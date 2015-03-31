@@ -22,6 +22,7 @@
 #include <asm/cpuidle.h>
 #include <asm/proc-fns.h>
 #include <asm/suspend.h>
+#include <asm/cpu_ops.h>
 
 #define MAX_PMIC_DATA		2
 #define MAX_SEQ_DATA		64
@@ -190,7 +191,7 @@ static int qcom_cpu_spc(void)
 	return ret;
 }
 
-static int qcom_idle_enter(unsigned long index)
+int qcom_idle_enter(unsigned long index)
 {
 	return __this_cpu_read(qcom_idle_ops)[index]();
 }
@@ -200,7 +201,7 @@ static const struct of_device_id qcom_idle_state_match[] __initconst = {
 	{ },
 };
 
-static int __init qcom_cpuidle_init(struct device_node *cpu_node, int cpu)
+int __init qcom_cpuidle_init(struct device_node *cpu_node, int cpu)
 {
 	const struct of_device_id *match_id;
 	struct device_node *state_node;
@@ -256,7 +257,11 @@ static int __init qcom_cpuidle_init(struct device_node *cpu_node, int cpu)
 		/* We have atleast one power down mode */
 		cpumask_clear(&mask);
 		cpumask_set_cpu(cpu, &mask);
+#ifdef ARCH_ARM
 		qcom_scm_set_warm_boot_addr(cpu_resume_arm, &mask);
+#else
+		qcom_scm_set_warm_boot_addr(cpu_resume, &mask);
+#endif
 	}
 
 	per_cpu(qcom_idle_ops, cpu) = fns;
@@ -270,13 +275,14 @@ check_spm:
 	return per_cpu(cpu_spm_drv, cpu) ? 0 : -ENXIO;
 }
 
+#ifdef ARCH_ARM
 static const struct cpuidle_ops qcom_cpuidle_ops __initconst = {
 	.suspend = qcom_idle_enter,
 	.init = qcom_cpuidle_init,
 };
-
 CPUIDLE_METHOD_OF_DECLARE(qcom_idle_v1, "qcom,kpss-acc-v1", &qcom_cpuidle_ops);
 CPUIDLE_METHOD_OF_DECLARE(qcom_idle_v2, "qcom,kpss-acc-v2", &qcom_cpuidle_ops);
+#endif
 
 static struct spm_driver_data *spm_get_drv(struct platform_device *pdev,
 		int *spm_cpu)
