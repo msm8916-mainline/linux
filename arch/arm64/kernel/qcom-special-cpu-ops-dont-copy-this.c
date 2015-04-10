@@ -273,9 +273,25 @@ static int qcom_cpu_boot(unsigned int cpu)
 	return ret;
 }
 
+extern int qcom_cpuidle_init(struct device_node *cpu_node, int cpu);
+extern int qcom_idle_enter(unsigned long index);
+
+static __init __maybe_unused int qcom_cpu_init_idle(unsigned int cpu)
+{
+	struct device_node *cpu_node = of_get_cpu_node(cpu, NULL);
+	if (!cpu_node)
+		return -ENODEV;
+
+	return qcom_cpuidle_init(cpu_node, cpu);
+}
+
 const struct cpu_operations qcom_cortex_a_ops = {
 	.name		= "qcom,arm-cortex-acc",
 	.cpu_init	= qcom_cpu_init,
 	.cpu_prepare	= qcom_cpu_prepare,
 	.cpu_boot	= qcom_cpu_boot,
+#ifdef CONFIG_QCOM_PM
+	.cpu_init_idle	= qcom_cpu_init_idle,
+	.cpu_suspend	= qcom_idle_enter,
+#endif
 };
