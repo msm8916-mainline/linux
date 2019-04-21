@@ -640,8 +640,8 @@ static int lpg_blink_set(struct led_classdev *cdev,
 	((y1) + ((y2) - (y1)) * ((x) - (x1)) / ((x2) - (x1)))
 
 static int lpg_pattern_set(struct led_classdev *led_cdev,
-			   struct led_pattern *led_pattern, int len,
-			   bool repeat)
+			   struct led_pattern *led_pattern, u32 len,
+			   int repeat)
 {
 	struct lpg_led *led = container_of(led_cdev, struct lpg_led, cdev);
 	struct lpg_channel *chan = led->channels[0];
@@ -938,7 +938,7 @@ static int lpg_add_led(struct lpg *lpg, struct device_node *np)
 	if (lpg->lut_base) {
 		led->cdev.pattern_set = lpg_pattern_set;
 		led->cdev.pattern_clear = lpg_pattern_clear;
-		led->cdev.pattern_get = lpg_pattern_get;
+//		led->cdev.pattern_get = lpg_pattern_get; FIXME
 	}
 
 	if (!of_property_read_string(np, "default-state", &state) &&
