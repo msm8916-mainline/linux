@@ -3053,6 +3053,34 @@ static const struct panel_desc_dsi lg_acx467akm_7 = {
 	.lanes = 4,
 };
 
+static const struct drm_display_mode samsung_ea8061v_ams497ee01_mode = {
+	.clock = 80118,
+	.hdisplay = 720,
+	.hsync_start = 720 + 80,
+	.hsync_end = 720 + 80 + 96,
+	.htotal = 720 + 80 + 96 + 128,
+	.vdisplay = 1280,
+	.vsync_start = 1280 + 14,
+	.vsync_end = 1280 + 14 + 2,
+	.vtotal = 1280 + 14 + 2 + 8,
+	.vrefresh = 60,
+};
+
+static const struct panel_desc_dsi samsung_ea8061v_ams497ee01 = {
+	.desc = {
+		.modes = &samsung_ea8061v_ams497ee01_mode,
+		.num_modes = 1,
+		.bpc = 8,
+		.size = {
+			.width = 720,
+			.height = 1280,
+		},
+	},
+	.flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST,
+	.format = MIPI_DSI_FMT_RGB888,
+	.lanes = 4,
+};
+
 static const struct of_device_id dsi_of_match[] = {
 	{
 		.compatible = "auo,b080uan01",
@@ -3072,6 +3100,9 @@ static const struct of_device_id dsi_of_match[] = {
 	}, {
 		.compatible = "lg,acx467akm-7",
 		.data = &lg_acx467akm_7
+	}, {
+		.compatible = "samsung,ea8061v-ams497ee01",
+		.data = &samsung_ea8061v_ams497ee01
 	}, {
 		/* sentinel */
 	}
