@@ -9,6 +9,7 @@
 #include <linux/of.h>
 #include <linux/of_device.h>
 #include <linux/i2c.h>
+#include <linux/gpio/consumer.h>
 #include <linux/input/mt.h>
 #include <linux/input/touchscreen.h>
 #include <linux/interrupt.h>
@@ -62,6 +63,7 @@ struct mms114_data {
 	struct input_dev	*input_dev;
 	struct regulator	*core_reg;
 	struct regulator	*io_reg;
+	struct gpio_desc	*power_gpio;
 	struct touchscreen_properties props;
 	enum mms_type		type;
 	unsigned int		contact_threshold;
@@ -361,12 +363,16 @@ static int mms114_start(struct mms114_data *data)
 		return error;
 	}
 
+	if (data->power_gpio)
+		gpiod_set_value_cansleep(data->power_gpio, 1);
+
 	msleep(MMS114_POWERON_DELAY);
 
 	error = mms114_setup_regs(data);
 	if (error < 0) {
 		regulator_disable(data->io_reg);
 		regulator_disable(data->core_reg);
+		gpiod_set_value_cansleep(data->power_gpio, 0);
 		return error;
 	}
 
@@ -389,6 +395,9 @@ static void mms114_stop(struct mms114_data *data)
 	error = regulator_disable(data->core_reg);
 	if (error)
 		dev_warn(&client->dev, "Failed to disable avdd: %d\n", error);
+
+	if (data->power_gpio)
+		gpiod_set_value_cansleep(data->power_gpio, 0);
 }
 
 static int mms114_input_open(struct input_dev *dev)
@@ -535,6 +544,15 @@ static int mms114_probe(struct i2c_client *client,
 		error = PTR_ERR(data->io_reg);
 		dev_err(&client->dev,
 			"Unable to get the IO regulator (%d)\n", error);
+		return error;
+	}
+
+	data->power_gpio = devm_gpiod_get_optional(&client->dev, "power",
+						   GPIOD_OUT_LOW);
+	if (IS_ERR(data->power_gpio)) {
+		error = PTR_ERR(data->power_gpio);
+		dev_err(&client->dev,
+			"Unable to get power GPIO (%d)\n", error);
 		return error;
 	}
 
