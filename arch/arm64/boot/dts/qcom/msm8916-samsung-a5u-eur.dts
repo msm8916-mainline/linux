@@ -8,6 +8,30 @@
 	model = "Samsung Galaxy A5U (EUR)";
 	compatible = "samsung,a5u-eur", "qcom,msm8916";
 
+	reg_vlcd_vdd3: regulator-vlcd-vdd3 {
+		compatible = "regulator-fixed";
+		regulator-name = "vlcd_vdd3";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		vin-supply = <&pm8916_s4>;
+
+		gpio = <&msmgpio 87 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_on_default>;
+	};
+
+	reg_vlcd_vci: regulator-vlcd-vci {
+		compatible = "regulator-fixed";
+		regulator-name = "vlcd_vci";
+		regulator-min-microvolt = <3000000>;
+		regulator-max-microvolt = <3000000>;
+
+		gpio = <&msmgpio 87 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
 	reg_touch_key: regulator-touch-key {
 		compatible = "regulator-fixed";
 		regulator-name = "touch_key";
@@ -49,6 +73,28 @@
 	};
 };
 
+&dsi0 {
+	panel@0 {
+		compatible = "samsung,ea8061v-ams497ee01";
+		reg = <0>;
+
+		vdd3-supply = <&reg_vlcd_vdd3>;
+		vci-supply = <&reg_vlcd_vci>;
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
 &pronto {
 	iris {
 		compatible = "qcom,wcn3660b";
@@ -61,6 +107,14 @@
 };
 
 &msmgpio {
+	lcd_on_default: lcd-on-default {
+		pins = "gpio87";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	tkey_en_default: tkey-en-default {
 		pins = "gpio97";
 		function = "gpio";
