@@ -12,4 +12,15 @@
 			bias-disable;
 		};
 	};
+	ts_int_default: ts_int_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio13";
+		};
+		pinconf {
+			pins = "gpio13";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
 };
