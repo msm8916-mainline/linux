@@ -30,6 +30,34 @@
 	};
 };
 
+&dsi0 {
+	panel@0 {
+		compatible = "samsung,ea8061v-ams497ee01";
+		reg = <0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				panel_in: endpoint {
+					remote-endpoint = <&dsi0_out>;
+				};
+			};
+		};
+	};
+
+	ports {
+		port@1 {
+			endpoint {
+				remote-endpoint = <&panel_in>;
+				data-lanes = <0 1 2 3>;
+			};
+		};
+	};
+};
+
 &pronto {
 	iris {
 		compatible = "qcom,wcn3680";
