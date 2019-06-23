@@ -269,7 +269,7 @@
 		};
 		pinconf {
 			pins = "gpio6", "gpio7";
-			drive-strength = <16>;
+			drive-strength = <2>;
 			bias-disable;
 		};
 	};
