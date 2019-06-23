@@ -12,6 +12,7 @@
 			bias-disable;
 		};
 	};
+	
 	ts_int_default: ts_int_default {
 		pinmux {
 			function = "gpio";
@@ -19,6 +20,32 @@
 		};
 		pinconf {
 			pins = "gpio13";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+	
+	gpio_keys_default: gpio_keys_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio107", "gpio109";
+		};
+
+		pinconf {
+			pins = "gpio107", "gpio109";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	gpio_hall_sensor_default: gpio_hall_sensor_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio52";
+		};
+
+		pinconf {
+			pins = "gpio52";
 			drive-strength = <2>;
 			bias-disable;
 		};
