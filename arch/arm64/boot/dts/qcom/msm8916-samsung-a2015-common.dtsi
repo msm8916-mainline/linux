@@ -85,6 +85,10 @@
 			};
 		};
 
+		wcnss@a21b000 {
+			status = "okay";
+		};
+
 		/*
 		 * Debug power domain is not enabled on this device by default.
 		 * At the moment, it is not possible to enable it from the kernel.
