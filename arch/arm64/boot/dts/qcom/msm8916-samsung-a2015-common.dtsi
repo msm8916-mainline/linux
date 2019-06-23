@@ -165,6 +165,22 @@
 	};
 };
 
+&blsp_i2c2 {
+	status = "okay";
+
+	bmc150@10 {
+		compatible = "bosch,bmc150_accel";
+		reg = <0x10>;
+		interrupt-parent = <&msmgpio>;
+		interrupts = <115 IRQ_TYPE_EDGE_RISING>;
+	};
+
+	bmc150@12 {
+		compatible = "bosch,bmc150_magn";
+		reg = <0x12>;
+	};
+};
+
 &msmgpio {
 	gpio_keys_default: gpio_keys_default {
 		pinmux {
