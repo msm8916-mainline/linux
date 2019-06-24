@@ -7,4 +7,61 @@
 / {
 	model = "Samsung Galaxy A3U (EUR)";
 	compatible = "samsung,a3u-eur", "qcom,msm8916";
+
+	reg_vlcd_vci: regulator-vlcd-vci {
+		compatible = "regulator-fixed";
+		regulator-name = "vlcd_vci";
+		regulator-min-microvolt = <2850000>;
+		regulator-max-microvolt = <2850000>;
+
+		gpio = <&msmgpio 9 0>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_on_default>;
+	};
+};
+
+&dsi0 {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&pmx_mdss_default>;
+	pinctrl-1 = <&pmx_mdss_sleep>;
+
+	panel@0 {
+		reg = <0>;
+
+		compatible = "samsung,s6e88a0-ams452ef01";
+
+		vdd3-supply = <&pm8916_l17>;
+		vci-supply = <&reg_vlcd_vci>;
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_HIGH>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+
+	ports {
+		port@1 {
+			dsi0_out: endpoint {
+				remote-endpoint = <&panel_in>;
+				data-lanes = <0 1>;
+			};
+		};
+	};
+};
+
+&msmgpio {
+	lcd_on_default: lcd_on_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio9";
+		};
+		pinconf {
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
 };
