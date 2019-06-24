@@ -69,6 +69,24 @@
 			status = "okay";
 		};
 
+		mdss@1a00000 {
+			dsi@1a98000 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				vdda-supply = <&pm8916_l2>;
+				vddio-supply = <&pm8916_l6>;
+
+				pinctrl-names = "default", "sleep";
+				pinctrl-0 = <&pmx_mdss_default>;
+				pinctrl-1 = <&pmx_mdss_sleep>;
+			};
+
+			dsi-phy@1a98300 {
+				vddio-supply = <&pm8916_l6>;
+			};
+		};
+
 		/*
 		 * Attempting to enable these devices causes a "synchronous
 		 * external abort". Suspected cause is that the debug power
@@ -215,6 +233,30 @@
 			pins = "gpio12";
 			drive-strength = <2>;
 			bias-disable;
+		};
+	};
+
+	pmx_mdss_default: pmx_mdss_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio25";
+		};
+		pinconf {
+			pins = "gpio25";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	pmx_mdss_sleep: pmx_mdss_sleep {
+		pinmux {
+			function = "gpio";
+			pins = "gpio25";
+		};
+		pinconf {
+			pins = "gpio25";
+			drive-strength = <2>;
+			bias-pull-down;
 		};
 	};
 
