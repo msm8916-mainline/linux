@@ -8,3 +8,57 @@
 	model = "Samsung Galaxy A3U (EUR)";
 	compatible = "samsung,a3u-eur", "qcom,msm8916";
 };
+
+&dsi0 {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&pmx_mdss_default>;
+	pinctrl-1 = <&pmx_mdss_sleep>;
+
+	panel@0 {
+		reg = <0>;
+
+		compatible = "samsung,s6e88a0-ams452ef01";
+
+		extra-power-gpios = <&msmgpio 9 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_HIGH>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+
+	ports {
+		port@1 {
+			dsi0_out: endpoint {
+				remote-endpoint = <&panel_in>;
+				data-lanes = <0 1>;
+			};
+		};
+	};
+};
+
+&msmgpio {
+	pmx_mdss_default: pmx_mdss_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio9", "gpio25";
+		};
+		pinconf {
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	pmx_mdss_sleep: pmx_mdss_sleep {
+		pinmux {
+			function = "gpio";
+			pins = "gpio9", "gpio25";
+		};
+		pinconf {
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
+};
