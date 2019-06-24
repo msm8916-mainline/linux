@@ -143,6 +143,20 @@
 			status = "okay";
 		};
 
+		mdss@1a00000 {
+			dsi@1a98000 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				vdda-supply = <&pm8916_l2>;
+				vddio-supply = <&pm8916_l6>;
+			};
+
+			dsi-phy@1a98300 {
+				vddio-supply = <&pm8916_l6>;
+			};
+		};
+
 		/*
 		 * Debug power domain is not enabled on this device by default.
 		 * At the moment, it is not possible to enable it from the kernel.
