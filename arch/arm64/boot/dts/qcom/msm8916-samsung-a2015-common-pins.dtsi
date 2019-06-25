@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+&msmgpio {
+	muic_int_default: muic_int_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio12";
+		};
+		pinconf {
+			pins = "gpio12";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+};
