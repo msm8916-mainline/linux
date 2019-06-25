@@ -2,6 +2,7 @@
 
 #include "msm8916.dtsi"
 #include "pm8916.dtsi"
+#include "msm8916-no-psci-sad-face.dtsi"
 #include "msm8916-samsung-a2015-common-pins.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/irq.h>
