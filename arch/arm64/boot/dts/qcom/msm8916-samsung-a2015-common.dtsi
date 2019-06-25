@@ -2,6 +2,7 @@
 
 #include "msm8916.dtsi"
 #include "pm8916.dtsi"
+#include "msm8916-no-psci-sad-face.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 
