@@ -26,6 +26,12 @@
 		l2-cache {
 			power-domain = <&l2ccc_0>;
 		};
+
+		idle-states {
+			spc {
+				compatible = "qcom,idle-state-spc", "arm,idle-state";
+			};
+		};
 	};
 
 	psci {
