@@ -283,6 +283,17 @@ int __qcom_scm_set_warm_boot_addr(struct device *dev, void *entry,
  */
 void __qcom_scm_cpu_power_down(u32 flags)
 {
+	int ret;
+	struct qcom_scm_desc desc = {0};
+	struct arm_smccc_res res;
+
+	desc.args[0] = flags & QCOM_SCM_FLUSH_FLAG_MASK;
+	desc.arginfo = QCOM_SCM_ARGS(1);
+
+	ret = qcom_scm_call_atomic(NULL, QCOM_SCM_SVC_BOOT,
+				   QCOM_SCM_CMD_TERMINATE_PC, &desc, &res);
+	if (ret)
+		pr_err("Failed to power down CPU (%d): %d\n", flags, ret);
 }
 
 int __qcom_scm_is_call_available(struct device *dev, u32 svc_id, u32 cmd_id)
