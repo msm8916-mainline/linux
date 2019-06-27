@@ -163,6 +163,38 @@ static int qcom_scm_call(struct device *dev, u32 svc_id, u32 cmd_id,
 	return 0;
 }
 
+static int qcom_scm_call_atomic(u32 svc_id, u32 cmd_id,
+				const struct qcom_scm_desc *desc,
+				struct arm_smccc_res *res)
+{
+	int arglen = desc->arginfo & 0xf;
+	u32 fn_id = QCOM_SCM_FNID(svc_id, cmd_id);
+	u64 cmd, x5 = desc->args[FIRST_EXT_ARG_IDX];
+	struct arm_smccc_quirk quirk = {.id = ARM_SMCCC_QUIRK_QCOM_A6};
+
+	if (unlikely(arglen > N_REGISTER_ARGS))
+		return -EINVAL;
+
+	cmd = ARM_SMCCC_CALL_VAL(ARM_SMCCC_FAST_CALL,
+				 qcom_smccc_convention,
+				 ARM_SMCCC_OWNER_SIP, fn_id);
+
+	do {
+		arm_smccc_smc_quirk(cmd, desc->arginfo, desc->args[0],
+				    desc->args[1], desc->args[2], x5,
+				    quirk.state.a6, 0, res, &quirk);
+
+		if (res->a0 == QCOM_SCM_INTERRUPTED)
+			cmd = res->a0;
+
+	} while (res->a0 == QCOM_SCM_INTERRUPTED);
+
+	if (res->a0 < 0)
+		return qcom_scm_remap_error(res->a0);
+
+	return 0;
+}
+
 static int qcom_scm_set_boot_addr(struct device *dev, void *entry,
 				  const cpumask_t *cpus, int flags)
 {
@@ -236,6 +268,17 @@ int __qcom_scm_set_warm_boot_addr(struct device *dev, void *entry,
  */
 void __qcom_scm_cpu_power_down(u32 flags)
 {
+	int ret;
+	struct qcom_scm_desc desc = {0};
+	struct arm_smccc_res res;
+
+	desc.args[0] = flags & QCOM_SCM_FLUSH_FLAG_MASK;
+	desc.arginfo = QCOM_SCM_ARGS(1);
+
+	ret = qcom_scm_call_atomic(QCOM_SCM_SVC_BOOT, QCOM_SCM_CMD_TERMINATE_PC,
+				   &desc, &res);
+	if (ret)
+		pr_err("Failed to power down CPU (%d): %d\n", flags, ret);
 }
 
 int __qcom_scm_is_call_available(struct device *dev, u32 svc_id, u32 cmd_id)
