@@ -9,6 +9,25 @@
 	compatible = "samsung,a3u-eur", "qcom,msm8916";
 };
 
+
+&blsp_i2c5 {
+	status = "okay";
+	
+ 	bt541@20 {
+		compatible = "zinitix,bt541";
+		reg = <0x20>;
+		interrupt-parent = <&msmgpio>;
+		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&tsp_default>;
+		vddo-supply = <&pm8916_l6>;
+		vdd_enable-gpio = <&msmgpio 73 GPIO_ACTIVE_HIGH>;
+		touchscreen-size-x = <540>;
+		touchscreen-size-y = <960>;
+	};	
+};
+
+
 &dsi0 {
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&pmx_mdss_default>;
@@ -59,6 +78,17 @@
 		pinconf {
 			drive-strength = <2>;
 			bias-pull-down;
+		};
+	};
+
+	tsp_default: tsp_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio13", "gpio73";
+		};
+		pinconf {
+			drive-strength = <2>;
+			bias-disable;
 		};
 	};
 };
