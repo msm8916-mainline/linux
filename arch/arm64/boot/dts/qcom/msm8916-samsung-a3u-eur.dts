@@ -22,6 +22,23 @@
 	};
 };
 
+&blsp_i2c5 {
+	status = "okay";
+
+	bt541@20 {
+		compatible = "zinitix,bt541";
+		reg = <0x20>;
+		interrupt-parent = <&msmgpio>;
+		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&tsp_default>;
+		vdd-supply = <&reg_vdd_tsp>;
+		vddo-supply = <&pm8916_l6>;
+		touchscreen-size-x = <540>;
+		touchscreen-size-y = <960>;
+	};
+};
+
 &dsi0 {
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&pmx_mdss_default>;
@@ -58,6 +75,17 @@
 		pinmux {
 			function = "gpio";
 			pins = "gpio9";
+		};
+		pinconf {
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	tsp_default: tsp_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio13";
 		};
 		pinconf {
 			drive-strength = <2>;
