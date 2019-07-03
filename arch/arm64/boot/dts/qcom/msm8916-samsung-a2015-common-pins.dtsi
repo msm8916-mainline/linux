@@ -38,4 +38,16 @@
 			bias-disable;
 		};
 	};
+
+	jack_default: jack_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio110";
+		};
+		pinconf {
+			pins = "gpio110";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
 };
