@@ -11,52 +11,64 @@
 / {
 	model = "Wileyfox Swift";
 	compatible = "wileyfox,crackling", "qcom,msm8916-v1-qrd/9-v1", "qcom,msm8916";
-	
-	
+
+
 	aliases {
 		serial0 = &blsp1_uart2;
 	};
-	
+
 	chosen {
 		stdout-path = "serial0";
 	};
-	
+
+	reserved-memory {
+
+		// wcnss.mdt is not relocatable, so it must be loaded at 0x8b600000
+		/delete-node/ wcnss@89300000;
+
+		wcnss_mem: wcnss@8b600000 {
+			reg = <0x0 0x8b600000 0x0 0x600000>;
+			no-map;
+		};
+
+	};
+
 	soc {
-		
+
 		sdhci@7824000 {
 			status = "okay";
-			
+
 			vmmc-supply = <&pm8916_l8>;
 			vqmmc-supply = <&pm8916_l5>;
-			
+
 			pinctrl-names = "default", "sleep";
 			pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
 			pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
 		};
-		
-		
+
+
 		sdhci@7864000 {
 			status = "okay";
-			
+
 			vmmc-supply = <&pm8916_l11>;
 			vqmmc-supply = <&pm8916_l12>;
-			
+
 			pinctrl-names = "default", "sleep";
 			pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
 			pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
-			
+
 			cd-gpios = <&msmgpio 38 GPIO_ACTIVE_LOW>;
 		};
-		
-		
+
+
 		serial@78b0000 {
 			status = "okay";
 			pinctrl-names = "default", "sleep";
 			pinctrl-0 = <&blsp1_uart2_default>;
 			pinctrl-1 = <&blsp1_uart2_sleep>;
 		};
-		
-		
+
+
 		// FIXME: Pull up random NC GPIO to detect USB permanently
 		usb_id: usb-id {
 			compatible = "linux,extcon-usb-gpio";
@@ -64,16 +76,16 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&usb_id_default>;
 		};
-		
+
 		usb@78d9000 {
 			status = "okay";
 			extcon = <&usb_id>;
 			dr_mode = "peripheral";
-			
+
 			hnp-disable;
 			srp-disable;
 			adp-disable;
-			
+
 			ulpi {
 				phy {
 					extcon = <&usb_id>;
@@ -82,7 +94,13 @@
 				};
 			};
 		};
-		
+
+
+		wcnss@a21b000 {
+			status = "okay";
+		};
+
+
 		/*
 		 * Attempting to enable these devices causes a "synchronous
 		 * external abort". Suspected cause is that the debug power
@@ -106,7 +124,7 @@
 		etm@85e000 { status = "disabled"; };
 		etm@85f000 { status = "disabled"; };
 	};
-	
+
 };
 
 &msmgpio {
@@ -115,7 +133,7 @@
 			function = "gpio";
 			pins = "gpio62";
 		};
-		
+
 		pinconf {
 			pins = "gpio62";
 			bias-pull-up;
@@ -144,7 +162,7 @@
 	s4 {
 		regulator-min-microvolt = <1800000>;
 		regulator-max-microvolt = <2100000>;
-		
+
 		regulator-always-on;
 		regulator-boot-on;
 	};
