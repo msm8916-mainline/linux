@@ -19,6 +19,21 @@
 
 	chosen {
 		stdout-path = "serial0";
+
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		framebuffer@83200000 {
+			compatible = "simple-framebuffer";
+			reg = <0x0 0x83200000 0x0 (720 * 1280 * 3)>;
+			width = <720>;
+			height = <1280>;
+			stride = <(720 * 3)>;
+			format = "r8g8b8";
+
+			power-domains = <&gcc MDSS_GDSC>;
+		};
 	};
 
 	reserved-memory {
@@ -31,7 +46,12 @@
 			no-map;
 		};
 
+		framebuffer@83200000 {
+			reg = <0x0 0x83200000 0x0 0x300000>;
+			no-map;
+		};
 	};
+
 
 	soc {
 
@@ -95,6 +115,13 @@
 			};
 		};
 
+		mdss@1a00000 {
+			status = "disabled";
+
+			dsi@1a98000 { status = "disabled"; };
+			dsi-phy@1a98300 { status = "disabled"; };
+			mdp@1a01000 { status = "disabled"; };
+		};
 
 		wcnss@a21b000 {
 			status = "okay";
@@ -127,6 +154,8 @@
 
 };
 
+
+
 &msmgpio {
 	usb_id_default: usb-id-default {
 		pinmux {
@@ -153,11 +182,11 @@
 		regulator-max-microvolt = <1300000>;
 	};
 
+
 	s3 {
 		regulator-min-microvolt = <1200000>;
 		regulator-max-microvolt = <1300000>;
 	};
-
 
 	s4 {
 		regulator-min-microvolt = <1800000>;
