@@ -222,6 +222,29 @@
 			pinctrl-0 = <&muic_int_default>;
 		};
 	};
+
+	i2c-nfc {
+		compatible = "i2c-gpio";
+		sda-gpios = <&msmgpio 0 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&msmgpio 1 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		s3fwrn5@27 {
+			compatible = "samsung,s3fwrn5-i2c";
+
+			reg = <0x27>;
+			interrupt-parent = <&msmgpio>;
+			interrupts = <21 IRQ_TYPE_EDGE_RISING>;
+
+			s3fwrn5,en-gpios = <&msmgpio 20 GPIO_ACTIVE_LOW>;
+			s3fwrn5,fw-gpios = <&msmgpio 49 GPIO_ACTIVE_LOW>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&nfc_default &nfc_int_default &nfc_fw_default>;
+		};
+	};
 };
 
 &blsp_i2c2 {
@@ -286,6 +309,42 @@
 			pins = "gpio12";
 			drive-strength = <2>;
 			bias-disable;
+		};
+	};
+
+	nfc_default: nfc_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio0", "gpio1", "gpio20";
+		};
+		pinconf {
+			pins = "gpio0", "gpio1", "gpio20";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	nfc_int_default: nfc_int_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio21";
+		};
+		pinconf {
+			pins = "gpio21";
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
+
+	nfc_fw_default: nfc_fw_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio49";
+		};
+		pinconf {
+			pins = "gpio49";
+			drive-strength = <2>;
+			bias-pull-down;
 		};
 	};
 
