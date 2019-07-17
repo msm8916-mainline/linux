@@ -150,6 +150,53 @@
 		etm@85f000 { status = "disabled"; };
 	};
 
+	reg_ctp: regulator-ctp {
+		compatible = "regulator-fixed";
+		regulator-name = "ctp";
+
+		regulator-min-microvolt = <2800000>;
+		regulator-max-microvolt = <2800000>;
+
+		gpio = <&msmgpio 17 0>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&ctp_pwr_en_default>;
+	};
+
+};
+
+&blsp_i2c5 {
+	status = "okay";
+
+	rmi4@20 {
+		compatible = "syna,rmi4-i2c";
+		reg = <0x20>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+
+		vdd-supply = <&reg_ctp>;
+		vio-supply = <&pm8916_l6>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&tp_int_default>;
+
+		syna,startup-delay-ms = <10>;
+
+		rmi4-f01@1 {
+			reg = <0x1>;
+			syna,nosleep-mode = <1>; // Allow sleeping
+		};
+
+		rmi4-f11@11 {
+			reg = <0x11>;
+			syna,sensor-type = <1>; // Touchscreen
+		};
+
+	};
 };
 
 
@@ -163,6 +210,30 @@
 		pinconf {
 			pins = "gpio62";
 			bias-pull-up;
+		};
+	};
+
+	tp_int_default: tp_int_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio13";
+		};
+		pinconf {
+			pins = "gpio13";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	ctp_pwr_en_default: ctp_pwr_en_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio17";
+		};
+		pinconf {
+			pins = "gpio17";
+			drive-strength = <2>;
+			bias-disable;
 		};
 	};
 };
