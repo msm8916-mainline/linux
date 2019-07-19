@@ -147,6 +147,27 @@
 	};
 };
 
+&blsp_i2c2 {
+	status = "okay";
+
+	bmc150@10 {
+		compatible = "bosch,bmc150_accel";
+		reg = <0x10>;
+	};
+
+	bmc150@12 {
+		compatible = "bosch,bmc150_magn";
+		reg = <0x12>;
+	};
+
+	bmg160@68 {
+		compatible = "bosch,bmg160";
+		reg = <0x68>;
+		interrupt-parent = <&msmgpio>;
+		interrupts = <23 IRQ_TYPE_EDGE_RISING>;
+	};
+};
+
 &blsp_i2c5 {
 	status = "okay";
 
