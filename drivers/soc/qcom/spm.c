@@ -22,6 +22,7 @@
 #include <asm/cpuidle.h>
 #include <asm/proc-fns.h>
 #include <asm/suspend.h>
+#include <asm/cpu_ops.h>
 
 #define MAX_PMIC_DATA		2
 #define MAX_SEQ_DATA		64
@@ -52,9 +53,10 @@ enum spm_reg {
 };
 
 struct spm_reg_data {
-	const u8 *reg_offset;
+	const u32 *reg_offset;
 	u32 spm_cfg;
 	u32 spm_dly;
+	u32 spm_ctl;
 	u32 pmic_dly;
 	u32 pmic_data[MAX_PMIC_DATA];
 	u8 seq[MAX_SEQ_DATA];
@@ -66,7 +68,7 @@ struct spm_driver_data {
 	const struct spm_reg_data *reg_data;
 };
 
-static const u8 spm_reg_offset_v2_1[SPM_REG_NR] = {
+static const u32 spm_reg_offset_v2_1[SPM_REG_NR] = {
 	[SPM_REG_CFG]		= 0x08,
 	[SPM_REG_SPM_CTL]	= 0x30,
 	[SPM_REG_DLY]		= 0x34,
@@ -85,7 +87,7 @@ static const struct spm_reg_data spm_reg_8974_8084_cpu  = {
 	.start_index[PM_SLEEP_MODE_SPC] = 3,
 };
 
-static const u8 spm_reg_offset_v1_1[SPM_REG_NR] = {
+static const u32 spm_reg_offset_v1_1[SPM_REG_NR] = {
 	[SPM_REG_CFG]		= 0x08,
 	[SPM_REG_SPM_CTL]	= 0x20,
 	[SPM_REG_PMIC_DLY]	= 0x24,
@@ -105,6 +107,28 @@ static const struct spm_reg_data spm_reg_8064_cpu = {
 		0x10, 0x54, 0x30, 0x0C, 0x24, 0x30, 0x0F },
 	.start_index[PM_SLEEP_MODE_STBY] = 0,
 	.start_index[PM_SLEEP_MODE_SPC] = 2,
+};
+
+static const u32 spm_reg_offset_v3_0[SPM_REG_NR] = {
+	[SPM_REG_CFG]		= 0x08,
+	[SPM_REG_SPM_CTL]	= 0x30,
+	[SPM_REG_DLY]		= 0x34,
+	[SPM_REG_PMIC_DATA_0]	= 0x40,
+	[SPM_REG_PMIC_DATA_1]	= 0x44,
+	[SPM_REG_SEQ_ENTRY]	= 0x400,
+};
+
+/* SPM register data for 8916 */
+static const struct spm_reg_data spm_reg_8916_cpu = {
+	.reg_offset = spm_reg_offset_v3_0,
+	.spm_cfg = 0x1,
+	.spm_ctl = 0xE,
+	.spm_dly = 0x3C102800,
+	.seq = { 0x60, 0x03, 0x60, 0x0B, 0x0F, 0x20, 0x10, 0x80, 0x30, 0x90,
+		0x5B, 0x60, 0x03, 0x60, 0x3B, 0x76, 0x76, 0x0B, 0x94, 0x5B,
+		0x80, 0x10, 0x26, 0x30, 0x0F },
+	.start_index[PM_SLEEP_MODE_STBY] = 0,
+	.start_index[PM_SLEEP_MODE_SPC] = 5,
 };
 
 static DEFINE_PER_CPU(struct spm_driver_data *, cpu_spm_drv);
@@ -190,7 +214,7 @@ static int qcom_cpu_spc(void)
 	return ret;
 }
 
-static int qcom_idle_enter(unsigned long index)
+int qcom_idle_enter(unsigned long index)
 {
 	return __this_cpu_read(qcom_idle_ops)[index]();
 }
@@ -200,7 +224,7 @@ static const struct of_device_id qcom_idle_state_match[] __initconst = {
 	{ },
 };
 
-static int __init qcom_cpuidle_init(struct device_node *cpu_node, int cpu)
+int __init qcom_cpuidle_init(struct device_node *cpu_node, int cpu)
 {
 	const struct of_device_id *match_id;
 	struct device_node *state_node;
@@ -256,7 +280,11 @@ static int __init qcom_cpuidle_init(struct device_node *cpu_node, int cpu)
 		/* We have atleast one power down mode */
 		cpumask_clear(&mask);
 		cpumask_set_cpu(cpu, &mask);
+#ifdef ARCH_ARM
 		qcom_scm_set_warm_boot_addr(cpu_resume_arm, &mask);
+#else
+		qcom_scm_set_warm_boot_addr(cpu_resume, &mask);
+#endif
 	}
 
 	per_cpu(qcom_idle_ops, cpu) = fns;
@@ -270,13 +298,14 @@ check_spm:
 	return per_cpu(cpu_spm_drv, cpu) ? 0 : -ENXIO;
 }
 
+#ifdef ARCH_ARM
 static const struct cpuidle_ops qcom_cpuidle_ops __initconst = {
 	.suspend = qcom_idle_enter,
 	.init = qcom_cpuidle_init,
 };
-
 CPUIDLE_METHOD_OF_DECLARE(qcom_idle_v1, "qcom,kpss-acc-v1", &qcom_cpuidle_ops);
 CPUIDLE_METHOD_OF_DECLARE(qcom_idle_v2, "qcom,kpss-acc-v2", &qcom_cpuidle_ops);
+#endif
 
 static struct spm_driver_data *spm_get_drv(struct platform_device *pdev,
 		int *spm_cpu)
@@ -314,6 +343,8 @@ static const struct of_device_id spm_match_table[] = {
 	  .data = &spm_reg_8974_8084_cpu },
 	{ .compatible = "qcom,apq8064-saw2-v1.1-cpu",
 	  .data = &spm_reg_8064_cpu },
+	{ .compatible = "qcom,msm8916-saw2-v3.0-cpu",
+	  .data = &spm_reg_8916_cpu },
 	{ },
 };
 
@@ -358,7 +389,8 @@ static int spm_dev_probe(struct platform_device *pdev)
 				drv->reg_data->pmic_data[0]);
 	spm_register_write(drv, SPM_REG_PMIC_DATA_1,
 				drv->reg_data->pmic_data[1]);
-
+	spm_register_write(drv, SPM_REG_SPM_CTL,
+				drv->reg_data->spm_ctl);
 	/* Set up Standby as the default low power mode */
 	spm_set_low_power_mode(drv, PM_SLEEP_MODE_STBY);
 

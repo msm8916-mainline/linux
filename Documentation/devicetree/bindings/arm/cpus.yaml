@@ -165,6 +165,7 @@ properties:
           - enum:
               - psci
               - spin-table
+              - qcom,arm-cortex-acc
           # On ARM 32-bit systems this property is optional
           - enum:
               - actions,s500-smp

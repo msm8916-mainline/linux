@@ -76,7 +76,7 @@ config QCOM_MDT_LOADER
 
 config QCOM_PM
 	bool "Qualcomm Power Management"
-	depends on ARCH_QCOM && !ARM64
+	depends on ARCH_QCOM
 	select ARM_CPU_SUSPEND
 	select QCOM_SCM
 	help
