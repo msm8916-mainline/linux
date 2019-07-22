@@ -11,6 +11,7 @@
 #include <linux/qcom_scm.h>
 #include <linux/arm-smccc.h>
 #include <linux/dma-mapping.h>
+#include <asm/cacheflush.h>
 
 #include "qcom_scm.h"
 
@@ -106,6 +107,7 @@ static int qcom_scm_call(struct device *dev, u32 svc_id, u32 cmd_id,
 						      FIRST_EXT_ARG_IDX]);
 		}
 
+		if (dev) {
 		args_phys = dma_map_single(dev, args_virt, alloc_len,
 					   DMA_TO_DEVICE);
 
@@ -115,6 +117,10 @@ static int qcom_scm_call(struct device *dev, u32 svc_id, u32 cmd_id,
 		}
 
 		x5 = args_phys;
+		} else {
+			x5 = virt_to_phys(args_virt);
+			__flush_dcache_area(args_virt, alloc_len);
+		}
 	}
 
 	do {
@@ -146,6 +152,7 @@ static int qcom_scm_call(struct device *dev, u32 svc_id, u32 cmd_id,
 	}  while (res->a0 == QCOM_SCM_V2_EBUSY);
 
 	if (args_virt) {
+		if (dev)
 		dma_unmap_single(dev, args_phys, alloc_len, DMA_TO_DEVICE);
 		kfree(args_virt);
 	}
@@ -154,6 +161,66 @@ static int qcom_scm_call(struct device *dev, u32 svc_id, u32 cmd_id,
 		return qcom_scm_remap_error(res->a0);
 
 	return 0;
+}
+
+static int qcom_scm_call_atomic(u32 svc_id, u32 cmd_id,
+				const struct qcom_scm_desc *desc,
+				struct arm_smccc_res *res)
+{
+	int arglen = desc->arginfo & 0xf;
+	u32 fn_id = QCOM_SCM_FNID(svc_id, cmd_id);
+	u64 cmd, x5 = desc->args[FIRST_EXT_ARG_IDX];
+	struct arm_smccc_quirk quirk = {.id = ARM_SMCCC_QUIRK_QCOM_A6};
+
+	if (unlikely(arglen > N_REGISTER_ARGS))
+		return -EINVAL;
+
+	cmd = ARM_SMCCC_CALL_VAL(ARM_SMCCC_FAST_CALL,
+				 qcom_smccc_convention,
+				 ARM_SMCCC_OWNER_SIP, fn_id);
+
+	do {
+		arm_smccc_smc_quirk(cmd, desc->arginfo, desc->args[0],
+				    desc->args[1], desc->args[2], x5,
+				    quirk.state.a6, 0, res, &quirk);
+
+		if (res->a0 == QCOM_SCM_INTERRUPTED)
+			cmd = res->a0;
+
+	} while (res->a0 == QCOM_SCM_INTERRUPTED);
+
+	if (res->a0 < 0)
+		return qcom_scm_remap_error(res->a0);
+
+	return 0;
+}
+
+static int qcom_scm_set_boot_addr(struct device *dev, void *entry,
+				  const cpumask_t *cpus, int flags)
+{
+	struct qcom_scm_desc desc = {0};
+	struct arm_smccc_res res;
+	unsigned int cpu = cpumask_first(cpus);
+	u64 mpidr_el1 = cpu_logical_map(cpu);
+
+	/* For now we assume only a single cpu is set in the mask */
+	WARN_ON(cpumask_weight(cpus) != 1);
+
+	if (mpidr_el1 & ~MPIDR_HWID_BITMASK) {
+		pr_err("CPU%d: Failed to set boot address\n", cpu);
+		return -ENOSYS;
+	}
+
+	desc.args[0] = virt_to_phys(entry);
+	desc.args[1] = BIT(MPIDR_AFFINITY_LEVEL(mpidr_el1, 0));
+	desc.args[2] = BIT(MPIDR_AFFINITY_LEVEL(mpidr_el1, 1));
+	desc.args[3] = BIT(MPIDR_AFFINITY_LEVEL(mpidr_el1, 2));
+	desc.args[4] = ~0ULL;
+	desc.args[5] = QCOM_SCM_FLAG_HLOS | flags;
+	desc.arginfo = QCOM_SCM_ARGS(6);
+
+	return qcom_scm_call(dev, QCOM_SCM_SVC_BOOT, QCOM_SCM_BOOT_ADDR_MC,
+			     &desc, &res);
 }
 
 /**
@@ -166,7 +233,13 @@ static int qcom_scm_call(struct device *dev, u32 svc_id, u32 cmd_id,
  */
 int __qcom_scm_set_cold_boot_addr(void *entry, const cpumask_t *cpus)
 {
-	return -ENOTSUPP;
+	if (qcom_smccc_convention == -1) {
+		// This is called long before the driver is probed
+		__qcom_scm_init();
+	}
+
+	return qcom_scm_set_boot_addr(NULL, entry, cpus,
+				      QCOM_SCM_FLAG_COLDBOOT_MC);
 }
 
 /**
@@ -181,7 +254,8 @@ int __qcom_scm_set_cold_boot_addr(void *entry, const cpumask_t *cpus)
 int __qcom_scm_set_warm_boot_addr(struct device *dev, void *entry,
 				  const cpumask_t *cpus)
 {
-	return -ENOTSUPP;
+	return qcom_scm_set_boot_addr(dev, entry, cpus,
+				      QCOM_SCM_FLAG_WARMBOOT_MC);
 }
 
 /**
@@ -194,6 +268,17 @@ int __qcom_scm_set_warm_boot_addr(struct device *dev, void *entry,
  */
 void __qcom_scm_cpu_power_down(u32 flags)
 {
+	int ret;
+	struct qcom_scm_desc desc = {0};
+	struct arm_smccc_res res;
+
+	desc.args[0] = flags & QCOM_SCM_FLUSH_FLAG_MASK;
+	desc.arginfo = QCOM_SCM_ARGS(1);
+
+	ret = qcom_scm_call_atomic(QCOM_SCM_SVC_BOOT, QCOM_SCM_CMD_TERMINATE_PC,
+				   &desc, &res);
+	if (ret)
+		pr_err("Failed to power down CPU (%d): %d\n", flags, ret);
 }
 
 int __qcom_scm_is_call_available(struct device *dev, u32 svc_id, u32 cmd_id)
