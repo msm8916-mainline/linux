@@ -132,6 +132,16 @@
 &blsp_i2c2 {
 	status = "okay";
 
+	light-sensor@23 {
+		compatible = "liteon,ltr559";
+		reg = <0x23>;
+		vdd-supply = <&pm8916_l17>;
+		vio-supply = <&pm8916_l6>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <115 IRQ_TYPE_EDGE_FALLING>;
+	};
+
 	accelerometer@10 {
 		compatible = "bosch,bmc150_accel";
 		reg = <0x10>;
