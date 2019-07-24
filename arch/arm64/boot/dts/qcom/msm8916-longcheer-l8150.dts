@@ -24,17 +24,6 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
-
-		framebuffer@83200000 {
-			compatible = "simple-framebuffer";
-			reg = <0x0 0x83200000 0x0 (720 * 1280 * 3)>;
-			width = <720>;
-			height = <1280>;
-			stride = <(720 * 3)>;
-			format = "r8g8b8";
-
-			power-domains = <&gcc MDSS_GDSC>;
-		};
 	};
 
 	reserved-memory {
@@ -44,11 +33,6 @@
 
 		wcnss_mem: wcnss@8b600000 {
 			reg = <0x0 0x8b600000 0x0 0x600000>;
-			no-map;
-		};
-
-		framebuffer@83200000 {
-			reg = <0x0 0x83200000 0x0 0x300000>;
 			no-map;
 		};
 	};
