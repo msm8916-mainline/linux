@@ -142,6 +142,7 @@
 
 			dsi-phy@1a98300 {
 				vddio-supply = <&pm8916_l6>;
+				qcom,dsi-phy-regulator-ldo-mode;
 			};
 		};
 
