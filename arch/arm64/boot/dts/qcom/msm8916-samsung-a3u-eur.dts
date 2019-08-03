@@ -40,6 +40,7 @@
 
 		compatible = "samsung,s6e88a0-ams452ef01";
 
+		// TODO: Use regulator for this
 		extra-power-gpios = <&msmgpio 9 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_HIGH>;
 
@@ -61,6 +62,8 @@
 };
 
 &msmgpio {
+	// TODO: Remove, reset GPIO is in common
+	// Extra power GPIO should be handled by regulator-fixed
 	pmx_mdss_default: pmx_mdss_default {
 		pinmux {
 			function = "gpio";

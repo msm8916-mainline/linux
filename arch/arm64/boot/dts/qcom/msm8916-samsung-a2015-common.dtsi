@@ -117,6 +117,10 @@
 
 				vdda-supply = <&pm8916_l2>;
 				vddio-supply = <&pm8916_l6>;
+
+				pinctrl-names = "default", "sleep";
+				pinctrl-0 = <&pmx_mdss_default>;
+				pinctrl-1 = <&pmx_mdss_sleep>;
 			};
 
 			dsi-phy@1a98300 {
@@ -284,6 +288,28 @@
 			pins = "gpio12";
 			drive-strength = <2>;
 			bias-disable;
+		};
+	};
+
+	pmx_mdss_default: pmx_mdss_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio25";
+		};
+		pinconf {
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	pmx_mdss_sleep: pmx_mdss_sleep {
+		pinmux {
+			function = "gpio";
+			pins = "gpio25";
+		};
+		pinconf {
+			drive-strength = <2>;
+			bias-pull-down;
 		};
 	};
 
