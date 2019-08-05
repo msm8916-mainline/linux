@@ -8,6 +8,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
 #include <dt-bindings/sound/apq8016-lpass.h>
 
 / {
@@ -30,6 +31,15 @@
 			reg = <0x0 0x8b600000 0x0 0x600000>;
 			no-map;
 		};
+	};
+
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pm8916_pwm 0 100000>;
+
+		brightness-levels = <0 255>;
+		num-interpolated-steps = <255>;
+		default-brightness-level = <255>;
 	};
 
 	// FIXME: Use extcon device provided by charger driver when available
@@ -202,6 +212,7 @@
 		compatible = "longcheer,l8150-panel";
 		reg = <0>;
 
+		backlight = <&backlight>;
 		power-supply = <&pm8916_l17>;
 		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
 
@@ -224,6 +235,12 @@
 
 &lpass {
 	status = "okay";
+};
+
+&pm8916_pwm {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm_out>;
 };
 
 &pm8916_resin {
@@ -473,5 +490,16 @@
 		function = "gpio";
 
 		bias-pull-up;
+	};
+};
+
+&pm8916_mpps {
+	pwm_out: mpp4 {
+		pins = "mpp4";
+		function = "digital";
+
+		output-low;
+		qcom,dtest = <1>;
+		power-source = <PM8916_MPP_VPH>;
 	};
 };
