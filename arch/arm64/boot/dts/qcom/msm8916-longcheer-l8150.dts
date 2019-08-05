@@ -9,6 +9,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/sound/apq8016-lpass.h>
+#include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
 
 / {
 	model = "Longcheer L8150";
@@ -165,6 +166,15 @@
 		etm@85f000 { status = "disabled"; };
 	};
 
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pm8916_pwm 0 100000>;
+
+		brightness-levels = <0 255>;
+		num-interpolated-steps = <255>;
+		default-brightness-level = <255>;
+	};
+
 	// FIXME: Use extcon device provided by charger driver when available
 	usb_vbus: usb-vbus {
 		compatible = "linux,extcon-usb-gpio";
@@ -266,6 +276,7 @@
 		reg = <0>;
 
 		power-supply = <&pm8916_l17>;
+		backlight = <&backlight>;
 		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_HIGH>;
 
 		ports {
@@ -364,6 +375,18 @@
 	};
 };
 
+&pm8916_mpps {
+	pwm_out: pm8916_mpp4 {
+		pinconf {
+			pins = "mpp4";
+			function = "digital";
+			output-low;
+			power-source = <PM8916_MPP_VPH>;
+			qcom,dtest = <1>;
+		};
+	};
+};
+
 &spmi_bus {
 	pm8916@0 {
 		pon@800 {
@@ -377,6 +400,12 @@
 	};
 
 	pm8916@1 {
+		pwm@bc00 {
+			status = "okay";
+			pinctrl-names = "default";
+			pinctrl-0 = <&pwm_out>;
+		};
+
 		codec@f000 {
 			qcom,micbias-lvl = <2800>;
 			qcom,mbhc-vthreshold-low = <75 150 237 450 500>;
