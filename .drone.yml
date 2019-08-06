@@ -1,0 +1,48 @@
+---
+kind: pipeline
+type: docker
+name: aarch64
+
+platform:
+  os: linux
+  arch: amd64
+
+clone:
+  depth: 1
+
+steps:
+  - name: build
+    image: alpine:3.16
+    commands:
+      - ./.drone.sh build arm64 aarch64-none-elf
+  - name: check
+    image: alpine:3.16
+    commands:
+      - ./.drone.sh check
+    when:
+      event: pull_request
+
+---
+kind: pipeline
+type: docker
+name: armv7
+
+platform:
+  os: linux
+  arch: amd64
+
+clone:
+  depth: 1
+
+steps:
+  - name: build
+    image: alpine:3.16
+    commands:
+      - cat arch/arm64/configs/msm8916_defconfig arch/arm/configs/msm8916_defconfig.part > arch/arm/configs/msm8916_defconfig
+      - ./.drone.sh build arm arm-none-eabi
+  - name: check
+    image: alpine:3.16
+    commands:
+      - ./.drone.sh check
+    when:
+      event: pull_request
