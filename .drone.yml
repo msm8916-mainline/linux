@@ -1,0 +1,31 @@
+kind: pipeline
+name: aarch64
+
+platform:
+  os: linux
+  arch: arm64
+
+clone:
+  depth: 16
+
+steps:
+  - name: build
+    image: arm64v8/alpine:latest
+    commands:
+      - nproc && grep Mem /proc/meminfo && df -hT .
+      - apk add build-base bison flex openssl-dev perl
+      - make msm8916_defconfig
+      - make KCFLAGS="-Wall -Werror" -j$(nproc)
+
+  - name: check
+    image: arm64v8/alpine:latest
+    commands:
+      - apk add git perl
+      - git format-patch origin/$DRONE_TARGET_BRANCH
+      - 'scripts/checkpatch.pl --strict --no-signoff --color=always *.patch || :'
+      - '! scripts/checkpatch.pl --strict --no-signoff --terse *.patch | grep -qF ERROR:'
+    when:
+      event: pull_request
+
+trigger:
+  event: [push, pull_request, tag]
