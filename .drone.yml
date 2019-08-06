@@ -1,0 +1,49 @@
+---
+kind: pipeline
+name: aarch64
+
+platform:
+  os: linux
+  arch: arm64
+
+clone:
+  depth: 16
+
+steps:
+  - name: build
+    image: arm64v8/alpine:3.12
+    commands: [./.drone.sh build]
+  - name: check
+    image: arm64v8/alpine:3.12
+    commands: [./.drone.sh check]
+    when:
+      event: pull_request
+
+trigger:
+  event: [push, pull_request, tag]
+
+---
+kind: pipeline
+name: armv7
+
+platform:
+  os: linux
+  arch: arm
+
+clone:
+  depth: 16
+
+steps:
+  - name: build
+    image: arm32v7/alpine:3.12
+    commands:
+      - cat arch/arm64/configs/msm8916_defconfig arch/arm/configs/msm8916_defconfig.part > arch/arm/configs/msm8916_defconfig
+      - ./.drone.sh build
+  - name: check
+    image: arm32v7/alpine:3.12
+    commands: [./.drone.sh check]
+    when:
+      event: pull_request
+
+trigger:
+  event: [push, pull_request, tag]
