@@ -1,0 +1,65 @@
+---
+kind: pipeline
+type: docker
+name: aarch64
+
+platform:
+  os: linux
+  arch: amd64
+
+clone:
+  depth: 1
+
+steps:
+  - name: build (gcc)
+    image: alpine:3.17
+    commands: [./.drone.sh gcc-aarch64-none-elf]
+    environment:
+      ARCH: arm64
+      CROSS_COMPILE: aarch64-none-elf-
+
+  - name: build (clang)
+    image: alpine:3.17
+    commands: [./.drone.sh clang lld llvm]
+    environment:
+      ARCH: arm64
+      LLVM: 1
+
+  - name: check
+    image: alpine:3.17
+    commands: [./.drone.sh]
+    when:
+      event: pull_request
+
+---
+kind: pipeline
+type: docker
+name: armv7
+
+platform:
+  os: linux
+  arch: amd64
+
+clone:
+  depth: 1
+
+steps:
+  - name: build (gcc)
+    image: alpine:3.17
+    commands: [./.drone.sh gcc-arm-none-eabi]
+    environment:
+      ARCH: arm
+      CROSS_COMPILE: arm-none-eabi-
+
+  - name: build (clang)
+    image: alpine:3.17
+    commands: [./.drone.sh clang lld llvm]
+    environment:
+      ARCH: arm
+      LLVM: 1
+
+  - name: check
+    image: alpine:3.17
+    commands: [./.drone.sh]
+    when:
+      event: pull_request
