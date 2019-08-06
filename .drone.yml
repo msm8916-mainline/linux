@@ -1,0 +1,73 @@
+---
+kind: pipeline
+type: docker
+name: arm64
+
+platform:
+  os: linux
+  arch: amd64
+
+clone:
+  depth: 1
+
+environment:
+  ARCH: arm64
+
+steps:
+  - name: build (gcc)
+    image: alpine:3.17
+    commands:
+      - . .ci-prepare.sh gcc
+      - ./.ci-build.sh
+      - apk add git && git clean -dxfq
+
+  - name: build (clang)
+    image: alpine:3.17
+    commands:
+      - . .ci-prepare.sh clang
+      - ./.ci-build.sh
+
+  - name: check
+    image: alpine:3.17
+    commands:
+      - apk add git perl
+      - ./.ci-check.sh origin/$DRONE_TARGET_BRANCH
+    when:
+      event: pull_request
+
+---
+kind: pipeline
+type: docker
+name: arm
+
+platform:
+  os: linux
+  arch: amd64
+
+clone:
+  depth: 1
+
+environment:
+  ARCH: arm
+
+steps:
+  - name: build (gcc)
+    image: alpine:3.17
+    commands:
+      - . .ci-prepare.sh gcc
+      - ./.ci-build.sh
+      - apk add git && git clean -dxfq
+
+  - name: build (clang)
+    image: alpine:3.17
+    commands:
+      - . .ci-prepare.sh clang
+      - ./.ci-build.sh
+
+  - name: check
+    image: alpine:3.17
+    commands:
+      - apk add git perl
+      - ./.ci-check.sh origin/$DRONE_TARGET_BRANCH
+    when:
+      event: pull_request

@@ -1,0 +1,22 @@
+name: Build
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [arm64, arm]
+        compiler: [gcc, clang]
+    env:
+      ARCH: ${{ matrix.arch }}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: jirutka/setup-alpine@v1
+      with:
+        branch: v3.17
+    - name: Prepare build environment
+      run: ./.ci-prepare.sh ${{ matrix.compiler }}
+      shell: alpine.sh --root {0}
+    - name: Build
+      run: ./.ci-build.sh
+      shell: alpine.sh {0}
