@@ -1,0 +1,44 @@
+---
+kind: pipeline
+name: aarch64
+
+clone:
+  depth: 16
+
+steps:
+  - name: build
+    image: alpine:3.15
+    commands:
+      - ./.drone.sh build arm64 aarch64-none-elf
+  - name: check
+    image: alpine:3.15
+    commands:
+      - ./.drone.sh check
+    when:
+      event: pull_request
+
+trigger:
+  event: [push, pull_request, tag]
+
+---
+kind: pipeline
+name: armv7
+
+clone:
+  depth: 16
+
+steps:
+  - name: build
+    image: alpine:3.15
+    commands:
+      - cat arch/arm64/configs/msm8916_defconfig arch/arm/configs/msm8916_defconfig.part > arch/arm/configs/msm8916_defconfig
+      - ./.drone.sh build arm arm-none-eabi
+  - name: check
+    image: alpine:3.15
+    commands:
+      - ./.drone.sh check
+    when:
+      event: pull_request
+
+trigger:
+  event: [push, pull_request, tag]
