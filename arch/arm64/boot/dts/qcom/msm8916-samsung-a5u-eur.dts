@@ -41,7 +41,7 @@
 
 		reg = <0x48>;
 		interrupt-parent = <&msmgpio>;
-		interrupts = <13 IRQ_TYPE_LEVEL_LOW>;
+		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
 
 		touchscreen-size-x = <720>;
 		touchscreen-size-y = <1280>;
