@@ -1135,8 +1135,8 @@ static irqreturn_t pm8916_mbhc_switch_irq_handler(int irq, void *arg)
 static int pm8916_wcd_analog_jack_status_check(void *data)
 {
 	struct pm8916_wcd_analog_priv *wcd = data;
-
 	bool ins = gpiod_get_value_cansleep(wcd->jack_gpio.desc);
+
 	return pm8916_wcd_analog_switch_check(wcd, ins);
 }
 
