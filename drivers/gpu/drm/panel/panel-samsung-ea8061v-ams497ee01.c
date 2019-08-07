@@ -39,7 +39,7 @@ static void ea8061v_ams497ee01_reset(struct ea8061v_ams497ee01 *ctx)
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	msleep(20);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
-	msleep(1);
+	usleep_range(1000, 2000);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	msleep(20);
 }
