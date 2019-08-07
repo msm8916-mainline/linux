@@ -444,13 +444,13 @@ static int mms114_probe(struct i2c_client *client,
 	int error;
 
 	/* FIXME: switch to device_get_match_data() when available */
-	type = (enum mms_type) of_device_get_match_data(&client->dev);
+	type = (enum mms_type)of_device_get_match_data(&client->dev);
 	if (!type)
 		return -EINVAL;
 
-	if (type != TYPE_MMS345L
-	    && !i2c_check_functionality(client->adapter,
-					I2C_FUNC_PROTOCOL_MANGLING)) {
+	if (type != TYPE_MMS345L &&
+	    !i2c_check_functionality(client->adapter,
+				     I2C_FUNC_PROTOCOL_MANGLING)) {
 		dev_err(&client->dev,
 			"Need i2c bus that supports protocol mangling\n");
 		return -ENODEV;
