@@ -260,8 +260,8 @@
 			syna,nosleep-mode = <1>; // Allow sleeping
 		};
 
-		rmi4-f11@11 {
-			reg = <0x11>;
+		rmi4-f12@12 {
+			reg = <0x12>;
 			syna,sensor-type = <1>; // Touchscreen
 		};
 	};
