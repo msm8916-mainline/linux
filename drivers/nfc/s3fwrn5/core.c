@@ -33,6 +33,10 @@ static int s3fwrn5_firmware_update(struct s3fwrn5_info *info)
 	s3fwrn5_set_mode(info, S3FWRN5_MODE_FW);
 
 	ret = s3fwrn5_fw_setup(&info->fw_info);
+	if (ret == -ENOENT) {
+		dev_warn(&info->ndev->nfc_dev->dev, "Skipping firmware update\n");
+		return 0;
+	}
 	if (ret < 0)
 		return ret;
 
