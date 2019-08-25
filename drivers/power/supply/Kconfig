@@ -51,6 +51,13 @@ config GENERIC_ADC_BATTERY
 	  Say Y here to enable support for the generic battery driver
 	  which uses IIO framework to read adc.
 
+config DUMB_ADC_BATTERY
+	tristate "Dumb battery support using IIO"
+	depends on IIO
+	help
+	  Say Y here to enable support for the dumb battery driver
+	  which uses IIO framework to read adc.
+
 config MAX8925_POWER
 	tristate "MAX8925 battery charger support"
 	depends on MFD_MAX8925
