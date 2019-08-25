@@ -10,6 +10,7 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/sound/apq8016-lpass.h>
 #include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
+#include <dt-bindings/iio/qcom,spmi-vadc.h>
 
 / {
 	model = "Longcheer L8150";
@@ -181,6 +182,25 @@
 		vbus-gpio = <&msmgpio 62 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&usb_vbus_default>;
+	};
+
+	bat: battery {
+		compatible = "simple-battery";
+		voltage-min-design-microvolt = <3500000>;
+		// FIXME: Should be 4.35 when driver will use Voc table.
+		voltage-max-design-microvolt = <4050000>;
+		energy-full-design-microwatt-hours = <9500000>;
+		charge-full-design-microamp-hours = <2500000>;
+
+		// FIXME: Values was measured from closed circuit
+		ocv-capacity-table-0 = <4200000 100>, <3860000 70>, <3700000 35>, <3500000 0>;
+	};
+
+	adc_battery {
+		compatible = "dumb-adc-battery";
+		io-channels = <&pm8916_vadc VADC_VSYS>;
+		io-channel-names = "battery";
+		monitored-battery = <&bat>;
 	};
 
 	gpio-keys {
