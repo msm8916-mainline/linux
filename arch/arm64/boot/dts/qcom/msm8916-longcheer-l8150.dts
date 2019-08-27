@@ -98,9 +98,9 @@
 
 			qcom,model = "msm8916";
 			qcom,audio-routing =
-				"AMIC1", "MIC BIAS External1",
+				"AMIC1", "MIC BIAS Internal1",
 				"AMIC2", "MIC BIAS Internal2",
-				"AMIC3", "MIC BIAS External1";
+				"AMIC3", "MIC BIAS Internal3";
 
 			internal-codec-playback-dai-link@0 {
 				link-name = "WCD";
