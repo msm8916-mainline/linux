@@ -11,6 +11,32 @@
 	model = "Samsung Galaxy Tab A 9.7 WiFi (2015) (SM-T550)";
 	compatible = "samsung,gt510wifi", "qcom,apq8016";
 
+	reg_lcd_vmipi: regulator-lcd-vmipi {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd_vmipi";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+
+		gpio = <&msmgpio 8 0>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_en_default>;
+	};
+
+	reg_vlcd_5p4v: regulator-vlcd-5p4v {
+		compatible = "regulator-fixed";
+		regulator-name = "vlcd_5p4v";
+		regulator-min-microvolt = <5400000>;
+		regulator-max-microvolt = <5400000>;
+
+		gpio = <&msmgpio 51 0>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&buckbooster_en_default>;
+	};
+
 	aliases {
 		serial0 = &blsp1_uart2;
 	};
@@ -77,6 +103,24 @@
 			};
 		};
 
+		mdss@1a00000 {
+			dsi@1a98000 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				vdda-supply = <&pm8916_l2>;
+				vddio-supply = <&pm8916_l6>;
+
+				pinctrl-names = "default", "sleep";
+				pinctrl-0 = <&pmx_mdss_default>;
+				pinctrl-1 = <&pmx_mdss_sleep>;
+			};
+
+			dsi-phy@1a98300 {
+				vddio-supply = <&pm8916_l6>;
+			};
+		};
+
 		/*
 		 * Attempting to enable these devices causes a "synchronous
 		 * external abort". Suspected cause is that the debug power
@@ -110,7 +154,87 @@
 	};
 };
 
+&dsi0 {
+	panel@0 {
+		compatible = "samsung,s6d7aa0-ltl101at01";
+		reg = <0>;
+
+		vmipi-supply = <&reg_lcd_vmipi>;
+		5p4v-supply = <&reg_vlcd_5p4v>;
+		reset-gpios = <&msmgpio 97 GPIO_ACTIVE_HIGH>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				panel_in: endpoint {
+					remote-endpoint = <&dsi0_out>;
+				};
+			};
+		};
+	};
+
+	ports {
+		port@1 {
+			endpoint {
+				remote-endpoint = <&panel_in>;
+				data-lanes = <0 1 2 3>;
+			};
+		};
+	};
+};
+
 &msmgpio {
+	buckbooster_en_default: buckbooster_en_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio51";
+		};
+		pinconf {
+			pins = "gpio51";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	lcd_en_default: lcd_en_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio8";
+		};
+		pinconf {
+			pins = "gpio8";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	pmx_mdss_default: pmx_mdss_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio97";
+		};
+		pinconf {
+			pins = "gpio97";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	pmx_mdss_sleep: pmx_mdss_sleep {
+		pinmux {
+			function = "gpio";
+			pins = "gpio97";
+		};
+		pinconf {
+			pins = "gpio97";
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
+
 	usb_vbus_default: usb-vbus-default {
 		pinmux {
 			function = "gpio";
