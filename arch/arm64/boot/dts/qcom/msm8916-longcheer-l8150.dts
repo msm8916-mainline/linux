@@ -65,6 +65,26 @@
 		default-brightness-level = <255>;
 	};
 
+	usb_otg_hack: usb-otg-hack {
+		compatible = "linux,extcon-usb-gpio";
+
+		/*
+		 * NOTE: This allows detection of custom-made OTG adapters
+		 *
+		 * Since L8150 doesn't support OTG it's impossible to use normal OTG
+		 * adapters. However since USB_ID is in fact connected to GPIO it's
+		 * possible to detect custom-made OTG adapters that connect USB_ID
+		 * to 5v instead of GND and provie external power.
+		 *
+		 * Downside of this approach is that USB_ID pin is used to change boot
+		 * order of SoC and if device will be powered on with adapter attached
+		 * and powered, it will boot into USB BOOT mode.
+		 */
+		id-gpio = <&msmgpio 37 GPIO_ACTIVE_LOW>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb_id_default>;
+	};
+
 	gpio-keys {
 		compatible = "gpio-keys";
 
@@ -337,8 +357,7 @@
 
 &usb {
 	status = "okay";
-	dr_mode = "peripheral";
-	extcon = <&pm8916_usbin>;
+	extcon = <&pm8916_usbin>, <&usb_otg_hack>;
 };
 
 &usb_hs_phy {
@@ -534,6 +553,14 @@
 
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+	usb_id_default: usb-id-default {
+		pins = "gpio37";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-down;
 	};
 };
 
