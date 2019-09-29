@@ -65,6 +65,8 @@
 #define BT541_POINT_STATUS_REG			0x0080
 #define BT541_ICON_STATUS_REG			0x00AA
 
+#define BT541_POINT_COORD_REG			(BT541_POINT_STATUS_REG + 2)
+
 #define BT541_AFE_FREQUENCY			0x0100
 #define BT541_DND_N_COUNT			0x0122
 #define BT541_DND_U_COUNT			0x0135
@@ -125,7 +127,7 @@
 #define DELAY_FOR_TRANSACTION		50 // μs
 #define DELAY_FOR_POST_TRANSCATION	10 // μs
 
-struct coord {
+struct point_coord {
 	__le16	x;
 	__le16	y;
 	u8	width;
@@ -135,10 +137,9 @@ struct coord {
 	u8	angle;
 } __packed;
 
-struct point_info {
+struct point_status {
 	__le16	status;
 	__le16	event_flag;
-	struct coord coord[MAX_SUPPORTED_FINGER_NUM];
 } __packed;
 
 struct bt541_ts_data {
@@ -317,29 +318,45 @@ static irqreturn_t zinitix_ts_irq_handler(int irq, void *bt541_handler)
 	struct i2c_client *client = bt541->client;
 	int i;
 	int ret;
-	struct point_info touch_info;
+	struct point_status point_status;
+	struct point_coord point_coord[MAX_SUPPORTED_FINGER_NUM] = {0};
 
-	memset(&touch_info, 0, sizeof(struct point_info));
+	memset(&point_status, 0, sizeof(struct point_status));
 
-	ret = zinitix_read_data(bt541->client, BT541_POINT_STATUS_REG, (u8 *)&touch_info, sizeof(struct point_info));
+	ret = zinitix_read_data(bt541->client, BT541_POINT_STATUS_REG, (u8 *)&point_status, sizeof(struct point_status));
 	if (ret) {
-		dev_err(&client->dev, "%s: Failed to read point info\n", __func__);
+		dev_err(&client->dev, "%s: Failed to read point status\n", __func__);
+
+		zinitix_write_cmd(bt541->client, BT541_CLEAR_INT_STATUS_CMD);
 		return IRQ_HANDLED;
 	}
 
-	zinitix_write_cmd(bt541->client, BT541_CLEAR_INT_STATUS_CMD);
 
 	for (i = 0; i < MAX_SUPPORTED_FINGER_NUM; i++) {
-		if (touch_info.coord[i].sub_status & SUB_BIT_EXIST) {
+		if (le16_to_cpu(point_status.event_flag) & BIT(i)) {
+			ret = zinitix_read_data(bt541->client, BT541_POINT_COORD_REG + (i * sizeof(struct point_coord) / sizeof(u16)),
+						(u8 *)&point_coord[i], sizeof(struct point_coord));
+			if (ret) {
+				dev_err(&client->dev, "%s: Failed to read point info\n", __func__);
+
+				zinitix_write_cmd(bt541->client, BT541_CLEAR_INT_STATUS_CMD);
+				return IRQ_HANDLED;
+			}
+
+			if (!(point_coord[i].sub_status & SUB_BIT_EXIST))
+				continue;
+
 			input_mt_slot(bt541->input_dev, i);
 			input_mt_report_slot_state(bt541->input_dev, MT_TOOL_FINGER, true);
 			touchscreen_report_pos(bt541->input_dev, &bt541->prop,
-					       le16_to_cpu(touch_info.coord[i].x),
-					       le16_to_cpu(touch_info.coord[i].y), true);
-			input_report_abs(bt541->input_dev, ABS_MT_TOUCH_MAJOR, touch_info.coord[i].width);
-			input_report_abs(bt541->input_dev, ABS_MT_WIDTH_MAJOR, touch_info.coord[i].width);
+					       le16_to_cpu(point_coord[i].x),
+					       le16_to_cpu(point_coord[i].y), true);
+			input_report_abs(bt541->input_dev, ABS_MT_TOUCH_MAJOR, point_coord[i].width);
+			input_report_abs(bt541->input_dev, ABS_MT_WIDTH_MAJOR, point_coord[i].width);
 		}
 	}
+
+	zinitix_write_cmd(bt541->client, BT541_CLEAR_INT_STATUS_CMD);
 
 	input_mt_sync_frame(bt541->input_dev);
 	input_sync(bt541->input_dev);
