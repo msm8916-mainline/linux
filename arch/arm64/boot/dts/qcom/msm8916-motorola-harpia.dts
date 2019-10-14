@@ -47,6 +47,39 @@
 		pinctrl-1 = <&usb_id_sleep>;
 		pinctrl-names = "default", "sleep";
 	};
+
+	/*
+	 * harpia uses a NT50358 regulator to drive the display panel.
+	 * This regulator is apparently compatible with the TPS65132, except for
+	 * some differences with the enable lines, according to the downstream
+	 * kernel.
+	 * (https://github.com/MotorolaMobilityLLC/kernel-msm/blob/nougat-7.1.1-release-harpia/arch/arm/boot/dts/qcom/msm8916-harpia.dtsi#L202)
+	 * TODO: figure out what needs to be done to get a proper driver working
+	 * for this regulator. For now, we can just use fixed-regulator, as the
+	 * regulator reads voltages on startup from an onboard EEPROM, and we
+	 * don't need to adjust the regulator's values.
+	 */
+	nt50358_pos: nt50358-pos {
+		compatible = "regulator-fixed";
+		regulator-name = "nt50358-pos";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&tlmm 97 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-0 = <&lcd_p_en_default>;
+		pinctrl-names = "default";
+	};
+
+	nt50358_neg: nt50358-neg {
+		compatible = "regulator-fixed";
+		regulator-name = "nt50358-neg";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&tlmm 98 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-0 = <&lcd_n_en_default>;
+		pinctrl-names = "default";
+	};
 };
 
 &blsp_i2c1 {
@@ -127,6 +160,48 @@
 
 &blsp_uart1 {
 	status = "okay";
+};
+
+&gpu {
+	status = "okay";
+};
+
+&mdss {
+	status = "okay";
+};
+
+&mdss_dsi0 {
+	pinctrl-0 = <&mdss_default>;
+	pinctrl-1 = <&mdss_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	panel@0 {
+		compatible = "motorola,harpia-panel";
+		reg = <0>;
+
+		vsp-supply = <&nt50358_pos>;
+		vsn-supply = <&nt50358_neg>;
+		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+		backlight-gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
+
+		pinctrl-0 = <&lcd_bl_en_default>;
+		pinctrl-names = "default";
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&mdss_dsi0_out>;
+			};
+		};
+	};
+};
+
+&mdss_dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&mdss_dsi0_phy {
+	qcom,dsi-phy-regulator-ldo-mode;
 };
 
 &mpss_mem {
@@ -261,6 +336,41 @@
 		drive-strength = <2>;
 		bias-disable;
 		output-high;
+	};
+
+	lcd_bl_en_default: lcd-bl-en-default-state {
+		pins = "gpio37";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	lcd_p_en_default: lcd-p-en-default-state {
+		pins = "gpio97";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	lcd_n_en_default: lcd-n-en-default-state {
+		pins = "gpio98";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	mdss_default: mdss-default-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	mdss_sleep: mdss-sleep-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
 	};
 
 	sdc2_cd_default: sdc2-cd-default-state {
