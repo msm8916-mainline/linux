@@ -135,12 +135,12 @@ struct point_coord {
 	// not used on this model, but needed as padding:
 	u8	minor_width;
 	u8	angle;
-} __packed;
+};
 
 struct point_status {
 	__le16	status;
 	__le16	event_flag;
-} __packed;
+};
 
 struct bt541_ts_data {
 	struct i2c_client *client;
@@ -149,60 +149,64 @@ struct bt541_ts_data {
 	struct regulator_bulk_data supplies[2];
 };
 
-static inline s32 zinitix_read_data(struct i2c_client *client,
-				    u16 reg, u8 *values, u16 length)
+static int zinitix_read_data(struct i2c_client *client,
+			     u16 reg, u8 *values, size_t length)
 {
-	int ret;
+	int error;
 	__le16 reg_le = cpu_to_le16(reg);
 
-	ret = i2c_master_send(client, (u8 *)&reg_le, sizeof(reg_le));
-	if (ret < 0)
-		return ret;
+	error = i2c_master_send(client, (u8 *)&reg_le, sizeof(reg_le));
+	if (error < 0)
+		return error;
 
 	udelay(DELAY_FOR_TRANSACTION);
-	ret = i2c_master_recv(client, values, length);
-	if (ret < 0)
-		return ret;
+	error = i2c_master_recv(client, values, length);
+	if (error < 0)
+		return error;
+	if (error != length)
+		return -EIO;
 
 	udelay(DELAY_FOR_POST_TRANSCATION);
 	return 0;
 }
 
-static inline s32 zinitix_write_data(struct i2c_client *client,
-				     u16 reg, u8 *values, u16 length)
+static int zinitix_write_data(struct i2c_client *client,
+			      u16 reg, u8 *values, size_t length)
 {
-	int ret;
+	int error;
 	u8 *packet;
 	__le16 reg_le = cpu_to_le16(reg);
 
 	packet = kmalloc(length + sizeof(reg_le), GFP_KERNEL);
+	if (!packet)
+		return -ENOMEM;
 	memcpy(packet, (u8 *)&reg_le, sizeof(reg_le));
 	memcpy(packet + sizeof(reg_le), values, length);
 
-	ret = i2c_master_send(client, packet, length + sizeof(reg_le));
+	error = i2c_master_send(client, packet, length + sizeof(reg_le));
 	kfree(packet);
-	if (ret < 0)
-		return ret;
+	if (error < 0)
+		return error;
 
 	udelay(DELAY_FOR_POST_TRANSCATION);
 	return 0;
 }
 
-static inline s32 zinitix_write_u16(struct i2c_client *client, u16 reg, u16 value)
+static int zinitix_write_u16(struct i2c_client *client, u16 reg, u16 value)
 {
 	__le16 value_le = cpu_to_le16(value);
 
 	return zinitix_write_data(client, reg, (u8 *)&value_le, sizeof(reg));
 }
 
-static inline s32 zinitix_write_cmd(struct i2c_client *client, u16 reg)
+static int zinitix_write_cmd(struct i2c_client *client, u16 reg)
 {
-	int ret;
+	int error;
 	__le16 reg_le = cpu_to_le16(reg);
 
-	ret = i2c_master_send(client, (u8 *)&reg_le, sizeof(reg_le));
-	if (ret < 0)
-		return ret;
+	error = i2c_master_send(client, (u8 *)&reg_le, sizeof(reg_le));
+	if (error < 0)
+		return error;
 
 	udelay(DELAY_FOR_POST_TRANSCATION);
 	return 0;
@@ -212,46 +216,46 @@ static bool zinitix_init_touch(struct bt541_ts_data *bt541)
 {
 	struct i2c_client *client = bt541->client;
 	int i;
-	int ret;
+	int error;
 
-	ret = zinitix_write_cmd(client, BT541_SWRESET_CMD);
-	if (ret) {
+	error = zinitix_write_cmd(client, BT541_SWRESET_CMD);
+	if (error) {
 		dev_err(&client->dev, "Failed to write reset command\n");
-		return ret;
+		return error;
 	}
 
-	ret = zinitix_write_u16(client, BT541_INT_ENABLE_FLAG, 0x0);
-	if (ret) {
+	error = zinitix_write_u16(client, BT541_INT_ENABLE_FLAG, 0x0);
+	if (error) {
 		dev_err(&client->dev, "failed to reset interrupt enable flag\n");
-		return ret;
+		return error;
 	}
 
 	/* initialize */
-	ret = zinitix_write_u16(client, BT541_X_RESOLUTION, (u16)bt541->prop.max_x);
-	if (ret)
-		return ret;
+	error = zinitix_write_u16(client, BT541_X_RESOLUTION, (u16)bt541->prop.max_x);
+	if (error)
+		return error;
 
-	ret = zinitix_write_u16(client, BT541_Y_RESOLUTION, (u16)bt541->prop.max_y);
-	if (ret)
-		return ret;
+	error = zinitix_write_u16(client, BT541_Y_RESOLUTION, (u16)bt541->prop.max_y);
+	if (error)
+		return error;
 
-	ret = zinitix_write_u16(client, BT541_SUPPORTED_FINGER_NUM,
-				(u16)MAX_SUPPORTED_FINGER_NUM);
-	if (ret)
-		return ret;
+	error = zinitix_write_u16(client, BT541_SUPPORTED_FINGER_NUM,
+				  (u16)MAX_SUPPORTED_FINGER_NUM);
+	if (error)
+		return error;
 
-	ret = zinitix_write_u16(client, BT541_INITIAL_TOUCH_MODE, TOUCH_POINT_MODE);
-	if (ret)
-		return ret;
+	error = zinitix_write_u16(client, BT541_INITIAL_TOUCH_MODE, TOUCH_POINT_MODE);
+	if (error)
+		return error;
 
-	ret = zinitix_write_u16(client, BT541_TOUCH_MODE, TOUCH_POINT_MODE);
-	if (ret)
-		return ret;
+	error = zinitix_write_u16(client, BT541_TOUCH_MODE, TOUCH_POINT_MODE);
+	if (error)
+		return error;
 
-	ret = zinitix_write_u16(client, BT541_INT_ENABLE_FLAG,
-				BIT_PT_CNT_CHANGE | BIT_DOWN | BIT_MOVE | BIT_UP);
-	if (ret)
-		return ret;
+	error = zinitix_write_u16(client, BT541_INT_ENABLE_FLAG,
+				  BIT_PT_CNT_CHANGE | BIT_DOWN | BIT_MOVE | BIT_UP);
+	if (error)
+		return error;
 
 	/* clear queue */
 	for (i = 0; i < 10; i++) {
@@ -265,15 +269,15 @@ static bool zinitix_init_touch(struct bt541_ts_data *bt541)
 static int zinitix_init_regulators(struct bt541_ts_data *bt541)
 {
 	struct i2c_client *client = bt541->client;
-	int ret;
+	int error;
 
 	bt541->supplies[0].supply = "vdd";
 	bt541->supplies[1].supply = "vddo";
-	ret = devm_regulator_bulk_get(&client->dev, ARRAY_SIZE(bt541->supplies),
-				      bt541->supplies);
-	if (ret < 0) {
-		dev_err(&client->dev, "Failed to get regulators: %d\n", ret);
-		return ret;
+	error = devm_regulator_bulk_get(&client->dev, ARRAY_SIZE(bt541->supplies),
+					bt541->supplies);
+	if (error < 0) {
+		dev_err(&client->dev, "Failed to get regulators: %d\n", error);
+		return error;
 	}
 
 	return 0;
@@ -281,34 +285,34 @@ static int zinitix_init_regulators(struct bt541_ts_data *bt541)
 
 static int zinitix_send_power_on_sequence(struct bt541_ts_data *bt541)
 {
-	int ret;
+	int error;
 	struct i2c_client *client = bt541->client;
 
-	ret = zinitix_write_u16(client, 0xc000, 0x0001);
-	if (ret) {
+	error = zinitix_write_u16(client, 0xc000, 0x0001);
+	if (error) {
 		dev_err(&client->dev, "Failed to send power sequence(vendor cmd enable)\n");
-		return ret;
+		return error;
 	}
 	udelay(10);
 
-	ret = zinitix_write_cmd(client, 0xc004);
-	if (ret) {
+	error = zinitix_write_cmd(client, 0xc004);
+	if (error) {
 		dev_err(&client->dev, "Failed to send power sequence(intn clear)\n");
-		return ret;
+		return error;
 	}
 	udelay(10);
 
-	ret = zinitix_write_u16(client, 0xc002, 0x0001);
-	if (ret) {
+	error = zinitix_write_u16(client, 0xc002, 0x0001);
+	if (error) {
 		dev_err(&client->dev, "Failed to send power sequence(nvm init)\n");
-		return ret;
+		return error;
 	}
 	mdelay(2);
 
-	ret = zinitix_write_u16(client, 0xc001, 0x0001);
-	if (ret) {
+	error = zinitix_write_u16(client, 0xc001, 0x0001);
+	if (error) {
 		dev_err(&client->dev, "Failed to send power sequence(program start)\n");
-		return ret;
+		return error;
 	}
 	msleep(FIRMWARE_ON_DELAY);	/* wait for checksum cal */
 
@@ -320,33 +324,31 @@ static irqreturn_t zinitix_ts_irq_handler(int irq, void *bt541_handler)
 	struct bt541_ts_data *bt541 = (struct bt541_ts_data *)bt541_handler;
 	struct i2c_client *client = bt541->client;
 	int i;
-	int ret;
+	int error;
+	unsigned long event_flag;
 	struct point_status point_status;
 	struct point_coord point_coord[MAX_SUPPORTED_FINGER_NUM] = {0};
 
 	memset(&point_status, 0, sizeof(struct point_status));
 
-	ret = zinitix_read_data(bt541->client, BT541_POINT_STATUS_REG,
-				(u8 *)&point_status, sizeof(struct point_status));
-	if (ret) {
+	error = zinitix_read_data(bt541->client, BT541_POINT_STATUS_REG,
+				  (u8 *)&point_status, sizeof(struct point_status));
+	if (error) {
 		dev_err(&client->dev, "%s: Failed to read point status\n", __func__);
 
 		zinitix_write_cmd(bt541->client, BT541_CLEAR_INT_STATUS_CMD);
 		return IRQ_HANDLED;
 	}
 
-	for (i = 0; i < MAX_SUPPORTED_FINGER_NUM; i++) {
-		if (!(le16_to_cpu(point_status.event_flag) & BIT(i)))
-			continue;
+	event_flag = le16_to_cpu(point_status.event_flag);
 
-		ret = zinitix_read_data(bt541->client, BT541_POINT_COORD_REG +
-					(i * sizeof(struct point_coord) / sizeof(u16)),
-					(u8 *)&point_coord[i], sizeof(struct point_coord));
-		if (ret) {
+	for_each_set_bit(i, &event_flag, MAX_SUPPORTED_FINGER_NUM) {
+		error = zinitix_read_data(bt541->client, BT541_POINT_COORD_REG +
+					  (i * sizeof(struct point_coord) / sizeof(u16)),
+					  (u8 *)&point_coord[i], sizeof(struct point_coord));
+		if (error) {
 			dev_err(&client->dev, "%s: Failed to read point info\n", __func__);
-
-			zinitix_write_cmd(bt541->client, BT541_CLEAR_INT_STATUS_CMD);
-			return IRQ_HANDLED;
+			goto out;
 		}
 
 		if (!(point_coord[i].sub_status & SUB_BIT_EXIST))
@@ -358,20 +360,20 @@ static irqreturn_t zinitix_ts_irq_handler(int irq, void *bt541_handler)
 				       le16_to_cpu(point_coord[i].x),
 				       le16_to_cpu(point_coord[i].y), true);
 		input_report_abs(bt541->input_dev, ABS_MT_TOUCH_MAJOR, point_coord[i].width);
-		input_report_abs(bt541->input_dev, ABS_MT_WIDTH_MAJOR, point_coord[i].width);
 	}
-
-	zinitix_write_cmd(bt541->client, BT541_CLEAR_INT_STATUS_CMD);
 
 	input_mt_sync_frame(bt541->input_dev);
 	input_sync(bt541->input_dev);
+
+out:
+	zinitix_write_cmd(bt541->client, BT541_CLEAR_INT_STATUS_CMD);
 
 	return IRQ_HANDLED;
 }
 
 static int zinitix_init_input_dev(struct bt541_ts_data *bt541)
 {
-	int ret;
+	int error;
 
 	bt541->input_dev = devm_input_allocate_device(&bt541->client->dev);
 	if (!bt541->input_dev) {
@@ -395,28 +397,75 @@ static int zinitix_init_input_dev(struct bt541_ts_data *bt541)
 		return -EINVAL;
 	}
 
-	ret = input_mt_init_slots(bt541->input_dev, MAX_SUPPORTED_FINGER_NUM,
-				  INPUT_MT_DIRECT | INPUT_MT_DROP_UNUSED);
-	if (ret) {
+	error = input_mt_init_slots(bt541->input_dev, MAX_SUPPORTED_FINGER_NUM,
+				    INPUT_MT_DIRECT | INPUT_MT_DROP_UNUSED);
+	if (error) {
 		dev_err(&bt541->client->dev,
-			"Failed to initialize MT slots: %d", ret);
-		return ret;
+			"Failed to initialize MT slots: %d", error);
+		return error;
 	}
 
-	ret = input_register_device(bt541->input_dev);
-	if (ret) {
+	error = input_register_device(bt541->input_dev);
+	if (error) {
 		dev_err(&bt541->client->dev,
-			"Failed to register input device: %d", ret);
-		return ret;
+			"Failed to register input device: %d", error);
+		return error;
 	}
 
 	return 0;
 }
 
+static int zinitix_start(struct bt541_ts_data *bt541)
+{
+	int error;
+
+	error = regulator_bulk_enable(ARRAY_SIZE(bt541->supplies), bt541->supplies);
+	if (error < 0) {
+		dev_err(&bt541->client->dev, "Failed to enable regulators: %d\n", error);
+		return error;
+	}
+
+	msleep(CHIP_ON_DELAY);
+
+	error = zinitix_send_power_on_sequence(bt541);
+	if (error) {
+		dev_err(&bt541->client->dev, "sending power-on sequence failed: %d\n", error);
+		return error;
+	}
+
+	error = zinitix_init_touch(bt541);
+	if (error) {
+		dev_err(&bt541->client->dev, "Failed to init touchscreen ic\n");
+		return error;
+	}
+
+	return 0;
+}
+
+static int zinitix_stop(struct bt541_ts_data *bt541)
+{
+	int error;
+
+	error = regulator_bulk_disable(ARRAY_SIZE(bt541->supplies), bt541->supplies);
+	if (error) {
+		dev_err(&bt541->client->dev, "failed to disable regulators: %d\n", error);
+		return error;
+	}
+
+	return 0;
+}
+
+static void zinitix_disable_regulators(void *arg)
+{
+	struct bt541_ts_data *bt541 = arg;
+
+	zinitix_stop(bt541);
+}
+
 static int zinitix_ts_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	struct bt541_ts_data *bt541;
-	int ret;
+	int error;
 
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
 		dev_err(&client->dev, "I2C check functionality failed.\n");
@@ -430,45 +479,34 @@ static int zinitix_ts_probe(struct i2c_client *client, const struct i2c_device_i
 	bt541->client = client;
 	i2c_set_clientdata(client, bt541);
 
-	ret = zinitix_init_regulators(bt541);
-	if (ret) {
-		dev_err(&client->dev, "regulator initialization failed: %d\n", ret);
-		return ret;
+	error = zinitix_init_regulators(bt541);
+	if (error) {
+		dev_err(&client->dev, "regulator initialization failed: %d\n", error);
+		return error;
 	}
 
-	ret = regulator_bulk_enable(ARRAY_SIZE(bt541->supplies), bt541->supplies);
-	if (ret < 0) {
-		dev_err(&client->dev, "Failed to enable regulators: %d\n", ret);
-		return ret;
+	error = zinitix_init_input_dev(bt541);
+	if (error) {
+		dev_err(&client->dev, "input dev initialization failed: %d\n", error);
+		return error;
 	}
 
-	msleep(CHIP_ON_DELAY);
+	zinitix_start(bt541);
 
-	ret = zinitix_send_power_on_sequence(bt541);
-	if (ret) {
-		dev_err(&client->dev, "sending power-on sequence failed: %d\n", ret);
-		return ret;
+	error = devm_add_action_or_reset(&client->dev,
+					 zinitix_disable_regulators, bt541);
+	if (error) {
+		dev_err(&client->dev, "failed to install poweroff handler: %d\n", error);
+		return error;
 	}
 
-	ret = zinitix_init_input_dev(bt541);
-	if (ret) {
-		dev_err(&client->dev, "input dev initialization failed: %d\n", ret);
-		return ret;
-	}
-
-	ret = zinitix_init_touch(bt541);
-	if (ret) {
-		dev_err(&client->dev, "Failed to init touchscreen ic\n");
-		return ret;
-	}
-
-	ret = devm_request_threaded_irq(&bt541->client->dev, bt541->client->irq,
-					NULL, zinitix_ts_irq_handler,
-					IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
-					bt541->client->name, bt541);
-	if (ret) {
-		dev_err(&client->dev, "request IRQ failed: %d\n", ret);
-		return ret;
+	error = devm_request_threaded_irq(&bt541->client->dev, bt541->client->irq,
+					  NULL, zinitix_ts_irq_handler,
+					  IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
+					  bt541->client->name, bt541);
+	if (error) {
+		dev_err(&client->dev, "request IRQ failed: %d\n", error);
+		return error;
 	}
 
 	dev_info(&client->dev, "initialized a zinitix touchscreen\n");
@@ -476,14 +514,54 @@ static int zinitix_ts_probe(struct i2c_client *client, const struct i2c_device_i
 	return 0;
 }
 
-static int zinitix_ts_remove(struct i2c_client *client)
+static int __maybe_unused zinitix_suspend(struct device *dev)
 {
+	struct i2c_client *client = to_i2c_client(dev);
 	struct bt541_ts_data *bt541 = i2c_get_clientdata(client);
+	int i;
 
-	regulator_bulk_disable(ARRAY_SIZE(bt541->supplies), bt541->supplies);
+	/* Release all fingers */
+	for (i = 0; i < MAX_SUPPORTED_FINGER_NUM; i++) {
+		input_mt_slot(bt541->input_dev, i);
+		input_mt_report_slot_state(bt541->input_dev, MT_TOOL_FINGER, false);
+	}
+
+	input_mt_sync_frame(bt541->input_dev);
+	input_sync(bt541->input_dev);
+
+	mutex_lock(&bt541->input_dev->mutex);
+
+	disable_irq(client->irq);
+
+	zinitix_stop(bt541);
+
+	mutex_unlock(&bt541->input_dev->mutex);
 
 	return 0;
 }
+
+static int __maybe_unused zinitix_resume(struct device *dev)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct bt541_ts_data *bt541 = i2c_get_clientdata(client);
+	int error;
+
+	mutex_lock(&bt541->input_dev->mutex);
+
+	error = zinitix_start(bt541);
+	if (error) {
+		mutex_unlock(&bt541->input_dev->mutex);
+		return error;
+	}
+
+	enable_irq(client->irq);
+
+	mutex_unlock(&bt541->input_dev->mutex);
+
+	return 0;
+}
+
+static SIMPLE_DEV_PM_OPS(zinitix_pm_ops, zinitix_suspend, zinitix_resume);
 
 #ifdef CONFIG_OF
 static const struct of_device_id zinitix_of_match[] = {
@@ -495,9 +573,9 @@ MODULE_DEVICE_TABLE(of, zinitix_of_match);
 
 static struct i2c_driver zinitix_ts_driver = {
 	.probe = zinitix_ts_probe,
-	.remove = zinitix_ts_remove,
 	.driver = {
 		.name = "Zinitix-TS",
+		.pm = &zinitix_pm_ops,
 		.of_match_table = of_match_ptr(zinitix_of_match),
 	},
 };
