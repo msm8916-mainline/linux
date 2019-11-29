@@ -638,13 +638,47 @@ int __qcom_scm_restore_sec_cfg(struct device *dev, u32 device_id,
 int __qcom_scm_iommu_secure_ptbl_size(struct device *dev, u32 spare,
 				      size_t *size)
 {
-	return -ENODEV;
+	struct {
+		__le32 size;
+		__le32 scm_ret;
+	} resp;
+	__le32 in = cpu_to_le32(spare);
+	int ret;
+
+	ret = qcom_scm_call(dev, QCOM_SCM_SVC_MP,
+			    QCOM_SCM_IOMMU_SECURE_PTBL_SIZE,
+			    &in, sizeof(in), &resp, sizeof(resp));
+
+	if (size)
+		*size = le32_to_cpu(resp.size);
+
+	return ret ? : le32_to_cpu(resp.scm_ret);
 }
 
 int __qcom_scm_iommu_secure_ptbl_init(struct device *dev, u64 addr, u32 size,
 				      u32 spare)
 {
-	return -ENODEV;
+	struct {
+		__le32 paddr;
+		__le32 size;
+		__le32 spare;
+	} req;
+	__le32 scm_ret = 0;
+	int ret;
+
+	req.paddr = cpu_to_le32(addr);
+	req.size = cpu_to_le32(size);
+	req.spare = cpu_to_le32(spare);
+
+	ret = qcom_scm_call(dev, QCOM_SCM_SVC_MP,
+			    QCOM_SCM_IOMMU_SECURE_PTBL_INIT,
+			    &req, sizeof(req), &scm_ret, sizeof(scm_ret));
+
+	/* the pg table has been initialized already, ignore the error */
+	if (ret == -EPERM)
+		ret = 0;
+
+	return ret;
 }
 
 int __qcom_scm_io_readl(struct device *dev, phys_addr_t addr,
