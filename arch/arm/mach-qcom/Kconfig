@@ -4,6 +4,7 @@ menuconfig ARCH_QCOM
 	depends on ARCH_MULTI_V7
 	select ARM_GIC
 	select ARM_AMBA
+	select IOMMU_DMA
 	select CLKSRC_QCOM
 	select HAVE_ARM_ARCH_TIMER
 	select PINCTRL
