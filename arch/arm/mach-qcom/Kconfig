@@ -27,6 +27,7 @@ config ARCH_MSM8909
 config ARCH_MSM8916
 	bool "Enable support for MSM8916"
 	select HAVE_ARM_ARCH_TIMER
+	select IOMMU_DMA
 	help
 	  Enable support for the Qualcomm Snapdragon 410 (MSM8916/APQ8016).
 
