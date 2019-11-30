@@ -73,6 +73,21 @@
 	};
 };
 
+&blsp_i2c2 {
+	status = "okay";
+
+	imu@6b {
+		compatible = "st,lsm6ds3";
+		reg = <0x6b>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <115 IRQ_TYPE_EDGE_RISING>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&imu_int_default>;
+	};
+};
+
 &blsp1_uart2 {
 	status = "okay";
 };
@@ -250,6 +265,14 @@
 
 	gpio_hall_sensor_default: gpio-hall-sensor-default {
 		pins = "gpio52";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	imu_int_default: imu-int-default {
+		pins = "gpio115";
 		function = "gpio";
 
 		drive-strength = <2>;
