@@ -118,7 +118,7 @@
 #define SUB_BIT_UPDATE		BIT(4)
 #define SUB_BIT_WAIT		BIT(5)
 
-#define TOUCH_POINT_MODE		1
+#define DEFAULT_TOUCH_POINT_MODE	2
 #define MAX_SUPPORTED_FINGER_NUM	5
 
 #define CHIP_ON_DELAY	15 // ms
@@ -132,14 +132,21 @@ struct point_coord {
 	__le16	y;
 	u8	width;
 	u8	sub_status;
-	// not used on this model, but needed as padding:
+	// currently unused, but needed as padding:
 	u8	minor_width;
 	u8	angle;
 };
 
-struct point_status {
+struct touch_event {
 	__le16	status;
-	__le16	event_flag;
+	union {
+		__le16	event_flag; // mode == 1
+		struct { // mode == 2
+			u8	finger_cnt;
+			u8	time_stamp;
+		};
+	};
+	struct point_coord point_coord[MAX_SUPPORTED_FINGER_NUM];
 };
 
 struct bt541_ts_data {
@@ -147,6 +154,7 @@ struct bt541_ts_data {
 	struct input_dev *input_dev;
 	struct touchscreen_properties prop;
 	struct regulator_bulk_data supplies[2];
+	u32 zinitix_mode;
 };
 
 static int zinitix_read_data(struct i2c_client *client,
@@ -244,11 +252,11 @@ static bool zinitix_init_touch(struct bt541_ts_data *bt541)
 	if (error)
 		return error;
 
-	error = zinitix_write_u16(client, BT541_INITIAL_TOUCH_MODE, TOUCH_POINT_MODE);
+	error = zinitix_write_u16(client, BT541_INITIAL_TOUCH_MODE, bt541->zinitix_mode);
 	if (error)
 		return error;
 
-	error = zinitix_write_u16(client, BT541_TOUCH_MODE, TOUCH_POINT_MODE);
+	error = zinitix_write_u16(client, BT541_TOUCH_MODE, bt541->zinitix_mode);
 	if (error)
 		return error;
 
@@ -325,14 +333,14 @@ static irqreturn_t zinitix_ts_irq_handler(int irq, void *bt541_handler)
 	struct i2c_client *client = bt541->client;
 	int i;
 	int error;
-	unsigned long event_flag;
-	struct point_status point_status;
-	struct point_coord point_coord[MAX_SUPPORTED_FINGER_NUM] = {0};
+	unsigned long event_flag = 0;
+	struct touch_event touch_event;
 
-	memset(&point_status, 0, sizeof(struct point_status));
+	memset(&touch_event, 0, sizeof(struct touch_event));
 
+	// in mode 2, we can get away with just one read
 	error = zinitix_read_data(bt541->client, BT541_POINT_STATUS_REG,
-				  (u8 *)&point_status, sizeof(struct point_status));
+				  (u8 *)&touch_event, sizeof(struct touch_event));
 	if (error) {
 		dev_err(&client->dev, "%s: Failed to read point status\n", __func__);
 
@@ -340,26 +348,33 @@ static irqreturn_t zinitix_ts_irq_handler(int irq, void *bt541_handler)
 		return IRQ_HANDLED;
 	}
 
-	event_flag = le16_to_cpu(point_status.event_flag);
+	if (bt541->zinitix_mode == 1)
+		event_flag = le16_to_cpu(touch_event.event_flag);
 
-	for_each_set_bit(i, &event_flag, MAX_SUPPORTED_FINGER_NUM) {
-		error = zinitix_read_data(bt541->client, BT541_POINT_COORD_REG +
-					  (i * sizeof(struct point_coord) / sizeof(u16)),
-					  (u8 *)&point_coord[i], sizeof(struct point_coord));
-		if (error) {
-			dev_err(&client->dev, "%s: Failed to read point info\n", __func__);
-			goto out;
+	for (i = 0; i < MAX_SUPPORTED_FINGER_NUM; i++) {
+		if (bt541->zinitix_mode == 1) {
+			// in mode 1, we need to read the points one by one
+			if (!(event_flag & BIT(i)))
+				continue;
+
+			error = zinitix_read_data(bt541->client, BT541_POINT_COORD_REG +
+						  (i * sizeof(struct point_coord) / sizeof(u16)),
+						  (u8 *)&touch_event.point_coord[i], sizeof(struct point_coord));
+			if (error) {
+				dev_err(&client->dev, "%s: Failed to read point info\n", __func__);
+				goto out;
+			}
 		}
 
-		if (!(point_coord[i].sub_status & SUB_BIT_EXIST))
+		if (!(touch_event.point_coord[i].sub_status & SUB_BIT_EXIST))
 			continue;
 
 		input_mt_slot(bt541->input_dev, i);
 		input_mt_report_slot_state(bt541->input_dev, MT_TOOL_FINGER, true);
 		touchscreen_report_pos(bt541->input_dev, &bt541->prop,
-				       le16_to_cpu(point_coord[i].x),
-				       le16_to_cpu(point_coord[i].y), true);
-		input_report_abs(bt541->input_dev, ABS_MT_TOUCH_MAJOR, point_coord[i].width);
+				       le16_to_cpu(touch_event.point_coord[i].x),
+				       le16_to_cpu(touch_event.point_coord[i].y), true);
+		input_report_abs(bt541->input_dev, ABS_MT_TOUCH_MAJOR, touch_event.point_coord[i].width);
 	}
 
 	input_mt_sync_frame(bt541->input_dev);
@@ -489,6 +504,17 @@ static int zinitix_ts_probe(struct i2c_client *client, const struct i2c_device_i
 	if (error) {
 		dev_err(&client->dev, "input dev initialization failed: %d\n", error);
 		return error;
+	}
+
+	error = device_property_read_u32(&client->dev, "zinitix,mode", &bt541->zinitix_mode);
+	if (error < 0) {
+		dev_warn(&client->dev, "zinitix,mode property could not be recovered from device tree: %d, using default.\n", error);
+		bt541->zinitix_mode = DEFAULT_TOUCH_POINT_MODE;
+	}
+	if (bt541->zinitix_mode < 1 || bt541->zinitix_mode > 2) {
+		// if devices are found which fail to support either, mode 0 support may be needed.
+		dev_err(&client->dev, "malformed zinitix,mode property, must be in range 1 to 2. (supplied: %d)\n", bt541->zinitix_mode);
+		return -EINVAL;
 	}
 
 	zinitix_start(bt541);

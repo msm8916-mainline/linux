@@ -36,6 +36,7 @@
 		vddo-supply = <&pm8916_l6>;
 		touchscreen-size-x = <540>;
 		touchscreen-size-y = <960>;
+		zinitix,mode = <2>;
 	};
 };
 
