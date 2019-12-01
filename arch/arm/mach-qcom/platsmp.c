@@ -291,6 +291,13 @@ static int kpssv2_boot_secondary(unsigned int cpu, struct task_struct *idle)
 	return qcom_boot_secondary(cpu, kpssv2_release_secondary);
 }
 
+extern int qcom_cortex_a_release_secondary(unsigned int cpu);
+
+static int cortex_a_boot_secondary(unsigned int cpu, struct task_struct *idle)
+{
+	return qcom_boot_secondary(cpu, qcom_cortex_a_release_secondary);
+}
+
 static void __init qcom_smp_prepare_cpus(unsigned int max_cpus)
 {
 	int cpu;
@@ -332,3 +339,12 @@ static const struct smp_operations qcom_smp_kpssv2_ops __initconst = {
 #endif
 };
 CPU_METHOD_OF_DECLARE(qcom_smp_kpssv2, "qcom,kpss-acc-v2", &qcom_smp_kpssv2_ops);
+
+static const struct smp_operations qcom_smp_cortex_a_ops __initconst = {
+	.smp_prepare_cpus	= qcom_smp_prepare_cpus,
+	.smp_boot_secondary	= cortex_a_boot_secondary,
+#ifdef CONFIG_HOTPLUG_CPU
+	.cpu_die		= qcom_cpu_die,
+#endif
+};
+CPU_METHOD_OF_DECLARE(qcom_smp_cortex_a, "qcom,arm-cortex-acc", &qcom_smp_cortex_a_ops);
