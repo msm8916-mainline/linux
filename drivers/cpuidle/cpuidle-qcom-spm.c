@@ -24,6 +24,10 @@
 
 #include "dt_idle_states.h"
 
+#ifdef CONFIG_ARM64
+#define cpu_resume_arm		cpu_resume
+#endif
+
 #define MAX_PMIC_DATA		2
 #define MAX_SEQ_DATA		64
 #define SPM_CTL_INDEX		0x7f
