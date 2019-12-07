@@ -325,6 +325,16 @@
 	reg = <0x0 0x86800000 0x0 0x5a00000>;
 };
 
+&pm8916_codec {
+	jack-gpios = <&tlmm 110 GPIO_ACTIVE_LOW>;
+	qcom,micbias-lvl = <2800>;
+	qcom,mbhc-vthreshold-low = <75 150 237 450 500>;
+	qcom,mbhc-vthreshold-high = <75 150 237 450 500>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&jack_default>;
+};
+
 &pm8916_resin {
 	status = "okay";
 	linux,code = <KEY_VOLUMEDOWN>;
@@ -419,6 +429,14 @@
 
 	imu_irq_default: imu-irq-default-state {
 		pins = "gpio115";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	jack_default: jack-default-state {
+		pins = "gpio110";
 		function = "gpio";
 
 		drive-strength = <2>;
