@@ -1734,6 +1734,13 @@ void arch_teardown_dma_ops(struct device *dev)
 	set_dma_ops(dev, NULL);
 }
 
+#ifdef CONFIG_IOMMU_DMA
+void arch_dma_prep_coherent(struct page *page, size_t size)
+{
+	__dma_clear_buffer(page, size, NORMAL);
+}
+#endif
+
 void *arch_dma_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
 		gfp_t gfp, unsigned long attrs)
 {
