@@ -15,6 +15,7 @@
 #include <linux/init.h>
 #include <linux/device.h>
 #include <linux/dma-direct.h>
+#include <linux/dma-iommu.h>
 #include <linux/dma-map-ops.h>
 #include <linux/highmem.h>
 #include <linux/memblock.h>
@@ -2266,9 +2267,12 @@ void arch_setup_dma_ops(struct device *dev, u64 dma_base, u64 size,
 	const struct dma_map_ops *dma_ops;
 
 	dev->archdata.dma_coherent = coherent;
-#ifdef CONFIG_SWIOTLB
+#if defined(CONFIG_SWIOTLB) || defined(CONFIG_IOMMU_DMA)
 	dev->dma_coherent = coherent;
 #endif
+
+	if (iommu)
+		iommu_setup_dma_ops(dev, dma_base, dma_base + size - 1);
 
 	/*
 	 * Don't override the dma_ops if they have already been set. Ideally
@@ -2302,7 +2306,14 @@ void arch_teardown_dma_ops(struct device *dev)
 	set_dma_ops(dev, NULL);
 }
 
-#ifdef CONFIG_SWIOTLB
+#ifdef CONFIG_IOMMU_DMA
+void arch_dma_prep_coherent(struct page *page, size_t size)
+{
+	__dma_clear_buffer(page, size, NORMAL);
+}
+#endif
+
+#if defined(CONFIG_SWIOTLB) || defined(CONFIG_IOMMU_DMA)
 void arch_sync_dma_for_device(phys_addr_t paddr, size_t size,
 		enum dma_data_direction dir)
 {
