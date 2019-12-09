@@ -4,6 +4,7 @@
 
 #include "arm64/qcom/msm8916.dtsi"
 #include "arm64/qcom/pm8916.dtsi"
+#include "qcom-msm8916-no-psci.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 
 / {
