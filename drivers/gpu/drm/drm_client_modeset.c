@@ -859,19 +859,23 @@ bool drm_client_rotation(struct drm_mode_set *modeset, unsigned int *rotation)
 	 */
 	cmdline = &connector->cmdline_mode;
 	if (cmdline->specified && cmdline->rotation_reflection) {
-		unsigned int cmdline_rest, panel_rest;
-		unsigned int cmdline_rot, panel_rot;
-		unsigned int sum_rot, sum_rest;
+		if (cmdline->rotation_reflection & DRM_MODE_ROTATE_MASK) {
+			unsigned int cmdline_rest, panel_rest;
+			unsigned int cmdline_rot, panel_rot;
+			unsigned int sum_rot, sum_rest;
 
-		panel_rot = ilog2(*rotation & DRM_MODE_ROTATE_MASK);
-		cmdline_rot = ilog2(cmdline->rotation_reflection & DRM_MODE_ROTATE_MASK);
-		sum_rot = (panel_rot + cmdline_rot) % 4;
+			panel_rot = ilog2(*rotation & DRM_MODE_ROTATE_MASK);
+			cmdline_rot = ilog2(cmdline->rotation_reflection & DRM_MODE_ROTATE_MASK);
+			sum_rot = (panel_rot + cmdline_rot) % 4;
 
-		panel_rest = *rotation & ~DRM_MODE_ROTATE_MASK;
-		cmdline_rest = cmdline->rotation_reflection & ~DRM_MODE_ROTATE_MASK;
-		sum_rest = panel_rest ^ cmdline_rest;
+			panel_rest = *rotation & ~DRM_MODE_ROTATE_MASK;
+			cmdline_rest = cmdline->rotation_reflection & ~DRM_MODE_ROTATE_MASK;
+			sum_rest = panel_rest ^ cmdline_rest;
 
-		*rotation = (1 << sum_rot) | sum_rest;
+			*rotation = (1 << sum_rot) | sum_rest;
+		} else {
+			*rotation ^= cmdline->rotation_reflection;
+		}
 	}
 
 	/*
@@ -879,7 +883,8 @@ bool drm_client_rotation(struct drm_mode_set *modeset, unsigned int *rotation)
 	 * depending on the hardware this may require the framebuffer
 	 * to be in a specific tiling format.
 	 */
-	if ((*rotation & DRM_MODE_ROTATE_MASK) != DRM_MODE_ROTATE_180 ||
+	if (((*rotation & DRM_MODE_ROTATE_MASK) != DRM_MODE_ROTATE_0 &&
+	     (*rotation & DRM_MODE_ROTATE_MASK) != DRM_MODE_ROTATE_180) ||
 	    !plane->rotation_property)
 		return false;
 
