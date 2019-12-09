@@ -1,0 +1,2 @@
+# This is dynamically built from the arm64 one (see msm8916_defconfig.part)
+msm8916_defconfig
