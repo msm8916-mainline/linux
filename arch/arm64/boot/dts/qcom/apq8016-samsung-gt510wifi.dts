@@ -75,7 +75,7 @@
 			pinctrl-0 = <&cdc_pdm_lines_act>;
 			pinctrl-1 = <&cdc_pdm_lines_sus>;
 
-			qcom,model = "msm8916";
+			qcom,model = "msm8916"; // FIXME
 			qcom,audio-routing =
 				"AMIC1", "MIC BIAS External1",
 				"AMIC2", "MIC BIAS Internal2",
@@ -325,6 +325,18 @@
 			};
 		};
 	};
+
+	pm8916@1 {
+		codec@f000 {
+			jack-gpios = <&msmgpio 110 GPIO_ACTIVE_LOW>;
+			qcom,micbias-lvl = <2800>;
+			qcom,mbhc-vtreshold-low = <75 150 237 450 500>;
+			qcom,mbhc-vtreshold-high = <75 150 237 450 500>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&jack_default>;
+		};
+	};
 };
 
 &smd_rpm_regulators {
@@ -472,6 +484,18 @@
 		};
 		pinconf {
 			pins = "gpio52";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	jack_default: jack_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio110";
+		};
+		pinconf {
+			pins = "gpio110";
 			drive-strength = <2>;
 			bias-disable;
 		};
