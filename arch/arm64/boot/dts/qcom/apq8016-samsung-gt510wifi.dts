@@ -213,9 +213,7 @@
 	// FIXME: Use extcon device provided by MUIC driver when available
 	usb_vbus: usb-vbus {
 		compatible = "linux,extcon-usb-gpio";
-		vbus-gpio = <&msmgpio 26 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&usb_vbus_default>;
+		vbus-gpio = <&msmgpio 2 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -373,17 +371,6 @@
 			pins = "gpio114";
 			drive-strength = <2>;
 			bias-disable;
-		};
-	};
-
-	usb_vbus_default: usb-vbus-default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio26";
-		};
-		pinconf {
-			pins = "gpio26";
-			bias-pull-up;
 		};
 	};
 };
