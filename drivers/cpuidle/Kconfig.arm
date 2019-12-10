@@ -86,3 +86,16 @@ config ARM_MVEBU_V7_CPUIDLE
 	depends on ARCH_MVEBU && !ARM64
 	help
 	  Select this to enable cpuidle on Armada 370, 38x and XP processors.
+
+config ARM_QCOM_SPM_CPUIDLE
+	bool "CPU Idle Driver for Qualcomm Subsystem Power Manager (SPM)"
+	depends on ARCH_QCOM
+	select ARM_CPU_SUSPEND
+	select CPU_IDLE_MULTIPLE_DRIVERS
+	select DT_IDLE_STATES
+	select QCOM_SCM
+	help
+	  Select this to enable cpuidle on Qualcomm processors.
+	  The Subsystem Power Manager (SPM) controls low power modes for the
+	  CPU and L2 cores. It interface with various system drivers to put
+	  the cores in low power modes.
