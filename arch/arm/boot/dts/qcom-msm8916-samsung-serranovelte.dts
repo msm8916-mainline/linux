@@ -605,6 +605,10 @@
 		};
 	};
 	pm8916@1 {
+		vibrator@c000 {
+			status = "okay";
+		};
+
 		codec@f000 {
 			jack-gpios = <&msmgpio 110 GPIO_ACTIVE_LOW>;
 			qcom,micbias-lvl = <2800>;
