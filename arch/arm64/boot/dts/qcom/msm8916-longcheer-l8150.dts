@@ -168,6 +168,12 @@
 			};
 		};
 	};
+
+	pm8916@1 {
+		vibrator@c000 {
+			status = "okay";
+		};
+	};
 };
 
 &smd_rpm_regulators {
