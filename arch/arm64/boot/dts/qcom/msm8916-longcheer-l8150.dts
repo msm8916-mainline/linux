@@ -442,6 +442,10 @@
 	};
 
 	pm8916@1 {
+		vibrator@c000 {
+			status = "okay";
+		};
+
 		pwm@bc00 {
 			status = "okay";
 			pinctrl-names = "default";
