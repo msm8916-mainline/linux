@@ -167,6 +167,7 @@ properties:
           - enum:
               - psci
               - spin-table
+              - qcom,arm-cortex-acc
           # On ARM 32-bit systems this property is optional
           - enum:
               - actions,s500-smp
@@ -192,6 +193,7 @@ properties:
               - marvell,mmp3-smp
               - mediatek,mt6589-smp
               - mediatek,mt81xx-tz-smp
+              - qcom,arm-cortex-acc
               - qcom,gcc-msm8660
               - qcom,kpss-acc-v1
               - qcom,kpss-acc-v2
