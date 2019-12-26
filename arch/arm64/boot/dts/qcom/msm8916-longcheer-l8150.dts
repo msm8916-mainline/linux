@@ -23,12 +23,42 @@
 		stdout-path = "serial0";
 	};
 
+	/*
+	 * For some reason, the wcnss firmware is not reloctable,
+	 * so it must be loaded at 0x8b600000. Unfortunately this overlaps
+	 * with the memory region required for the modem (0x86800000-0x8b800000).
+	 *
+	 * On the downstream kernel everything somehow worked even with that
+	 * overlap (possibly because wcnss was loaded after the modem and the
+	 * modem never accessed its last 2 MB memory). Weird.
+	 *
+	 * Fortunately at least the modem is relocatable (aligned to 0x400000),
+	 * so we put it after everything else and leave its original region empty.
+	 */
 	reserved-memory {
-		// wcnss.mdt is not relocatable, so it must be loaded at 0x8b600000
+		/delete-node/ mpss@86800000;
 		/delete-node/ wcnss@89300000;
+		/delete-node/ venus@89900000;
 
 		wcnss_mem: wcnss@8b600000 {
 			reg = <0x0 0x8b600000 0x0 0x600000>;
+			no-map;
+		};
+
+		venus_mem: venus@8bc00000 {
+			reg = <0x0 0x8bc00000 0x0 0x600000>;
+			no-map;
+		};
+
+		mpss_mem: mpss@8ec00000 {
+			status = "disabled";
+			reg = <0x0 0x8ec00000 0x0 0x5000000>;
+			no-map;
+		};
+
+		gps_mem: gps@93c00000 {
+			status = "disabled";
+			reg = <0x0 0x93c00000 0x0 0x200000>;
 			no-map;
 		};
 	};
