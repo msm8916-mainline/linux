@@ -111,6 +111,16 @@ config SND_SOC_QDSP6_Q6VOICE
 	depends on SND_SOC_QDSP6
 	select SND_SOC_QDSP6_Q6VOICE_DAI
 
+config SND_SOC_MSM8916_QDSP6
+	tristate "SoC Machine driver for MSM8916 via QDSP6"
+	depends on QCOM_APR
+	select SND_SOC_QDSP6
+	select SND_SOC_QCOM_COMMON
+	help
+	  Support for Qualcomm Technologies LPASS audio block via QDSP6
+	  in MSM8916 SoC-based systems.
+	  Say Y if you want to use audio devices via QDSP6.
+
 config SND_SOC_MSM8996
 	tristate "SoC Machine driver for MSM8996 and APQ8096 boards"
 	depends on QCOM_APR
