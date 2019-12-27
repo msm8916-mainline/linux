@@ -1,0 +1,3 @@
+// SPDX-License-Identifier: GPL-2.0-only
+#include "msm8916-samsung-a3u-eur.dts"
+#include "msm8916-samsung-a2015-modem.dtsi"
