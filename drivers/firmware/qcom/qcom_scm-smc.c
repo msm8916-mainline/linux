@@ -13,6 +13,7 @@
 #include <linux/firmware/qcom/qcom_tzmem.h>
 #include <linux/arm-smccc.h>
 #include <linux/dma-mapping.h>
+#include <linux/dma-map-ops.h>
 
 #include "qcom_scm.h"
 
@@ -193,7 +194,13 @@ int __scm_smc_call(struct device *dev, const struct qcom_scm_desc *desc,
 						      SCM_SMC_FIRST_EXT_IDX]);
 		}
 
-		smc.args[SCM_SMC_LAST_REG_IDX] = qcom_tzmem_to_phys(args_virt);
+		if (likely(dev)) {
+			smc.args[SCM_SMC_LAST_REG_IDX] = qcom_tzmem_to_phys(args_virt);
+		} else {
+			smc.args[SCM_SMC_LAST_REG_IDX] = virt_to_phys(args_virt);
+			arch_sync_dma_for_device(smc.args[SCM_SMC_LAST_REG_IDX],
+						 SCM_SMC_N_EXT_ARGS * sizeof(u64), DMA_TO_DEVICE);
+		}
 	}
 
 	ret = __scm_smc_do(dev, &smc, &smc_res, atomic);
