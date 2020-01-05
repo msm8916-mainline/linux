@@ -323,11 +323,10 @@ static int qcom_scm_set_boot_addr_mc(void *entry, unsigned int flags)
 		},
 	};
 
-	/* Need a device for DMA of the additional arguments */
-	if (!__scm || __get_convention() == SMC_CONVENTION_LEGACY)
+	if (__get_convention() == SMC_CONVENTION_LEGACY)
 		return -EOPNOTSUPP;
 
-	return qcom_scm_call(__scm->dev, &desc, NULL);
+	return qcom_scm_call(__scm ? __scm->dev : NULL, &desc, NULL);
 }
 
 /**
