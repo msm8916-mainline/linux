@@ -213,6 +213,60 @@
 		pinctrl-0 = <&tsp_en_default>;
 	};
 
+	reg_touch_key: regulator-touch-key {
+		compatible = "regulator-fixed";
+		regulator-name = "touch_key";
+		regulator-min-microvolt = <2800000>;
+		regulator-max-microvolt = <2800000>;
+
+		gpio = <&msmgpio 86 0>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&tkey_en_default>;
+	};
+
+	reg_key_led: regulator-key-led {
+		compatible = "regulator-fixed";
+		regulator-name = "key_led";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+
+		gpio = <&msmgpio 60 0>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&tkey_led_en_default>;
+	};
+
+	i2c-tkey {
+		compatible = "i2c-gpio";
+		sda-gpios = <&msmgpio 16 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&msmgpio 17 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&tkey_i2c_default>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		touchkey@20 {
+			compatible = "coreriver,tc360-touchkey";
+			reg = <0x20>;
+
+			interrupt-parent = <&msmgpio>;
+			interrupts = <98 IRQ_TYPE_EDGE_FALLING>;
+
+			vcc-supply = <&reg_touch_key>;
+			vdd-supply = <&reg_key_led>;
+
+			linux,keycodes = <KEY_APPSELECT KEY_BACK>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&tkey_default>;
+		};
+	};
+
 	i2c-nfc {
 		compatible = "i2c-gpio";
 		sda-gpios = <&msmgpio 0 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
@@ -475,6 +529,54 @@
 			pins = "gpio25";
 			drive-strength = <2>;
 			bias-pull-down;
+		};
+	};
+
+	tkey_default: tkey_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio98";
+		};
+		pinconf {
+			pins = "gpio98";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	tkey_en_default: tkey_en_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio86";
+		};
+		pinconf {
+			pins = "gpio86";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	tkey_i2c_default: tkey_i2c_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio16", "gpio17";
+		};
+		pinconf {
+			pins = "gpio16", "gpio17";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	tkey_led_en_default: tkey_led_en_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio60";
+		};
+		pinconf {
+			pins = "gpio60";
+			drive-strength = <2>;
+			bias-disable;
 		};
 	};
 
