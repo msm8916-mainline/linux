@@ -31,6 +31,24 @@
 		gpio = <&msmgpio 87 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
+
+	reg_touch_key: regulator-touch-key {
+		compatible = "regulator-fixed";
+		regulator-name = "touch_key";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+
+		gpio = <&msmgpio 97 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&tkey_en_default>;
+	};
+};
+
+&touchkey {
+	vcc-supply = <&reg_touch_key>;
+	vdd-supply = <&reg_touch_key>;
 };
 
 &accelerometer {
@@ -91,6 +109,14 @@
 &msmgpio {
 	lcd_on_default: lcd-on-default {
 		pins = "gpio87";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	tkey_en_default: tkey-en-default {
+		pins = "gpio97";
 		function = "gpio";
 
 		drive-strength = <2>;
