@@ -110,6 +110,29 @@
 	};
 };
 
+&blsp_i2c4 {
+	status = "okay";
+
+	accelerometer@19 {
+		compatible = "bosch,bma253";
+		reg = <0x19>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <115 IRQ_TYPE_EDGE_RISING>,
+			     <119 IRQ_TYPE_EDGE_RISING>;
+
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l6>;
+
+		mount-matrix = "1",  "0", "0",
+			       "0", "-1", "0",
+			       "0",  "0", "1";
+
+		pinctrl-0 = <&accel_int_default>;
+		pinctrl-names = "default";
+	};
+};
+
 &blsp1_uart1 {
 	status = "okay";
 };
@@ -304,6 +327,13 @@
 };
 
 &msmgpio {
+	accel_int_default: accel-int-default-state {
+		pins = "gpio115", "gpio119";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	gpio_keys_default: gpio-keys-default-state {
 		pins = "gpio107";
 		function = "gpio";
