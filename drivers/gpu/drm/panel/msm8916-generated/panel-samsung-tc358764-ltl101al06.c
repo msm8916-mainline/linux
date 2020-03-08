@@ -3,6 +3,7 @@
 // Generated with linux-mdss-dsi-panel-driver-generator from vendor device tree:
 //   Copyright (c) 2013, The Linux Foundation. All rights reserved. (FIXME)
 
+#include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/gpio/consumer.h>
 #include <linux/module.h>
@@ -18,6 +19,7 @@ struct tc358764_ltl101a106 {
 	struct mipi_dsi_device *dsi;
 	struct regulator_bulk_data supplies[2];
 	struct gpio_desc *reset_gpio;
+	struct clk *pwm_clk;
 	bool prepared;
 };
 
@@ -123,6 +125,12 @@ static int tc358764_ltl101a106_prepare(struct drm_panel *panel)
 		return ret;
 	}
 
+	ret = clk_prepare_enable(ctx->pwm_clk);
+	if (ret < 0) {
+		dev_err(dev, "Failed to enable pwm clock: %d\n", ret);
+		return ret;
+	}
+
 	ctx->prepared = true;
 	return 0;
 }
@@ -135,6 +143,8 @@ static int tc358764_ltl101a106_unprepare(struct drm_panel *panel)
 
 	if (!ctx->prepared)
 		return 0;
+
+	clk_disable_unprepare(ctx->pwm_clk);
 
 	ret = tc358764_ltl101a106_off(ctx);
 	if (ret < 0)
@@ -208,6 +218,11 @@ static int tc358764_ltl101a106_probe(struct mipi_dsi_device *dsi)
 		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
 				     "Failed to get reset-gpios\n");
 
+	ctx->pwm_clk = devm_clk_get(dev, "pwm");
+	if (IS_ERR(ctx->pwm_clk))
+		return dev_err_probe(dev, PTR_ERR(ctx->pwm_clk),
+				     "Failed to get pwm clock\n");
+
 	ctx->dsi = dsi;
 	mipi_dsi_set_drvdata(dsi, ctx);
 
@@ -218,10 +233,6 @@ static int tc358764_ltl101a106_probe(struct mipi_dsi_device *dsi)
 
 	drm_panel_init(&ctx->panel, dev, &tc358764_ltl101a106_panel_funcs,
 		       DRM_MODE_CONNECTOR_DSI);
-
-	ret = drm_panel_of_backlight(&ctx->panel);
-	if (ret)
-		return dev_err_probe(dev, ret, "Failed to get backlight\n");
 
 	drm_panel_add(&ctx->panel);
 
