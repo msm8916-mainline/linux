@@ -37,18 +37,23 @@ struct tc358764_ltl101a106 *to_tc358764_ltl101a106(struct drm_panel *panel)
 			return ret;					\
 	} while (0)
 
+/* FIXME: Fix panel initialization */
+
 static void tc358764_ltl101a106_reset(struct tc358764_ltl101a106 *ctx)
 {
+#if 0
 	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
 	usleep_range(1000, 2000);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	usleep_range(1000, 2000);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
 	usleep_range(1000, 2000);
+#endif
 }
 
 static int tc358764_ltl101a106_on(struct tc358764_ltl101a106 *ctx)
 {
+#if 0
 	struct mipi_dsi_device *dsi = ctx->dsi;
 
 	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
@@ -83,12 +88,14 @@ static int tc358764_ltl101a106_on(struct tc358764_ltl101a106 *ctx)
 	dsi_generic_write_seq(dsi, 0x94, 0x04, 0x13, 0x14, 0x15, 0x1b);
 	dsi_generic_write_seq(dsi, 0x98, 0x04, 0x18, 0x19, 0x1a, 0x06);
 	dsi_generic_write_seq(dsi, 0x9c, 0x04, 0x01, 0x00, 0x00, 0x00);
+#endif
 
 	return 0;
 }
 
 static int tc358764_ltl101a106_off(struct tc358764_ltl101a106 *ctx)
 {
+#if 0
 	struct mipi_dsi_device *dsi = ctx->dsi;
 
 	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
@@ -96,6 +103,7 @@ static int tc358764_ltl101a106_off(struct tc358764_ltl101a106 *ctx)
 	dsi_generic_write_seq(dsi, 0xa0, 0x04, 0x01, 0x00, 0x00, 0x00);
 	usleep_range(1000, 2000);
 	dsi_generic_write_seq(dsi, 0x9c, 0x04, 0x00, 0x00, 0x00, 0x00);
+#endif
 
 	return 0;
 }
@@ -213,7 +221,7 @@ static int tc358764_ltl101a106_probe(struct mipi_dsi_device *dsi)
 	if (ret < 0)
 		return dev_err_probe(dev, ret, "Failed to get regulators\n");
 
-	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
+	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_ASIS);
 	if (IS_ERR(ctx->reset_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
 				     "Failed to get reset-gpios\n");
