@@ -306,6 +306,16 @@
 	extcon = <&muic>;
 };
 
+&wcd_codec {
+	jack-gpios = <&msmgpio 110 GPIO_ACTIVE_LOW>;
+	qcom,micbias-lvl = <2800>;
+	qcom,mbhc-vtreshold-low = <75 150 237 450 500>;
+	qcom,mbhc-vtreshold-high = <75 150 237 450 500>;
+
+	pinctrl-0 = <&jack_default>;
+	pinctrl-names = "default";
+};
+
 &smd_rpm_regulators {
 	vdd_l1_l2_l3-supply = <&pm8916_s3>;
 	vdd_l4_l5_l6-supply = <&pm8916_s4>;
@@ -422,6 +432,13 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-up;
+	};
+
+	jack_default: jack-default-state {
+		pins = "gpio110";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	lcd_en_default: lcd-en-default-state {
