@@ -178,6 +178,14 @@
 };
 
 &pm8916_codec {
+	jack-gpios = <&tlmm 110 GPIO_ACTIVE_LOW>;
+	qcom,micbias-lvl = <2800>;
+	qcom,mbhc-vtreshold-low = <75 150 237 450 500>;
+	qcom,mbhc-vtreshold-high = <75 150 237 450 500>;
+
+	pinctrl-0 = <&jack_default>;
+	pinctrl-names = "default";
+
 	status = "okay";
 };
 
@@ -304,6 +312,13 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-up;
+	};
+
+	jack_default: jack-default-state {
+		pins = "gpio110";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	muic_int_default: muic-int-default-state {
