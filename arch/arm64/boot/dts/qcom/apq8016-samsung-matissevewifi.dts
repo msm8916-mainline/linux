@@ -65,6 +65,27 @@
 	};
 };
 
+&blsp_i2c2 {
+	status = "okay";
+
+	accelerometer@1d {
+		compatible = "st,lis2hh12";
+
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l5>;
+
+		reg = <0x1d>;
+		interrupt-parent = <&msmgpio>;
+		interrupts = <115 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "INT1";
+
+		st,drdy-int-pin = <1>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&accel_int_default>;
+	};
+};
+
 &blsp1_uart2 {
 	status = "okay";
 };
@@ -213,6 +234,14 @@
 };
 
 &msmgpio {
+	accel_int_default: accel-int-default {
+		pins = "gpio115";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	gpio_keys_default: gpio-keys-default {
 		pins = "gpio107", "gpio109";
 		function = "gpio";
