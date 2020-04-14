@@ -68,6 +68,10 @@
 				};
 			};
 		};
+
+		wcnss@a21b000 {
+			status = "okay";
+		};
 	};
 
 	usb_id: usb-id {
