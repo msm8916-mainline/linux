@@ -73,6 +73,21 @@
 		wcnss@a21b000 {
 			status = "okay";
 		};
+
+		mdss@1a00000 {
+			dsi@1a98000 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				vdda-supply = <&pm8916_l2>;
+				vddio-supply = <&pm8916_l6>;
+			};
+
+			dsi-phy@1a98300 {
+				vddio-supply = <&pm8916_l6>;
+				qcom,dsi-phy-regulator-ldo-mode;
+			};
+		};
 	};
 
 	usb_id: usb-id {
@@ -196,16 +211,104 @@
 	};
 };
 
-&msmgpio {
-	usb_id_default: usb_id_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio110";
+&dsi0 {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&mdss_dsi_active &mdss_te_active>;
+	pinctrl-1 = <&mdss_dsi_suspend &mdss_te_suspend>;
+
+	panel@0 {
+		compatible = "yushun,nt35520";
+		reg = <0>;
+
+		power-supply = <&pm8916_l17>;
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_HIGH>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				panel_in: endpoint {
+					remote-endpoint = <&dsi0_out>;
+				};
+			};
 		};
-		pinconf {
-			pins = "gpio110";
-			drive-strength = <8>;
-			bias-pull-up;
+	};
+
+	ports {
+		port@1 {
+			endpoint {
+				remote-endpoint = <&panel_in>;
+				data-lanes = <0 1 2 3>;
+			};
+		};
+	};
+};
+
+&msmgpio {
+	usb_id {
+		usb_id_default: id_default {
+			pinmux {
+				function = "gpio";
+				pins = "gpio110";
+			};
+			pinconf {
+				pins = "gpio110";
+				drive-strength = <8>;
+				bias-pull-up;
+			};
+		};
+	};
+
+	pmx_mdss {
+		mdss_dsi_active: mdss_dsi_active {
+			pinmux {
+				function = "gpio";
+				pins = "gpio25";
+			};
+			pinconf {
+				pins = "gpio25";
+				drive-strength = <8>;
+				bias-disable;
+			};
+		};
+
+		mdss_dsi_suspend: mdss_dsi_suspend {
+			pinmux {
+				function = "gpio";
+				pins = "gpio25";
+			};
+			pinconf {
+				pins = "gpio25";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+
+		mdss_te_active: mdss_te_active {
+			pinmux {
+				function = "mdp_vsync";
+				pins = "gpio24";
+			};
+			pinconf {
+				pins = "gpio24";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+
+		mdss_te_suspend: mdss_te_suspend {
+			pinmux {
+				function = "mdp_vsync";
+				pins = "gpio24";
+			};
+			pinconf {
+				pins = "gpio24";
+				drive-strength = <2>;
+				bias-pull-down;
+				
+			};
 		};
 	};
 };
