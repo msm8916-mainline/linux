@@ -274,6 +274,9 @@
 		flash-gpios = <&msmgpio 31 GPIO_ACTIVE_HIGH>;
 		enable-gpios = <&msmgpio 32 GPIO_ACTIVE_HIGH>;
 
+		pinctrl-names = "default";
+		pinctrl-0 = <&camera_flash_default>;
+
 		flash_led: led {
 			function = LED_FUNCTION_FLASH;
 			color = <LED_COLOR_ID_WHITE>;
@@ -385,6 +388,18 @@
 };
 
 &msmgpio {
+	camera_flash_default: camera_flash_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio31", "gpio32";
+		};
+		pinconf {
+			pins = "gpio31", "gpio32";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
 	ctp_pwr_en_default: ctp_pwr_en_default {
 		pinmux {
 			function = "gpio";
