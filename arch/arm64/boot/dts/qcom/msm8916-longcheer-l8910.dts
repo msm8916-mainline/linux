@@ -7,6 +7,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
 
 / {
 	model = "BQ Aquaris X5 (Longcheer L8910)";
@@ -18,6 +19,15 @@
 
 	chosen {
 		stdout-path = "serial0";
+	};
+
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pm8916_pwm 0 100000>;
+
+		brightness-levels = <0 255>;
+		num-interpolated-steps = <255>;
+		default-brightness-level = <255>;
 	};
 
 	gpio-keys {
@@ -99,6 +109,7 @@
 		compatible = "longcheer,l8910-panel";
 		reg = <0>;
 
+		backlight = <&backlight>;
 		power-supply = <&pm8916_l17>;
 		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
 
@@ -121,6 +132,12 @@
 
 &mdss {
 	status = "okay";
+};
+
+&pm8916_pwm {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm_out>;
 };
 
 &pm8916_resin {
@@ -314,5 +331,16 @@
 
 		drive-strength = <8>;
 		bias-pull-up;
+	};
+};
+
+&pm8916_mpps {
+	pwm_out: mpp4 {
+		pins = "mpp4";
+		function = "digital";
+
+		output-low;
+		qcom,dtest = <1>;
+		power-source = <PM8916_MPP_VPH>;
 	};
 };
