@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-samsung-gt5-common.dtsi"
+
+
+/ {
+	model = "Samsung Galaxy Tab A 8.0 LTE (2015) (SM-T357W)";
+	compatible = "samsung,gt58ltebmc", "qcom,msm8916";
+
+	reg_vdd_tsp: regulator-vdd-tsp {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_tsp";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+
+		gpio = <&msmgpio 101 0>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&tsp_en_default>;		
+	};
+};
+
+&blsp_i2c5 {
+	status = "okay";
+
+	/*
+	 * Actual IC is Zinitix bt532.
+	 * It seems compatible enough with bt541 for basic functionality.
+	 */
+	touchscreen@20 {
+		compatible = "zinitix,bt532", "zinitix,bt541";
+		reg = <0x20>;
+		interrupt-parent = <&msmgpio>;
+		interrupts = <13 0>;
+
+		touchscreen-size-x = <768>;
+		touchscreen-size-y = <1024>;
+
+		zinitix,mode = <2>;
+
+		vdd-supply = <&reg_vdd_tsp>;
+		vddo-supply = <&pm8916_l6>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&tsp_int_default>;
+	};
+};
+
+&dsi0 {
+	panel@0 {
+		compatible = "samsung,s6d7aa0-lsl080al03";
+	};
+};
+
+&msmgpio {
+	tsp_en_default: tsp_en_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio101";
+		};
+		pinconf {
+			pins = "gpio101";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+};
