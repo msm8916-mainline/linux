@@ -1167,7 +1167,7 @@
 
 				label = "hexagon";
 
-				apr {
+				apr: apr {
 					compatible = "qcom,apr-v2";
 					qcom,smd-channels = "apr_audio_svc";
 					qcom,apr-domain = <APR_DOMAIN_ADSP>;
