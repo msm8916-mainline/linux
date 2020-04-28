@@ -9,3 +9,4 @@ obj-$(CONFIG_SND_SOC_QDSP6_ASM) += q6asm.o
 obj-$(CONFIG_SND_SOC_QDSP6_ASM_DAI) += q6asm-dai.o
 obj-$(CONFIG_SND_SOC_QDSP6_Q6VOICE) += q6cvp.o q6cvs.o q6mvm.o q6voice-common.o
 obj-$(CONFIG_SND_SOC_QDSP6_Q6VOICE) += q6voice.o
+obj-$(CONFIG_SND_SOC_QDSP6_Q6VOICE_DAI) += q6voice-dai.o
