@@ -7,4 +7,4 @@ obj-$(CONFIG_SND_SOC_QDSP6_ADM) += q6adm.o
 obj-$(CONFIG_SND_SOC_QDSP6_ROUTING) += q6routing.o
 obj-$(CONFIG_SND_SOC_QDSP6_ASM) += q6asm.o
 obj-$(CONFIG_SND_SOC_QDSP6_ASM_DAI) += q6asm-dai.o
-obj-$(CONFIG_SND_SOC_QDSP6_Q6VOICE) += q6voice-common.o
+obj-$(CONFIG_SND_SOC_QDSP6_Q6VOICE) += q6mvm.o q6voice-common.o
