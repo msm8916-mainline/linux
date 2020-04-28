@@ -2,25 +2,14 @@
 #include "msm8916-motorola-harpia.dts"
 #include <dt-bindings/sound/qcom,q6afe.h>
 #include <dt-bindings/sound/qcom,q6asm.h>
+#include <dt-bindings/sound/qcom,q6voice.h>
 
 / {
-	reserved-memory {
-		mpss_mem: mpss@86800000 {
-			status = "okay";
-		};
-	};
-
 	soc {
 		/delete-node/ sound;
 
 		hexagon@4080000 {
 			status = "okay";
-
-			smd-edge {
-				apr {
-					status = "okay";
-				};
-			};
 		};
 
 		lpass@7708000 {
@@ -68,6 +57,13 @@
 				};
 			};
 
+			cs-voice-dai-link {
+				link-name = "CS-Voice";
+				cpu {
+					sound-dai = <&q6voicedai CS_VOICE>;
+				};
+			};
+
 			primary-mi2s-dai-link {
 				link-name = "Primary MI2S";
 				cpu {
@@ -99,4 +95,24 @@
 			};
 		};
 	};
+};
+
+&mpss_mem {
+	status = "okay";
+};
+
+&apr {
+	status = "okay";
+};
+
+&q6mvm {
+	status = "okay";
+};
+
+&q6cvs {
+	status = "okay";
+};
+
+&q6cvp {
+	status = "okay";
 };
