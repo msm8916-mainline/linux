@@ -13,6 +13,7 @@ dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-motorola-harpia.dtb msm8916-motorola-harpia-m
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-a3u-eur.dtb msm8916-samsung-a3u-eur-modem.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-a5u-eur.dtb msm8916-samsung-a5u-eur-modem.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-j5nlte.dtb
+dtb-$(CONFIG_ARCH_QCOM) += msm8916-samsung-j3ltespr.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8992-bullhead-rev-101.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8994-angler-rev-101.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8996-mtp.dtb
