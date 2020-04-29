@@ -61,7 +61,6 @@
 
 		usb@78d9000 {
 			status = "okay";
-		etm@85e000 { status = "disabled"; };
 			dr_mode = "peripheral";
 			extcon = <&usb_vbus>;
 
@@ -102,6 +101,7 @@
 		etm@85d000 { status = "disabled"; };
 		etm@85e000 { status = "disabled"; };
 		etm@85f000 { status = "disabled"; };
+		etm@85e000 { status = "disabled"; };
 	};
 
 	// FIXME: Use extcon device provided by MUIC driver when available
