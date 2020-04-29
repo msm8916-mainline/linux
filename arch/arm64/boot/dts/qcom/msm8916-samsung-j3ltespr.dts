@@ -16,8 +16,8 @@
 
 	chosen {
 		stdout-path = "serial0";
-	};	
-	
+	};
+
 	reserved-memory {
 		// Additional memory used by Samsung firmware modifications
 		tz-apps@85500000 {
@@ -61,6 +61,7 @@
 
 		usb@78d9000 {
 			status = "okay";
+		etm@85e000 { status = "disabled"; };
 			dr_mode = "peripheral";
 			extcon = <&usb_vbus>;
 
@@ -73,7 +74,7 @@
 					extcon = <&usb_vbus>;
 					v1p8-supply = <&pm8916_l7>;
 					v3p3-supply = <&pm8916_l13>;
-					
+
 					qcom,init-seq = /bits/ 8 <0x1 0x19 0x2 0x0b>;
 				};
 			};
@@ -221,4 +222,4 @@
 		regulator-min-microvolt = <2700000>;
 		regulator-max-microvolt = <2700000>;
 	};
-}; 
+};
