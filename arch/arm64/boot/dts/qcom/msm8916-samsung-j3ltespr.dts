@@ -78,6 +78,13 @@
 				};
 			};
 		};
+		wcnss@a21b000 {
+			status = "okay";
+
+			iris {
+				compatible = "qcom,wcn3680";
+			};
+		};
 
 		/*
 		 * Attempting to enable these devices causes a "synchronous
@@ -101,7 +108,6 @@
 		etm@85d000 { status = "disabled"; };
 		etm@85e000 { status = "disabled"; };
 		etm@85f000 { status = "disabled"; };
-		etm@85e000 { status = "disabled"; };
 	};
 
 	// FIXME: Use extcon device provided by MUIC driver when available
