@@ -4,6 +4,7 @@
 
 #include "msm8916.dtsi"
 #include "pm8916.dtsi"
+#include "arm/qcom-msm8916-no-psci.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 
 / {
@@ -76,13 +77,6 @@
 
 					qcom,init-seq = /bits/ 8 <0x1 0x19 0x2 0x0b>;
 				};
-			};
-		};
-		wcnss@a21b000 {
-			status = "okay";
-
-			iris {
-				compatible = "qcom,wcn3680";
 			};
 		};
 
