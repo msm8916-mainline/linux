@@ -1,0 +1,698 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8939-pm8916.dtsi"
+#include "msm8916-modem.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/iio/qcom,spmi-vadc.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
+
+/ {
+	model = "Alcatel OneTouch Idol 3 (5.5)";
+	compatible = "alcatel,idol3", "qcom,msm8939";
+	chassis-type = "handset";
+
+	aliases {
+		serial0 = &blsp1_uart2;
+	};
+
+	chosen {
+		stdout-path = "serial0";
+	};
+
+	reserved-memory {
+		/delete-node/ rmtfs@86700000;
+
+		reserved@86680000 {
+			reg = <0x0 0x86680000 0x0 0x1000>;
+			no-map;
+		};
+
+		rmtfs: rmtfs@86681000 {
+			compatible = "qcom,rmtfs-mem";
+			reg = <0x0 0x86681000 0x0 0x15f000>;
+			no-map;
+
+			qcom,client-id = <1>;
+		};
+
+		gps_mem: gps@8cc00000 {
+			reg = <0x0 0x8cc00000 0x0 0x200000>;
+			no-map;
+		};
+
+		ramoops: ramoops@9ff00000 {
+			compatible = "ramoops";
+			reg = <0 0x9ff00000 0 0x100000>;
+
+			record-size = <0x1000>;
+			console-size = <0x40000>;
+			ftrace-size = <0x1000>;
+			pmsg-size = <0x20000>;
+		};
+	};
+
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pm8916_pwm 0 255000>;
+		brightness-levels = <0 255>;
+		num-interpolated-steps = <255>;
+		default-brightness-level = <64>;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		pinctrl-0 = <&gpio_keys_volume_up_default>;
+		pinctrl-names = "default";
+
+		label = "GPIO Keys";
+
+		button-volume-up {
+			label = "Volume Up";
+			gpios = <&msmgpio 107 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEUP>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		pinctrl-0 = <&gpio_leds_default>;
+		pinctrl-names = "default";
+
+		led-0 {
+			gpios = <&msmgpio 32 GPIO_ACTIVE_HIGH>;
+			function = LED_FUNCTION_TORCH;
+		};
+	};
+
+	reg_lcd_enn: regulator-lcd-enn {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd_enn";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-boot-on;
+		gpio = <&msmgpio 106 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-0 = <&lcd_enn_default>;
+		pinctrl-names = "default";
+	};
+
+	reg_lcd_enp: regulator-lcd-enp {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd_enp";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-boot-on;
+		gpio = <&msmgpio 105 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-0 = <&lcd_enp_default>;
+		pinctrl-names = "default";
+	};
+
+	usb_id: usb-id {
+		compatible = "linux,extcon-usb-gpio";
+		id-gpio = <&msmgpio 69 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&usb_id_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&blsp_i2c2 {
+	status = "okay";
+
+	magnetometer@c {
+		compatible = "asahi-kasei,ak09911";
+		reg = <0x0c>;
+		vdd-supply = <&pm8916_l17>;
+		vid-supply = <&pm8916_l6>;
+		reset-gpios = <&msmgpio 100 GPIO_ACTIVE_LOW>;
+		pinctrl-0 = <&mag_reset_default>;
+		pinctrl-names = "default";
+		mount-matrix = "0", "1", "0",
+			      "-1", "0", "0",
+			       "0", "0", "1";
+	};
+
+	accelerometer@e {
+		compatible = "kionix,kxtj21009";
+		reg = <0x0e>;
+		interrupts-extended = <&msmgpio 114 IRQ_TYPE_EDGE_FALLING>;
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l6>;
+		pinctrl-0 = <&accel_int_default>;
+		pinctrl-names = "default";
+		mount-matrix = "-1", "0", "0",
+			       "0", "-1", "0",
+			       "0", "0", "-1";
+	};
+
+	proximity@39 {
+		compatible = "amstaos,tsl2772";
+		reg = <0x39>;
+		interrupts-extended = <&msmgpio 34 IRQ_TYPE_EDGE_FALLING>;
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l6>;
+		amstaos,proximity-diodes = <0>;
+		led-max-microamp = <100000>;
+		pinctrl-0 = <&proximity_default>;
+		pinctrl-names = "default";
+	};
+
+	gyroscope@68 {
+		compatible = "bosch,bmg160";
+		reg = <0x68>;
+		interrupts-extended = <&msmgpio 23 IRQ_TYPE_EDGE_RISING>;
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l6>;
+		pinctrl-0 = <&gyro_int_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&blsp_i2c4 {
+	status = "okay";
+
+	headphones: audio-codec@10 {
+		compatible = "asahi-kasei,ak4375";
+		reg = <0x10>;
+		tvdd-supply = <&pm8916_l6>;
+		pdn-gpios = <&msmgpio 101 GPIO_ACTIVE_HIGH>;
+		pintctrl-0 = <&headphones_pdn_default>;
+		pinctrl-names = "default";
+		#sound-dai-cells = <0>;
+	};
+
+	speaker_codec_top: audio-codec@34 {
+		compatible = "nxp,tfa9897";
+		reg = <0x34>;
+		vddd-supply = <&pm8916_l6>;
+		rcv-gpios = <&msmgpio 91 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&speaker_top_default>;
+		pinctrl-names = "default";
+		sound-name-prefix = "Speaker Top";
+		#sound-dai-cells = <0>;
+	};
+
+	speaker_codec_bottom: audio-codec@36 {
+		compatible = "nxp,tfa9897";
+		reg = <0x36>;
+		vddd-supply = <&pm8916_l6>;
+		rcv-gpios = <&msmgpio 92 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&speaker_bottom_default>;
+		pinctrl-names = "default";
+		sound-name-prefix = "Speaker Bottom";
+		#sound-dai-cells = <0>;
+	};
+
+	led-controller@68 {
+		compatible = "si-en,sn3190";
+		reg = <0x68>;
+		shutdown-gpios = <&msmgpio 9 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&led_enable_default &led_shutdown_default>;
+		pinctrl-names = "default";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led@1 {
+			reg = <1>;
+			led-max-microamp = <5000>;
+			function = LED_FUNCTION_INDICATOR;
+			color = <LED_COLOR_ID_WHITE>;
+		};
+	};
+};
+
+&blsp_i2c5 {
+	status = "okay";
+
+	rmi4@20 {
+		status = "disabled";
+		compatible = "syna,rmi4-i2c";
+		reg = <0x20>;
+		interrupts-extended = <&msmgpio 13 IRQ_TYPE_LEVEL_LOW>;
+		vdd-supply = <&pm8916_l17>;
+		vio-supply = <&pm8916_l6>;
+		pinctrl-0 = <&ts_int_active &ts_reset_active>;
+		pinctrl-names = "default";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		syna,startup-delay-ms = <100>;
+
+		rmi4-f01@1 {
+			reg = <0x1>;
+			syna,nosleep-mode = <1>;
+		};
+
+		rmi4-f11@11 {
+			reg = <0x11>;
+			syna,sensor-type = <1>;
+		};
+	};
+
+	touchscreen@38 {
+		status = "disabled";
+		compatible = "edt,edt-ft5406";
+		reg = <0x38>;
+		interrupts-extended = <&msmgpio 13 IRQ_TYPE_LEVEL_LOW>;
+		vcc-supply = <&pm8916_l17>;
+		iovcc-supply = <&pm8916_l6>;
+		pinctrl-0 = <&ts_int_active &ts_reset_active>;
+		pinctrl-names = "default";
+		reset-gpios = <&msmgpio 12 GPIO_ACTIVE_LOW>;
+
+		touchscreen-size-x = <1080>;
+		touchscreen-size-y = <1920>;
+	};
+};
+
+&dsi0 {
+	pinctrl-0 = <&mdss_default>;
+	pinctrl-1 = <&mdss_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+
+	panel@0 {
+		compatible = "alcatel,idol3-panel";
+		reg = <0>;
+
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+		enp-supply = <&reg_lcd_enp>;
+		enn-supply = <&reg_lcd_enn>;
+
+		backlight = <&backlight>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				panel_in: endpoint {
+					remote-endpoint = <&dsi0_out>;
+				};
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <1 2 3 0>;
+	remote-endpoint = <&panel_in>;
+};
+
+&dsi_phy0 {
+	qcom,dsi-phy-regulator-ldo-mode;
+	status = "okay";
+};
+
+&mdss {
+	status = "okay";
+};
+
+&pm8916_pwm {
+	pinctrl-0 = <&pwm_out>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pm8916_resin {
+	linux,code = <KEY_VOLUMEDOWN>;
+	status = "okay";
+};
+
+&pm8916_vib {
+	status = "okay";
+};
+
+&pronto {
+	status = "okay";
+
+	iris {
+		compatible = "qcom,wcn3660b";
+	};
+};
+
+&q6afedai {
+	dai@18 {
+		reg = <SECONDARY_MI2S_RX>;
+		qcom,sd-lines = <0>;
+	};
+
+	dai@22 {
+		reg = <QUATERNARY_MI2S_RX>;
+		qcom,sd-lines = <0>;
+	};
+};
+
+&sdhc_1 {
+	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
+	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
+	pinctrl-names = "default", "sleep";
+
+	status = "okay";
+};
+
+&sdhc_2 {
+	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
+	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
+	pinctrl-names = "default", "sleep";
+
+	cd-gpios = <&msmgpio 38 GPIO_ACTIVE_LOW>;
+
+	status = "okay";
+};
+
+&sound {
+	model = "alcatel-idol3";
+	widgets = "Speaker", "Speaker Top", "Speaker", "Speaker Bottom";
+	pin-switches = "Speaker Top", "Speaker Bottom";
+	audio-routing =
+		"Speaker Top", "Speaker Top OUT",
+		"Speaker Bottom", "Speaker Bottom OUT",
+		"AMIC1", "MIC BIAS External1",
+		"AMIC2", "MIC BIAS Internal2",
+		"AMIC3", "MIC BIAS External1";
+
+	pinctrl-0 = <&cdc_pdm_lines_act &ext_mclk_tlmm_lines_act>,
+		    <&ext_pri_tlmm_lines_act &ext_pri_ws_act &ext_sec_tlmm_lines_act>;
+	pinctrl-1 = <&cdc_pdm_lines_sus &ext_mclk_tlmm_lines_sus>,
+		    <&ext_pri_tlmm_lines_sus &ext_pri_ws_sus &ext_sec_tlmm_lines_sus>;
+	pinctrl-names = "default", "sleep";
+
+	status = "okay";
+};
+
+&sound_dai_primary {
+	status = "disabled";
+};
+
+&sound_dai_quaternary {
+	status = "okay";
+
+	codec {
+		sound-dai = <&speaker_codec_top>, <&speaker_codec_bottom>;
+	};
+};
+
+&sound_dai_secondary {
+	status = "okay";
+
+	codec {
+		sound-dai = <&headphones>;
+	};
+};
+
+&usb {
+	extcon = <&usb_id>, <&usb_id>;
+	status = "okay";
+};
+
+&usb_hs_phy {
+	extcon = <&usb_id>;
+};
+
+&wcd_codec {
+	qcom,micbias-lvl = <2800>;
+	qcom,mbhc-vthreshold-low = <75 100 120 180 500>;
+	qcom,mbhc-vthreshold-high = <75 100 120 180 500>;
+	qcom,hphl-jack-type-normally-open;
+};
+
+&smd_rpm_regulators {
+	vdd_l1_l2_l3-supply = <&pm8916_s3>;
+	vdd_l4_l5_l6-supply = <&pm8916_s4>;
+	vdd_l7-supply = <&pm8916_s4>;
+
+	s3 {
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1300000>;
+	};
+
+	s4 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <2100000>;
+	};
+
+	l1 {
+		regulator-min-microvolt = <1225000>;
+		regulator-max-microvolt = <1225000>;
+	};
+
+	l2 {
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1200000>;
+	};
+
+	l4 {
+		regulator-min-microvolt = <2050000>;
+		regulator-max-microvolt = <2050000>;
+	};
+
+	l5 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	l6 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	l7 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	l8 {
+		regulator-min-microvolt = <2850000>;
+		regulator-max-microvolt = <2900000>;
+	};
+
+	l9 {
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+	};
+
+	l10 {
+		regulator-min-microvolt = <2700000>;
+		regulator-max-microvolt = <2800000>;
+	};
+
+	l11 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <2950000>;
+		regulator-system-load = <200000>;
+		regulator-allow-set-load;
+	};
+
+	l12 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <2950000>;
+	};
+
+	l13 {
+		regulator-min-microvolt = <3075000>;
+		regulator-max-microvolt = <3075000>;
+	};
+
+	l14 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3300000>;
+	};
+
+	l15 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3300000>;
+	};
+
+	l16 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3300000>;
+	};
+
+	l17 {
+		regulator-min-microvolt = <2850000>;
+		regulator-max-microvolt = <2850000>;
+	};
+
+	l18 {
+		regulator-min-microvolt = <2700000>;
+		regulator-max-microvolt = <2700000>;
+	};
+};
+
+/* Only some of the pins are used */
+&ext_mclk_tlmm_lines_act {
+	pins = "gpio116";
+};
+&ext_mclk_tlmm_lines_sus {
+	pins = "gpio116";
+};
+&ext_pri_tlmm_lines_act {
+	pins = "gpio113", "gpio115";
+};
+&ext_pri_tlmm_lines_sus {
+	pins = "gpio113", "gpio115";
+};
+
+&msmgpio {
+	accel_int_default: accel-int-default-state {
+		pins = "gpio114";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	gpio_keys_volume_up_default: gpio-keys-volume-up-default-state {
+		pins = "gpio107";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	gpio_leds_default: gpio-leds-default-state {
+		pins = "gpio32";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	gyro_int_default: gyro-int-default-state {
+		pins = "gpio23";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	headphones_pdn_default: headphones-pdn-default-state {
+		pins = "gpio101";
+		function = "gpio";
+
+		drive-strength = <16>;
+		bias-disable;
+		output-low;
+	};
+
+	lcd_enn_default: lcd-enn-default-state {
+		pins = "gpio106";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+		output-high;
+	};
+
+	lcd_enp_default: lcd-enp-default-state {
+		pins = "gpio105";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+		output-high;
+	};
+
+	/*
+	 * The OEM wired an additional GPIO to be asserted so that
+	 * the si-en,sn3190 LED IC works. Since this GPIO is not
+	 * part of the IC datasheet nor supported by the driver,
+	 * force it asserted here.
+	 */
+	led_enable_default: led-enable-default-state {
+		pins = "gpio108";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+		output-high;
+	};
+
+	led_shutdown_default: led-shutdown-default-state {
+		pins = "gpio9";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	mag_reset_default: mag-reset-default-state {
+		pins = "gpio100";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	proximity_default: proximity-default-state {
+		pins = "gpio34";
+		function = "gpio";
+		drive-strength = <6>;
+		bias-pull-up;
+	};
+
+	mdss_default: mdss-default-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	mdss_sleep: mdss-sleep-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
+	};
+
+	speaker_bottom_default: speaker-bottom-default-state {
+		pins = "gpio92";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	speaker_top_default: speaker-top-default-state {
+		pins = "gpio91";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	ts_int_active: pmx-ts-int-active-state {
+		pins = "gpio13";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	ts_reset_active: pmx-ts-reset-active-state {
+		pins = "gpio12";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	usb_id_default: usb-id-default-state {
+		pins = "gpio69";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+};
+
+&pm8916_mpps {
+	pwm_out: pm8916_mpp4 {
+		pins = "mpp4";
+		function = "digital";
+		output-low;
+		power-source = <PM8916_MPP_L5>;
+		qcom,dtest = <1>;
+	};
+};
