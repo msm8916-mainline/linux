@@ -95,6 +95,11 @@
 
 		lpass@7708000 {
 			status = "okay";
+
+			dai@3 {
+				reg = <MI2S_QUATERNARY>;
+				qcom,playback-sd-lines = <1>;
+			};
 		};
 
 		sound {
@@ -103,8 +108,8 @@
 			reg-names = "mic-iomux", "spkr-iomux";
 
 			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&cdc_pdm_lines_act>;
-			pinctrl-1 = <&cdc_pdm_lines_sus>;
+			pinctrl-0 = <&cdc_pdm_lines_act &ext_sec_tlmm_lines_act>;
+			pinctrl-1 = <&cdc_pdm_lines_sus &ext_sec_tlmm_lines_sus>;
 
 			qcom,model = "samsung-a2015";
 			qcom,audio-routing =
@@ -129,6 +134,16 @@
 				};
 				codec {
 					sound-dai = <&lpass_codec 1>, <&wcd_codec 1>;
+				};
+			};
+
+			external-dai-link@0 {
+				link-name = "Speaker";
+				cpu {
+					sound-dai = <&lpass MI2S_QUATERNARY>;
+				};
+				codec {
+					sound-dai = <&speaker_codec>;
 				};
 			};
 		};
@@ -300,6 +315,16 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&nfc_default &nfc_int_default &nfc_fw_default>;
 		};
+	};
+};
+
+&blsp_i2c1 {
+	status = "okay";
+
+	speaker_codec: audio-codec@34 {
+		compatible = "nxp,tfa9895";
+		reg = <0x34>;
+		#sound-dai-cells = <0>;
 	};
 };
 
