@@ -32,6 +32,7 @@
 				"AMIC3", "MIC BIAS Internal3",
 				"MM_DL1", "MultiMedia1 Playback",
 				"MM_DL3", "MultiMedia3 Playback",
+				"MM_DL4", "MultiMedia4 Playback",
 				"MultiMedia2 Capture", "MM_UL2";
 
 			mm1-dai-link {
@@ -52,6 +53,13 @@
 				link-name = "MultiMedia3";
 				cpu {
 					sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA3>;
+				};
+			};
+
+			mm4-dai-link {
+				link-name = "MultiMedia4";
+				cpu {
+					sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA4>;
 				};
 			};
 
