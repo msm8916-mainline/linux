@@ -1221,6 +1221,10 @@
 							dai@2 {
 								reg = <2>;
 								direction = <Q6ASM_DAI_RX>;
+							};
+							dai@3 {
+								reg = <3>;
+								direction = <Q6ASM_DAI_RX>;
 								is-compress-dai;
 							};
 						};
