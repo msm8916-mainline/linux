@@ -8,6 +8,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
+#include <dt-bindings/input/input.h>
 
 / {
 	model = "BQ Aquaris X5";
@@ -105,6 +106,19 @@
 		id-gpio = <&msmgpio 110 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&usb_id_default>;
+	};
+
+	reg_ts_vcca: regulator-vcca-ts {
+		compatible = "regulator-fixed";
+		regulator-name = "regulator-vcca-ts";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+
+		gpio = <&msmgpio 78 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&ts_vcca_default>;
 	};
 };
 
@@ -221,6 +235,28 @@
 	};
 };
 
+&blsp_i2c5 {
+	status = "okay";
+
+	touchscreen@48 {
+		compatible = "himax,852x";
+		reg = <0x48>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+
+		reset-gpio = <&msmgpio 12 GPIO_ACTIVE_HIGH>;
+
+		vccd-supply = <&pm8916_l6>;
+		vcca-supply = <&reg_ts_vcca>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&ts_int_reset_default>;
+
+		linux,keycodes = <KEY_BACK KEY_HOMEPAGE KEY_APPSELECT>;
+	};
+};
+
 &dsi0 {
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&mdss_dsi_active>;
@@ -293,6 +329,30 @@
 				drive-strength = <2>;
 				bias-pull-down;
 			};
+		};
+	};
+
+	ts_int_reset_default: ts_int_reset_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio12", "gpio13";
+		};
+		pinconf {
+			pins = "gpio12", "gpio13";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	ts_vcca_default: ts_vcca_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio78";
+		};
+		pinconf {
+			pins = "gpio78";
+			drive-strength = <2>;
+			bias-disable;
 		};
 	};
 };
