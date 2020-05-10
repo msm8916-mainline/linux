@@ -59,6 +59,19 @@
 		};
 	};
 
+	reg_ts_vcca: regulator-vcca-ts {
+		compatible = "regulator-fixed";
+		regulator-name = "regulator-vcca-ts";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+
+		gpio = <&msmgpio 78 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&ts_vcca_default>;
+	};
+
 	usb_id: usb-id {
 		compatible = "linux,extcon-usb-gpio";
 		id-gpio = <&msmgpio 110 GPIO_ACTIVE_HIGH>;
@@ -93,6 +106,28 @@
 		mount-matrix = "0", "1", "0",
 			      "-1", "0", "0",
 			       "0", "0", "1";
+	};
+};
+
+&blsp_i2c5 {
+	status = "okay";
+
+	touchscreen@48 {
+		compatible = "himax,852x";
+		reg = <0x48>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <13 IRQ_TYPE_LEVEL_LOW>;
+
+		reset-gpio = <&msmgpio 12 GPIO_ACTIVE_HIGH>;
+
+		vcca-supply = <&reg_ts_vcca>;
+		vccd-supply = <&pm8916_l6>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&ts_int_reset_default>;
+
+		linux,keycodes = <KEY_BACK KEY_HOMEPAGE KEY_APPSELECT>;
 	};
 };
 
@@ -323,6 +358,22 @@
 			drive-strength = <2>;
 			bias-pull-down;
 		};
+	};
+
+	ts_int_reset_default: ts-int-reset-default {
+		pins = "gpio12", "gpio13";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	ts_vcca_default: ts-vcca-default {
+		pins = "gpio78";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	usb_id_default: usb-id-default {
