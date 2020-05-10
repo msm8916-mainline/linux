@@ -120,6 +120,21 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&ts_vcca_default>;
 	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&gpio_keys_default>;
+
+		label = "GPIO Buttons";
+
+		volume-up {
+			label = "Volume Up";
+			gpios = <&msmgpio 107 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEUP>;
+		};
+	};
 };
 
 &smd_rpm_regulators {
@@ -355,6 +370,18 @@
 			bias-disable;
 		};
 	};
+
+	gpio_keys_default: gpio_keys_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio107";
+		};
+		pinconf {
+			pins = "gpio107";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
 };
 
 &pm8916_mpps {
@@ -370,6 +397,17 @@
 };
 
 &spmi_bus {
+	pm8916@0 {
+		pon@800 {
+			volume-down {
+				compatible = "qcom,pm8941-resin";
+				interrupts = <0x0 0x8 1 IRQ_TYPE_EDGE_BOTH>;
+				bias-pull-up;
+				linux,code = <KEY_VOLUMEDOWN>;
+			};
+		};
+	};
+
 	pm8916@1 {
 		pwm@bc00 {
 			status = "okay";
