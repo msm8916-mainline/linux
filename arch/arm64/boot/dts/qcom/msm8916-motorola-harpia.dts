@@ -106,6 +106,27 @@
 	};
 };
 
+&blsp_i2c1 {
+	status = "okay";
+
+	battery@36 {
+		compatible = "maxim,max17050";
+		reg = <0x36>;
+
+		maxim,rsns-microohm = <10000>;
+		maxim,over-heat-temp = <600>;
+		maxim,cold-temp = <(-200)>;
+		maxim,dead-volt = <3200>;
+		maxim,over-volt = <4500>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <62 IRQ_TYPE_EDGE_FALLING>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&battery_alert_default>;
+	};
+};
+
 &blsp_i2c2 {
 	status = "okay";
 
@@ -408,6 +429,14 @@
 
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+	battery_alert_default: battery-alert-default {
+		pins = "gpio62";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
 	};
 
 	gpio_keys_default: gpio-keys-default {
