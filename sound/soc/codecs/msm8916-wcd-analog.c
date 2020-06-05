@@ -321,6 +321,10 @@ static const struct soc_enum hph_enum = SOC_ENUM_SINGLE_VIRT(
 static const struct snd_kcontrol_new ear_mux = SOC_DAPM_ENUM("EAR_S", hph_enum);
 static const struct snd_kcontrol_new hphl_mux = SOC_DAPM_ENUM("HPHL", hph_enum);
 static const struct snd_kcontrol_new hphr_mux = SOC_DAPM_ENUM("HPHR", hph_enum);
+static const struct snd_kcontrol_new hphl_ext_mux = SOC_DAPM_ENUM("HPHL Ext",
+								  hph_enum);
+static const struct snd_kcontrol_new hphr_ext_mux = SOC_DAPM_ENUM("HPHR Ext",
+								  hph_enum);
 
 /* ADC2 MUX */
 static const struct soc_enum adc2_enum = SOC_ENUM_SINGLE_VIRT(
@@ -828,6 +832,11 @@ static const struct snd_soc_dapm_route pm8916_wcd_analog_audio_map[] = {
 	{"HEADPHONE", NULL, "HPHL PA"},
 	{"HEADPHONE", NULL, "HPHR PA"},
 
+	{"HPHL Ext PA", NULL, "HPHL Ext"},
+	{"HPHL Ext", "Switch", "HPHL PA"},
+	{"HPHR Ext PA", NULL, "HPHR Ext"},
+	{"HPHR Ext", "Switch", "HPHR PA"},
+
 	{"HPHL DAC", NULL, "EAR_HPHL_CLK"},
 	{"HPHR DAC", NULL, "EAR_HPHR_CLK"},
 
@@ -874,6 +883,12 @@ static const struct snd_soc_dapm_widget pm8916_wcd_analog_dapm_widgets[] = {
 	SND_SOC_DAPM_INPUT("AMIC2"),
 	SND_SOC_DAPM_OUTPUT("EAR"),
 	SND_SOC_DAPM_OUTPUT("HEADPHONE"),
+
+	/* There may be an external speaker amplifier connected to HPHL/HPHR */
+	SND_SOC_DAPM_OUTPUT("HPHL Ext PA"),
+	SND_SOC_DAPM_OUTPUT("HPHR Ext PA"),
+	SND_SOC_DAPM_MUX("HPHL Ext", SND_SOC_NOPM, 0, 0, &hphl_ext_mux),
+	SND_SOC_DAPM_MUX("HPHR Ext", SND_SOC_NOPM, 0, 0, &hphr_ext_mux),
 
 	/* RX stuff */
 	SND_SOC_DAPM_SUPPLY("INT_LDO_H", SND_SOC_NOPM, 1, 0, NULL, 0),
