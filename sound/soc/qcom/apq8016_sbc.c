@@ -133,6 +133,9 @@ static struct apq8016_sbc_data *apq8016_sbc_parse_of(struct snd_soc_card *card)
 			return ERR_PTR(ret);
 	}
 
+	ret = snd_soc_of_parse_aux_devs(card, "qcom,aux-devs");
+	if (ret)
+		return ERR_PTR(ret);
 
 	/* Populate links */
 	num_links = of_get_child_count(node);
