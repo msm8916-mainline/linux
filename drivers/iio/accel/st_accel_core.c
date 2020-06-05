@@ -1069,7 +1069,6 @@ static const struct iio_trigger_ops st_accel_trigger_ops = {
 #define ST_ACCEL_TRIGGER_OPS NULL
 #endif
 
-#ifdef CONFIG_ACPI
 static const struct iio_mount_matrix *
 get_mount_matrix(const struct iio_dev *indio_dev,
 		 const struct iio_chan_spec *chan)
@@ -1084,6 +1083,7 @@ static const struct iio_chan_spec_ext_info mount_matrix_ext_info[] = {
 	{ },
 };
 
+#ifdef CONFIG_ACPI
 /* Read ST-specific _ONT orientation data from ACPI and generate an
  * appropriate mount matrix.
  */
@@ -1207,10 +1207,6 @@ static int apply_acpi_orientation(struct iio_dev *indio_dev,
 		}
 	}
 
-	/* Expose the mount matrix via ext_info */
-	for (i = 0; i < indio_dev->num_channels; i++)
-		channels[i].ext_info = mount_matrix_ext_info;
-
 	ret = 0;
 	dev_info(&indio_dev->dev, "computed mount matrix from ACPI\n");
 
@@ -1225,6 +1221,42 @@ static int apply_acpi_orientation(struct iio_dev *indio_dev,
 	return 0;
 }
 #endif
+
+static int st_accel_apply_mount_matrix(struct iio_dev *indio_dev,
+				       struct iio_chan_spec *channels)
+{
+	struct st_sensor_data *adata = iio_priv(indio_dev);
+	struct device *dev = &indio_dev->dev;
+	int err, i;
+
+	err = apply_acpi_orientation(indio_dev, channels);
+	if (err)
+		dev_warn(dev,
+			 "failed to apply ACPI orientation data: %d\n", err);
+
+	if (!adata->mount_matrix &&
+	    device_property_present(adata->dev, "mount-matrix")) {
+		adata->mount_matrix = devm_kmalloc(dev,
+						   sizeof(*adata->mount_matrix),
+						   GFP_KERNEL);
+		if (!adata->mount_matrix)
+			return -ENOMEM;
+
+		err = iio_read_mount_matrix(adata->dev, "mount-matrix",
+					    adata->mount_matrix);
+		if (err)
+			return err;
+	}
+
+	if (!adata->mount_matrix)
+		return 0;
+
+	/* Expose the mount matrix via ext_info */
+	for (i = 0; i < indio_dev->num_channels; i++)
+		channels[i].ext_info = mount_matrix_ext_info;
+
+	return 0;
+}
 
 /*
  * st_accel_get_settings() - get sensor settings from device name
@@ -1275,9 +1307,9 @@ int st_accel_common_probe(struct iio_dev *indio_dev)
 		goto st_accel_power_off;
 	}
 
-	if (apply_acpi_orientation(indio_dev, channels))
-		dev_warn(&indio_dev->dev,
-			 "failed to apply ACPI orientation data: %d\n", err);
+	err = st_accel_apply_mount_matrix(indio_dev, channels);
+	if (err)
+		return err;
 
 	indio_dev->channels = channels;
 	adata->current_fullscale = &adata->sensor_settings->fs.fs_avl[0];
