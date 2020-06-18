@@ -19,8 +19,18 @@
 	status = "disabled";
 };
 
+&panel {
+	vdd3-supply = <&reg_vdd_lcd_1p8>;
+	vci-supply = <&pm8916_l17>;
+};
+
 &pm8916_codec {
 	qcom,micbias1-ext-cap;
+};
+
+&reg_vdd_lcd_1p8 {
+	gpio = <&tlmm 16 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 };
 
 &touchscreen {
@@ -29,4 +39,8 @@
 
 &usb_hs_phy {
 	qcom,init-seq = /bits/ 8 <0x1 0x19 0x2 0x0b>;
+};
+
+&lcd_1p8_ldo_en_default {
+	pins = "gpio16";
 };
