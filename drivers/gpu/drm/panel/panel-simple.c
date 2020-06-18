@@ -4409,6 +4409,36 @@ struct panel_desc_dsi {
 	unsigned int lanes;
 };
 
+static const struct drm_display_mode s6e8aa5x01_ams497hy01_mode = {
+	.clock = (720 + 226 + 20 + 100) * (1280 + 14 + 2 + 8) * 60 / 1000,
+	.hdisplay = 720,
+	.hsync_start = 720 + 226,
+	.hsync_end = 720 + 226 + 20,
+	.htotal = 720 + 226 + 20 + 100,
+	.vdisplay = 1280,
+	.vsync_start = 1280 + 14,
+	.vsync_end = 1280 + 14 + 2,
+	.vtotal = 1280 + 14 + 2 + 8,
+	.width_mm = 62,
+	.height_mm = 106,
+};
+
+static const struct panel_desc_dsi samsung_s6e8aa5x01_ams497hy01 = {
+	.desc = {
+		.modes = &s6e8aa5x01_ams497hy01_mode,
+		.num_modes = 1,
+		.bpc = 8,
+		.size = {
+			.width = 62,
+			.height = 106,
+		},
+		.connector_type = DRM_MODE_CONNECTOR_DSI,
+	},
+	.flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST,
+	.format = MIPI_DSI_FMT_RGB888,
+	.lanes = 4,
+};
+
 static const struct drm_display_mode auo_b080uan01_mode = {
 	.clock = 154500,
 	.hdisplay = 1200,
@@ -4618,6 +4648,9 @@ static const struct of_device_id dsi_of_match[] = {
 	}, {
 		.compatible = "boe,tv080wum-nl0",
 		.data = &boe_tv080wum_nl0
+	}, {
+		.compatible = "samsung,s6e8aa5x01-ams497hy01",
+		.data = &samsung_s6e8aa5x01_ams497hy01,
 	}, {
 		.compatible = "lg,ld070wx3-sl01",
 		.data = &lg_ld070wx3_sl01
