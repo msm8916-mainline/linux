@@ -10,6 +10,20 @@
 	chassis-type = "handset";
 };
 
+&panel {
+	vdd3-supply = <&reg_vdd_lcd_1p8>;
+	vci-supply = <&pm8916_l17>;
+};
+
 &usb_hs_phy {
 	qcom,init-seq = /bits/ 8 <0x1 0x19 0x2 0x0b>;
+};
+
+&reg_vdd_lcd_1p8 {
+	status = "okay";
+	gpio = <&msmgpio 16 GPIO_ACTIVE_HIGH>;
+};
+
+&lcd_1p8_ldo_en_default {
+	pins = "gpio16";
 };
