@@ -83,9 +83,67 @@
 			pinctrl-names = "default";
 		};
 	};
+
+	reg_vdd_lcd_1p8: regulator-vdd-lcd-1p8 {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_lcd_1p8";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		vin-supply = <&pm8916_s4>;
+
+		enable-active-high;
+
+		pinctrl-0 = <&lcd_1p8_ldo_en_default>;
+		pinctrl-names = "default";
+
+		status = "disabled";
+	};
+
+	reg_vdd_lcd_3p0: regulator-vdd-lcd-3p0 {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_lcd_3p0";
+		regulator-min-microvolt = <3000000>;
+		regulator-max-microvolt = <3000000>;
+
+		enable-active-high;
+
+		pinctrl-0 = <&lcd_3p0_ldo_en_default>;
+		pinctrl-names = "default";
+
+		status = "disabled";
+	};
 };
 
 &blsp1_uart2 {
+	status = "okay";
+};
+
+&dsi0 {
+	pinctrl-0 = <&mdss_default>;
+	pinctrl-1 = <&mdss_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	panel: panel@0 {
+		reg = <0>;
+
+		compatible = "samsung,s6e8aa5x01-ams497hy01";
+
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&mdss {
 	status = "okay";
 };
 
@@ -241,6 +299,32 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-up;
+	};
+
+	lcd_1p8_ldo_en_default: lcd-1p8-ldo-en-default-state {
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	lcd_3p0_ldo_en_default: lcd-3p0-ldo-en-default-state {
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	mdss_default: mdss-default-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	mdss_sleep: mdss-sleep-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
 	};
 
 	muic_i2c_default: muic-i2c-default-status {
