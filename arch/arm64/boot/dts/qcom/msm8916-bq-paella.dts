@@ -339,6 +339,10 @@
 			qcom,mbhc-vthreshold-high = <75 100 120 180 500>;
 			qcom,hphl-jack-type-normally-open;
 		};
+
+		vibrator@c000 {
+			status = "okay";
+		};
 	};
 };
 
