@@ -45,6 +45,38 @@
 	};
 };
 
+&blsp_i2c2 {
+	status = "okay";
+
+	rmi4@20 {
+		compatible = "syna,rmi4-i2c";
+		reg = <0x20>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <21 IRQ_TYPE_EDGE_FALLING>;
+
+		vdd-supply = <&pm8916_l16>;
+		vio-supply = <&pm8916_l6>;
+
+		pinctrl-0 = <&ts_int_default>;
+		pinctrl-names = "default";
+
+		syna,startup-delay-ms = <100>;
+
+		rmi4-f01@1 {
+			reg = <1>;
+			syna,nosleep-mode = <1>; // Allow sleeping
+		};
+
+		rmi4-f11@11 {
+			reg = <11>;
+			syna,sensor-type = <1>; // Touchscreen
+		};
+	};
+};
+
 &blsp1_uart1 {
 	status = "okay";
 };
@@ -206,6 +238,13 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-up;
+	};
+
+	ts_int_default: ts-int-default-state {
+		pins = "gpio21";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	usb_id_default: usb-id-default-state {
