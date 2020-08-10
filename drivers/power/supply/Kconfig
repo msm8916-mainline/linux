@@ -717,4 +717,12 @@ config CHARGER_WILCO
 	  information can be found in
 	  Documentation/ABI/testing/sysfs-class-power-wilco
 
+config SMB1360
+	tristate "Qualcomm SMB1360 Fuel Gauge"
+	depends on I2C
+	depends on OF
+	select REGMAP_I2C
+	help
+	  Say Y to enable support for Qualcomm SMB1360 fuel gauge
+
 endif # POWER_SUPPLY
