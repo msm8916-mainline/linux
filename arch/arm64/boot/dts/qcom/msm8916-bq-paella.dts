@@ -224,8 +224,8 @@
 		compatible = "linux,extcon-usb-gpio";
 		id-gpio = <&msmgpio 110 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
-		pinctrl-0 = <&usb_id_default &usb_otg_default>;
-		vbus-supply = <&smb1360_otg_vreg>;
+		pinctrl-0 = <&usb_id_default &usb_id_switch_default>;
+		vbus-supply = <&usb_otg_vbus>;
 	};
 };
 
@@ -290,7 +290,7 @@
 		qcom,profile-a-rid-kohm = <100>;
 		qcom,profile-b-rid-kohm = <200>;
 
-		smb1360_otg_vreg: smb1360_otg_vreg {};
+		usb_otg_vbus: usb-otg-vbus {};
 	};
 };
 
@@ -620,7 +620,7 @@
 		};
 	};
 
-	usb_otg_default: usb_otg_default {
+	usb_id_switch_default: usb_id_switch_default {
 		pinmux {
 			function = "gpio";
 			pins = "gpio121";

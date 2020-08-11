@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <linux/completion.h>
+#include <linux/extcon-provider.h>
 #include <linux/i2c.h>
 #include <linux/iio/consumer.h>
 #include <linux/interrupt.h>
@@ -189,6 +190,11 @@ enum {
 	IRQ_COUNT
 };
 
+static const u32 smb1360_usb_extcon_cable[] = {
+	EXTCON_USB,
+	EXTCON_NONE,
+};
+
 static const u32 smb1360_irq_changed_mask[IRQ_COUNT] = {
 	[IRQ_A] = IRQ_A_HOT_HARD_BIT | IRQ_A_COLD_HARD_BIT
 		  | IRQ_A_HOT_SOFT_BIT | IRQ_A_COLD_SOFT_BIT,
@@ -200,16 +206,12 @@ static const u32 smb1360_irq_changed_mask[IRQ_COUNT] = {
 
 static const int chg_time[] = { 192, 384, 768, 1536, };
 
-struct smb1360_otg_regulator {
-	struct regulator_desc	rdesc;
-	struct regulator_dev	*rdev;
-};
-
 struct smb1360_battery {
 	struct device			*dev;
 	struct regmap			*regmap;
 	struct power_supply		*psy;
-	struct smb1360_otg_regulator	otg_vreg;
+	struct extcon_dev		*edev;
+	struct regulator_dev		*otg_vreg;
 	struct completion		fg_mem_access_granted;
 	struct delayed_work		delayed_init_work;
 
@@ -244,6 +246,82 @@ static enum power_supply_property smb1360_battery_props[] = {
 	POWER_SUPPLY_PROP_CURRENT_NOW,
 	POWER_SUPPLY_PROP_TEMP,
 };
+
+/* for register debug purpose */
+struct ob_register {
+	u32 reg;
+	char *name;
+	void (*read_op)(struct smb1360_battery *battery, struct ob_register *smb1360_obreg);
+
+};
+
+static void reg_byte_read(struct smb1360_battery *battery, struct ob_register *smb1360_obreg)
+{
+	__le16 val;
+	int ret;
+
+	ret = regmap_bulk_read(battery->regmap, smb1360_obreg->reg, &val, sizeof(val));
+	if (ret) {
+		dev_err(battery->dev, "can't read reg %s", smb1360_obreg->name);
+		return;
+	}
+
+	dev_info(battery->dev, "%s: %d", smb1360_obreg->name, le16_to_cpu(val));
+}
+
+static void reg_read(struct smb1360_battery *battery, struct ob_register *smb1360_obreg)
+{
+	int ret, val;
+
+	ret = regmap_read(battery->regmap, smb1360_obreg->reg, &val);
+	if (ret) {
+		dev_err(battery->dev, "can't read reg %s", smb1360_obreg->name);
+		return;
+	}
+
+	dev_info(battery->dev, "%s: %d", smb1360_obreg->name, val);
+}
+
+static struct ob_register smb1360_obscure_registers[] = {
+	{ .name = "CFG_BATT_CHG_REG",		.reg = CFG_BATT_CHG_REG,	.read_op = reg_read },
+	{ .name = "CFG_BATT_CHG_ICL_REG",	.reg = CFG_BATT_CHG_ICL_REG,	.read_op = reg_read },
+	{ .name = "CFG_GLITCH_FLT_REG",		.reg = CFG_GLITCH_FLT_REG,	.read_op = reg_read },
+	{ .name = "CFG_CHG_MISC_REG",		.reg = CFG_CHG_MISC_REG,	.read_op = reg_read },
+	{ .name = "CFG_STAT_CTRL_REG",		.reg = CFG_STAT_CTRL_REG,	.read_op = reg_read },
+	{ .name = "CFG_SFY_TIMER_CTRL_REG",	.reg = CFG_SFY_TIMER_CTRL_REG,	.read_op = reg_read },
+	{ .name = "CFG_FG_BATT_CTRL_REG",	.reg = CFG_FG_BATT_CTRL_REG,	.read_op = reg_read },
+	{ .name = "BATT_CHG_FLT_VTG_REG",	.reg = BATT_CHG_FLT_VTG_REG,	.read_op = reg_read },
+	{ .name = "SHDN_CTRL_REG",		.reg = SHDN_CTRL_REG,		.read_op = reg_read },
+	{ .name = "CMD_IL_REG",			.reg = CMD_IL_REG,		.read_op = reg_read },
+	{ .name = "CMD_CHG_REG",		.reg = CMD_CHG_REG,		.read_op = reg_read },
+	{ .name = "SOC_MAX_REG",		.reg = SOC_MAX_REG,		.read_op = reg_read },
+	{ .name = "SOC_MIN_REG",		.reg = SOC_MIN_REG,		.read_op = reg_read },
+	{ .name = "VTG_EMPTY_REG",		.reg = VTG_EMPTY_REG,		.read_op = reg_read },
+	{ .name = "SOC_DELTA_REG",		.reg = SOC_DELTA_REG,		.read_op = reg_read },
+	{ .name = "VTG_MIN_REG",		.reg = VTG_MIN_REG,		.read_op = reg_read },
+	{ .name = "VOLTAGE_PREDICTED_REG",	.reg = 0x80,			.read_op = reg_byte_read },
+	{ .name = "CC_TO_SOC_COEFF",		.reg = 0xBA,			.read_op = reg_byte_read },
+	{ .name = "NOMINAL_CAPACITY_REG",	.reg = 0xBC,			.read_op = reg_byte_read },
+	{ .name = "ACTUAL_CAPACITY_REG",	.reg = 0xBE,			.read_op = reg_byte_read },
+	{ .name = "FG_IBATT_STANDBY_REG",	.reg = 0xCF,			.read_op = reg_byte_read },
+	{ .name = "FG_AUTO_RECHARGE_SOC",	.reg = 0xD2,			.read_op = reg_read },
+	{ .name = "FG_SYS_CUTOFF_V_REG",	.reg = 0xD3,			.read_op = reg_byte_read },
+	{ .name = "FG_CC_TO_CV_V_REG",		.reg = 0xD5,			.read_op = reg_byte_read },
+	{ .name = "FG_ITERM_REG",		.reg = 0xD9,			.read_op = reg_byte_read },
+	{ .name = "FG_THERM_C1_COEFF_REG",	.reg = 0xDB,			.read_op = reg_byte_read },
+};
+
+static void dump_registers_values(struct smb1360_battery *battery)
+{
+	int i;
+
+	dev_info(battery->dev, "start registry dump");
+	for (i = 0; i < ARRAY_SIZE(smb1360_obscure_registers); ++i) {
+		smb1360_obscure_registers[i].read_op(battery, &smb1360_obscure_registers[i]);
+	}
+	dev_info(battery->dev, "end registry dump");
+}
+/* end debug helpers */
 
 static int smb1360_read_voltage(struct smb1360_battery *battery, u8 reg,
 				int *voltage)
@@ -458,7 +536,7 @@ static irqreturn_t smb1360_bat_irq(int irq, void *data)
 
 	if (battery->irqstat[IRQ_F] & (IRQ_F_OTG_FAIL_BIT | IRQ_F_OTG_OC_BIT)) {
 		dev_warn(battery->dev, "otg error: %d\n", battery->irqstat[IRQ_F]);
-		regulator_disable_regmap(battery->otg_vreg.rdev);
+		regulator_disable_regmap(battery->otg_vreg);
 	}
 
 	if (battery->irqstat[IRQ_I] & IRQ_I_FG_ACCESS_ALLOWED_BIT)
@@ -477,14 +555,16 @@ static const struct regulator_ops smb1360_regulator_ops = {
 };
 
 static const struct regulator_desc smb1360_regulator_descriptor = {
-	.name		= "smb1360_otg_vreg",
-	.of_match	= "smb1360_otg_vreg",
+	.name		= "usb_otg_vbus",
+	.of_match	= "usb-otg-vbus",
 	.ops		= &smb1360_regulator_ops,
 	.type		= REGULATOR_VOLTAGE,
 	.owner		= THIS_MODULE,
 	.enable_reg	= CMD_CHG_REG,
 	.enable_mask	= CMD_OTG_EN_BIT,
 	.enable_val	= CMD_OTG_EN_BIT,
+	.fixed_uV	= 5000000,
+	.n_voltages	= 1,
 };
 
 static const struct regulator_init_data smb1360_vbus_init_data = {
@@ -495,18 +575,15 @@ static const struct regulator_init_data smb1360_vbus_init_data = {
 
 static int smb1360_register_vbus_regulator(struct smb1360_battery *battery)
 {
-	struct regulator_config cfg = { };
 	int ret = 0;
+	struct regulator_config cfg = {
+		.dev = battery->dev,
+		.init_data = &smb1360_vbus_init_data,
+	};
 
-	battery->otg_vreg.rdesc = smb1360_regulator_descriptor;
-
-	cfg.dev = battery->dev;
-	cfg.init_data = &smb1360_vbus_init_data;
-	cfg.driver_data = battery;
-
-	battery->otg_vreg.rdev = devm_regulator_register(battery->dev, &battery->otg_vreg.rdesc, &cfg);
-	if (IS_ERR(battery->otg_vreg.rdev)) {
-		ret = PTR_ERR(battery->otg_vreg.rdev);
+	battery->otg_vreg = devm_regulator_register(battery->dev, &smb1360_regulator_descriptor, &cfg);
+	if (IS_ERR(battery->otg_vreg)) {
+		ret = PTR_ERR(battery->otg_vreg);
 		dev_err(battery->dev, "can't register regulator: %d\n", ret);
 	}
 
@@ -587,6 +664,9 @@ static int smb1360_fg_reset(struct smb1360_battery *battery)
 	if (ret)
 		return ret;
 
+	dev_info(battery->dev, "predicted: %d", v_predicted);
+	dev_info(battery->dev, "now: %d", v_now);
+
 	temp = abs(v_predicted - v_now);
 	if (temp >= battery->fg_reset_threshold_mv) {
 		/* delay for the FG access to settle */
@@ -614,6 +694,9 @@ static int smb1360_fg_config(struct smb1360_battery *battery)
 		if (ret)
 			dev_err(battery->dev, "smb1360_fg_reset failed");
 
+		/* for debug purpose only */
+		dump_registers_values(battery);
+
 		smb1360_disable_fg_access(battery);
 	}
 
@@ -639,7 +722,7 @@ static int smb1360_fg_config(struct smb1360_battery *battery)
 	return 0;
 }
 
-static int smb1360_float_voltage_set(struct smb1360_battery *battery, int val)
+/*static int smb1360_float_voltage_set(struct smb1360_battery *battery, int val)
 {
 	u8 temp;
 
@@ -733,7 +816,7 @@ static int smb1360_safety_time_set(struct smb1360_battery *battery)
 	}
 
 	return 0;
-}
+}*/
 
 static int smb1360_enable(struct smb1360_battery *battery, bool enable)
 {
@@ -814,7 +897,7 @@ static int smb1360_hw_init(struct i2c_client *client)
 {
 	struct smb1360_battery *battery = i2c_get_clientdata(client);
 	int ret;
-	u8 val;
+	/*u8 val;*/
 
 	ret = regmap_update_bits(battery->regmap, CMD_I2C_REG,
 				 ALLOW_VOLATILE_BIT, ALLOW_VOLATILE_BIT);
@@ -831,46 +914,46 @@ static int smb1360_hw_init(struct i2c_client *client)
 	}
 
 	/* en chg by cmd reg, en chg by writing bit 1, en auto pre to fast */
-	ret = regmap_update_bits(battery->regmap, CFG_CHG_MISC_REG,
+	/*ret = regmap_update_bits(battery->regmap, CFG_CHG_MISC_REG,
 				 CHG_EN_BY_PIN_BIT | CHG_EN_ACTIVE_LOW_BIT
 				 | PRE_TO_FAST_REQ_CMD_BIT, 0);
 	if (ret < 0)
-		return ret;
+		return ret;*/
 
 	/* USB/AC pin settings */
-	ret = regmap_update_bits(battery->regmap, CFG_BATT_CHG_ICL_REG,
+	/*ret = regmap_update_bits(battery->regmap, CFG_BATT_CHG_ICL_REG,
 				 AC_INPUT_ICL_PIN_BIT | AC_INPUT_PIN_HIGH_BIT,
 				 AC_INPUT_PIN_HIGH_BIT);
 	if (ret < 0)
-		return ret;
+		return ret;*/
 
 	/* AICL enable and set input-uv glitch flt to 20ms */
-	ret = regmap_update_bits(battery->regmap, CFG_GLITCH_FLT_REG,
+	/*ret = regmap_update_bits(battery->regmap, CFG_GLITCH_FLT_REG,
 				 AICL_ENABLED_BIT | INPUT_UV_GLITCH_FLT_20MS_BIT,
 				 AICL_ENABLED_BIT | INPUT_UV_GLITCH_FLT_20MS_BIT);
 	if (ret < 0)
-		return ret;
+		return ret;*/
 
 	/* set the float voltage */
-	ret = smb1360_float_voltage_set(battery, battery->vfloat_mv);
+	/*ret = smb1360_float_voltage_set(battery, battery->vfloat_mv);
 	if (ret < 0)
-		return ret;
+		return ret;*/
 
 	/* set iterm */
-	ret = smb1360_iterm_set(battery);
+	/*ret = smb1360_iterm_set(battery);
 	if (ret < 0)
-		return ret;
+		return ret;*/
 
-	ret = smb1360_safety_time_set(battery);
+	/*ret = smb1360_safety_time_set(battery);
 	if (ret < 0)
-		return ret;
+		return ret;*/
 
 	/* configure resume threshold, auto recharge and charge inhibit */
-	ret = smb1360_recharge_threshold_set(battery, battery->resume_delta_mv);
+	/*ret = smb1360_recharge_threshold_set(battery, battery->resume_delta_mv);
 	if (ret)
-		return ret;
+		return ret;*/
 
-	val = battery->recharge_disabled ? CFG_AUTO_RECHG_DIS_BIT : 0;
+	/*val = battery->recharge_disabled ? CFG_AUTO_RECHG_DIS_BIT : 0;
 	ret = regmap_update_bits(battery->regmap, CFG_CHG_MISC_REG,
 				 CFG_AUTO_RECHG_DIS_BIT, val);
 	if (ret) {
@@ -884,7 +967,7 @@ static int smb1360_hw_init(struct i2c_client *client)
 	if (ret) {
 		dev_err(battery->dev, "couldn't set chg_inhibit: %d\n", ret);
 		return ret;
-	}
+	}*/
 
 	/* interrupt enabling - active low */
 	if (client->irq) {
@@ -1209,6 +1292,14 @@ static int smb1360_probe(struct i2c_client *client)
 	device_init_wakeup(battery->dev, 1);
 	i2c_set_clientdata(client, battery);
 
+	battery->edev = devm_extcon_dev_allocate(dev, smb1360_usb_extcon_cable);
+	if (IS_ERR(battery->edev))
+		return PTR_ERR(battery->edev);
+
+	ret = devm_extcon_dev_register(dev, battery->edev);
+	if (ret < 0)
+		return ret;
+
 	ret = smb1360_register_vbus_regulator(battery);
 	if (ret < 0)
 		return ret;
@@ -1260,7 +1351,7 @@ static void smb1360_shutdown(struct i2c_client *client)
 	int ret;
 	struct smb1360_battery *battery = i2c_get_clientdata(client);
 
-	ret = regulator_disable_regmap(battery->otg_vreg.rdev);
+	ret = regulator_disable_regmap(battery->otg_vreg);
 	if (ret)
 		dev_err(battery->dev, "couldn't disable OTG: %d\n", ret);
 
