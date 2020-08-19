@@ -38,10 +38,11 @@
 
 			pinctrl-names = "default", "sleep";
 
-			pinctrl-0 = <0xcc 0xcd 0xce 0xcf>;
-			pinctrl-1 = <0xd0 0xd1 0xd2 0xd3>;
+	        pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
+	        pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
 
-            cd-gpios = <0x48 0x26 0x00>;
+	        cd-gpios = <&msmgpio 38 0x0>;
+            
 		};
 
 		serial@78b0000 {
@@ -53,7 +54,7 @@
 
 		usb@78d9000 {
 			status = "okay";
-			dr_mode = "peripheral";
+ 	        extcon = <&usb_id>, <&usb_id>; 
 
 			hnp-disable;
 			srp-disable;
@@ -61,6 +62,7 @@
 
 			ulpi {
 				phy {
+                    extcon = <&usb_id>; 
 					v1p8-supply = <&pm8916_l7>;
 					v3p3-supply = <&pm8916_l13>;
 				};
@@ -90,9 +92,14 @@
 		etm@85e000 { status = "disabled"; };
 		etm@85f000 { status = "disabled"; };
 	};
+	usb_id: usb-id {
+		compatible = "linux,extcon-usb-gpio";
+		id-gpio = <&msmgpio 110 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb_id_default>;
+	};
 };
 
-// TODO (wiki): Explain setup of dummy extcon device to make USB work
 
 // FIXME: Verify all regulators with downstream
 &smd_rpm_regulators {
@@ -205,5 +212,117 @@
 	l18 {
 		regulator-min-microvolt = <2700000>;
 		regulator-max-microvolt = <2700000>;
+	};
+};
+
+&msmgpio {
+	button_backlight_default: button_backlight_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio17";
+		};
+		pinconf {
+			pins = "gpio17";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	gpio_keys_default: gpio_keys_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio107";
+		};
+		pinconf {
+			pins = "gpio107";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	mag_reset_default: mag_reset_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio111";
+		};
+		pinconf {
+			pins = "gpio111";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	pmx_mdss {
+		mdss_dsi_active: mdss_dsi_active {
+			pinmux {
+				function = "gpio";
+				pins = "gpio25";
+			};
+			pinconf {
+				pins = "gpio25";
+				drive-strength = <8>;
+				bias-disable;
+			};
+		};
+
+		mdss_dsi_suspend: mdss_dsi_suspend {
+			pinmux {
+				function = "gpio";
+				pins = "gpio25";
+			};
+			pinconf {
+				pins = "gpio25";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+	};
+
+	spk_ext_pa_default: spk_ext_pa_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio114";
+		};
+		pinconf {
+			pins = "gpio114";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	ts_int_reset_default: ts_int_reset_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio12", "gpio13";
+		};
+		pinconf {
+			pins = "gpio12", "gpio13";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	ts_vcca_default: ts_vcca_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio78";
+		};
+		pinconf {
+			pins = "gpio78";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	usb_id_default: usb_id_default {
+		pinmux {
+			function = "gpio";
+			pins = "gpio110";
+		};
+		pinconf {
+			pins = "gpio110";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
 	};
 };
