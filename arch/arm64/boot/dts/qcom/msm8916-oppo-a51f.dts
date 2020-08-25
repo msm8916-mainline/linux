@@ -77,8 +77,10 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 
-				vdda-supply = <&pm8916_l2>;
-				vddio-supply = <&pm8916_l6>;
+			    gdsc-supply = <0x5b>;
+			    vdda-supply = <0x43>;
+			    vdd-supply = <0x62>;
+			    vddio-supply = <0x63>;
 			};
 
 			dsi-phy@1a98300 {
