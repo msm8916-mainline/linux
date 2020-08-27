@@ -38,11 +38,11 @@
 
 			pinctrl-names = "default", "sleep";
 
-            pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
-            pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
+			pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
+			pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
 
-            cd-gpios = <&msmgpio 38 GPIO_ACTIVE_HIGH>;
-            
+			cd-gpios = <&msmgpio 38 GPIO_ACTIVE_HIGH>;
+			
 		};
 
 		serial@78b0000 {
@@ -54,7 +54,7 @@
 
 		usb@78d9000 {
 			status = "okay";
- 	        extcon = <&usb_id>, <&usb_id>; 
+			extcon = <&usb_id>, <&usb_id>; 
 
 			hnp-disable;
 			srp-disable;
@@ -62,31 +62,14 @@
 
 			ulpi {
 				phy {
-                    extcon = <&usb_id>; 
+					extcon = <&usb_id>; 
 					v1p8-supply = <&pm8916_l7>;
 					v3p3-supply = <&pm8916_l13>;
 				};
 			};
 		};
-        wcnss@a21b000 {
+		wcnss@a21b000 {
 			status = "okay";
-		};
-
-		mdss@1a00000 {
-			dsi@1a98000 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-			    gdsc-supply = <0x5b>;
-			    vdda-supply = <0x43>;
-			    vdd-supply = <0x62>;
-			    vddio-supply = <0x63>;
-			};
-
-			dsi-phy@1a98300 {
-				vddio-supply = <&pm8916_l6>;
-                qcom,dsi-phy-regulator-ldo-mode;
-			};
 		};
 
 		/*
@@ -232,41 +215,6 @@
 	l18 {
 		regulator-min-microvolt = <2700000>;
 		regulator-max-microvolt = <2700000>;
-	};
-};
-
-&dsi0 {
-	pinctrl-names = "default", "sleep";
-	pinctrl-0 = <&mdss_default>;
-	pinctrl-1 = <&mdss_sleep>;
-
-	panel@0 {
-		reg = <0>;
-
-		compatible = "qcom,oppo15009jdi_nt35592_720p_video";
-
-		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_HIGH>;
-
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			port@0 {
-				reg = <0>;
-				panel_in: endpoint {
-					remote-endpoint = <&dsi0_out>;
-				};
-			};
-		};
-	};
-
-	ports {
-		port@1 {
-			dsi0_out: endpoint {
-				remote-endpoint = <&panel_in>;
-				data-lanes = <0 1 2 3>;
-			};
-		};
 	};
 };
 
