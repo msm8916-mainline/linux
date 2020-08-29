@@ -252,33 +252,23 @@
 	pinctrl-1 = <&mdss_sleep>;
 
 	panel@0 {
-		compatible = "qcom,oppo15009jdi_nt35592";
+		compatible = "mdss,oppo15009jdi-nt35592";
 		reg = <0>;
 
 		power-supply = <&pm8916_l17>;
 		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_HIGH>;
 
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			port@0 {
-				reg = <0>;
-				panel_in: endpoint {
-					remote-endpoint = <&dsi0_out>;
-				};
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
 			};
 		};
 	};
+};
 
-	ports {
-		port@1 {
-			endpoint {
-				remote-endpoint = <&panel_in>;
-				data-lanes = <0 1 2 3>;
-			};
-		};
-	};
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
 };
 
 &msmgpio {
