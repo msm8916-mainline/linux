@@ -5,6 +5,7 @@
 #include "msm8916.dtsi"
 #include "pm8916.dtsi"
 #include <dt-bindings/gpio/gpio.h>
+#include "arm/qcom-msm8916-no-psci.dtsi"
 
 / {
 	model = "Oppo Mirror 5s (A51f)";
