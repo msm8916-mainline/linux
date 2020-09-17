@@ -47,6 +47,10 @@ config QCA7000_UART
 	  To compile this driver as a module, choose M here. The module
 	  will be called qcauart.
 
+config QCOM_BAM_DMUX
+	tristate "Qualcomm BAM DMUX Ethernet/IP support"
+	select QCOM_SMEM_STATE
+
 config QCOM_EMAC
 	tristate "Qualcomm Technologies, Inc. EMAC Gigabit Ethernet support"
 	depends on HAS_DMA && HAS_IOMEM
