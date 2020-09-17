@@ -225,6 +225,22 @@
 		};
 	};
 
+	bam_dmux: ethernet-bam-dmux {
+		compatible = "qcom,bam-dmux";
+
+		interrupt-parent = <&hexagon_smsm>;
+		interrupts = <1 IRQ_TYPE_EDGE_BOTH>, <11 IRQ_TYPE_EDGE_BOTH>;
+		interrupt-names = "pc", "pc-ack";
+
+		qcom,smem-states = <&apps_smsm 1>, <&apps_smsm 11>;
+		qcom,smem-state-names = "pc", "pc-ack";
+
+		dmas = <&bam_dmux_dma 4>, <&bam_dmux_dma 5>;
+		dma-names = "tx", "rx";
+
+		status = "disabled";
+	};
+
 	firmware {
 		scm: scm {
 			compatible = "qcom,scm-msm8916", "qcom,scm";
@@ -1279,6 +1295,20 @@
 			#size-cells = <0>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
+		};
+
+		bam_dmux_dma: dma@4044000 {
+			compatible = "qcom,bam-v1.7.0";
+			reg = <0x04044000 0x19000>;
+			interrupts = <GIC_SPI 29 IRQ_TYPE_LEVEL_HIGH>;
+			#dma-cells = <1>;
+			qcom,ee = <0>;
+
+			num-channels = <6>;
+			qcom,num-ees = <1>;
+			qcom,remote-power-collapse;
+
+			status = "disabled";
 		};
 
 		mpss: remoteproc@4080000 {
