@@ -388,6 +388,8 @@ struct bam_device {
 	/* execution environment ID, from DT */
 	u32 ee;
 	bool controlled_remotely;
+	bool remote_power_collapse;
+	u32 active_channels;
 
 	const struct reg_offset_data *layout;
 
@@ -489,6 +491,8 @@ static void bam_chan_init_hw(struct bam_chan *bchan,
 	bchan->tail = 0;
 }
 
+static void bam_reset(struct bam_device *bdev);
+
 /**
  * bam_alloc_chan - Allocate channel resources for DMA channel.
  * @chan: specified channel
@@ -511,6 +515,9 @@ static int bam_alloc_chan(struct dma_chan *chan)
 		dev_err(bdev->dev, "Failed to allocate desc fifo\n");
 		return -ENOMEM;
 	}
+
+	if (bdev->active_channels++ == 0 && bdev->remote_power_collapse)
+		bam_reset(bdev);
 
 	return 0;
 }
@@ -564,6 +571,13 @@ static void bam_free_chan(struct dma_chan *chan)
 
 	/* disable irq */
 	writel_relaxed(0, bam_addr(bdev, bchan->id, BAM_P_IRQ_EN));
+
+	if (--bdev->active_channels == 0 && bdev->remote_power_collapse) {
+		/* s/w reset bam */
+		val = readl_relaxed(bam_addr(bdev, 0, BAM_CTRL));
+		val |= BAM_SW_RST;
+		writel_relaxed(val, bam_addr(bdev, 0, BAM_CTRL));
+	}
 
 err:
 	pm_runtime_mark_last_busy(bdev->dev);
@@ -1139,33 +1153,9 @@ static struct dma_chan *bam_dma_xlate(struct of_phandle_args *dma_spec,
 	return dma_get_slave_channel(&(bdev->channels[request].vc.chan));
 }
 
-/**
- * bam_init
- * @bdev: bam device
- *
- * Initialization helper for global bam registers
- */
-static int bam_init(struct bam_device *bdev)
+static void bam_reset(struct bam_device *bdev)
 {
 	u32 val;
-
-	/* read revision and configuration information */
-	if (!bdev->num_ees) {
-		val = readl_relaxed(bam_addr(bdev, 0, BAM_REVISION));
-		bdev->num_ees = (val >> NUM_EES_SHIFT) & NUM_EES_MASK;
-	}
-
-	/* check that configured EE is within range */
-	if (bdev->ee >= bdev->num_ees)
-		return -EINVAL;
-
-	if (!bdev->num_channels) {
-		val = readl_relaxed(bam_addr(bdev, 0, BAM_NUM_PIPES));
-		bdev->num_channels = val & BAM_NUM_PIPES_MASK;
-	}
-
-	if (bdev->controlled_remotely)
-		return 0;
 
 	/* s/w reset bam */
 	/* after reset all pipes are disabled and idle */
@@ -1195,7 +1185,37 @@ static int bam_init(struct bam_device *bdev)
 
 	/* unmask global bam interrupt */
 	writel_relaxed(BAM_IRQ_MSK, bam_addr(bdev, 0, BAM_IRQ_SRCS_MSK_EE));
+}
 
+/**
+ * bam_init
+ * @bdev: bam device
+ *
+ * Initialization helper for global bam registers
+ */
+static int bam_init(struct bam_device *bdev)
+{
+	u32 val;
+
+	/* read revision and configuration information */
+	if (!bdev->num_ees) {
+		val = readl_relaxed(bam_addr(bdev, 0, BAM_REVISION));
+		bdev->num_ees = (val >> NUM_EES_SHIFT) & NUM_EES_MASK;
+	}
+
+	/* check that configured EE is within range */
+	if (bdev->ee >= bdev->num_ees)
+		return -EINVAL;
+
+	if (!bdev->num_channels) {
+		val = readl_relaxed(bam_addr(bdev, 0, BAM_NUM_PIPES));
+		bdev->num_channels = val & BAM_NUM_PIPES_MASK;
+	}
+
+	if (bdev->controlled_remotely || bdev->remote_power_collapse)
+		return 0;
+
+	bam_reset(bdev);
 	return 0;
 }
 
@@ -1257,8 +1277,10 @@ static int bam_dma_probe(struct platform_device *pdev)
 
 	bdev->controlled_remotely = of_property_read_bool(pdev->dev.of_node,
 						"qcom,controlled-remotely");
+	bdev->remote_power_collapse = of_property_read_bool(pdev->dev.of_node,
+						"qcom,remote-power-collapse");
 
-	if (bdev->controlled_remotely) {
+	if (bdev->controlled_remotely || bdev->remote_power_collapse) {
 		ret = of_property_read_u32(pdev->dev.of_node, "num-channels",
 					   &bdev->num_channels);
 		if (ret)
@@ -1270,7 +1292,7 @@ static int bam_dma_probe(struct platform_device *pdev)
 			dev_err(bdev->dev, "num-ees unspecified in dt\n");
 	}
 
-	if (bdev->controlled_remotely)
+	if (bdev->controlled_remotely || bdev->remote_power_collapse)
 		bdev->bamclk = devm_clk_get_optional(bdev->dev, "bam_clk");
 	else
 		bdev->bamclk = devm_clk_get(bdev->dev, "bam_clk");
