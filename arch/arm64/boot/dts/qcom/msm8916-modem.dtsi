@@ -1,0 +1,91 @@
+// SPDX-License-Identifier: GPL-2.0-only
+#include <dt-bindings/sound/qcom,q6afe.h>
+#include <dt-bindings/sound/qcom,q6asm.h>
+#include <dt-bindings/sound/qcom,q6voice.h>
+
+&apr {
+	status = "okay";
+};
+
+&bam_dmux {
+	status = "okay";
+};
+
+&bam_dmux_dma {
+	status = "okay";
+};
+
+&gps_mem {
+	status = "okay";
+};
+
+&lpass {
+	status = "disabled";
+};
+
+&memshare {
+	status = "okay";
+};
+
+&memshare_gps {
+	memory-region = <&gps_mem>;
+};
+
+&mpss {
+	status = "okay";
+};
+
+&mpss_mem {
+	status = "okay";
+};
+
+&q6cvp {
+	status = "okay";
+};
+
+&q6cvs {
+	status = "okay";
+};
+
+&q6mvm {
+	status = "okay";
+};
+
+&sound {
+	compatible = "qcom,msm8916-qdsp6-sndcard";
+
+	dai-link-multimedia1 {
+		link-name = "MultiMedia1";
+		cpu {
+			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
+		};
+	};
+
+	dai-link-multimedia2 {
+		link-name = "MultiMedia2";
+		cpu {
+			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA2>;
+		};
+	};
+
+	dai-link-multimedia3 {
+		link-name = "MultiMedia3";
+		cpu {
+			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA3>;
+		};
+	};
+
+	dai-link-multimedia4 {
+		link-name = "MultiMedia4";
+		cpu {
+			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA4>;
+		};
+	};
+
+	dai-link-cs-voice {
+		link-name = "CS-Voice";
+		cpu {
+			sound-dai = <&q6voicedai CS_VOICE>;
+		};
+	};
+};
