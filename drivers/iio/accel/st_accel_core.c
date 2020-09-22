@@ -1247,8 +1247,7 @@ EXPORT_SYMBOL(st_accel_get_settings);
 int st_accel_common_probe(struct iio_dev *indio_dev)
 {
 	struct st_sensor_data *adata = iio_priv(indio_dev);
-	struct st_sensors_platform_data *pdata =
-		(struct st_sensors_platform_data *)adata->dev->platform_data;
+	struct st_sensors_platform_data *pdata = dev_get_platdata(adata->dev);
 	struct iio_chan_spec *channels;
 	size_t channels_size;
 	int err;
@@ -1281,8 +1280,7 @@ int st_accel_common_probe(struct iio_dev *indio_dev)
 			 "failed to apply ACPI orientation data: %d\n", err);
 
 	indio_dev->channels = channels;
-	adata->current_fullscale = (struct st_sensor_fullscale_avl *)
-					&adata->sensor_settings->fs.fs_avl[0];
+	adata->current_fullscale = &adata->sensor_settings->fs.fs_avl[0];
 	adata->odr = adata->sensor_settings->odr.odr_avl[0].hz;
 
 	if (!pdata)

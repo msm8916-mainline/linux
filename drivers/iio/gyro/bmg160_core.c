@@ -19,6 +19,7 @@
 #include <linux/iio/trigger_consumer.h>
 #include <linux/iio/triggered_buffer.h>
 #include <linux/regmap.h>
+#include <linux/regulator/consumer.h>
 #include "bmg160.h"
 
 #define BMG160_IRQ_NAME		"bmg160_event"
@@ -92,6 +93,7 @@
 
 struct bmg160_data {
 	struct regmap *regmap;
+	struct regulator_bulk_data regulators[2];
 	struct iio_trigger *dready_trig;
 	struct iio_trigger *motion_trig;
 	struct iio_mount_matrix orientation;
@@ -439,7 +441,7 @@ static int bmg160_setup_new_data_interrupt(struct bmg160_data *data,
 
 static int bmg160_get_bw(struct bmg160_data *data, int *val)
 {
-	struct device *dev = regmap_get_device(data->regmap);	
+	struct device *dev = regmap_get_device(data->regmap);
 	int i;
 	unsigned int bw_bits;
 	int ret;
@@ -1051,8 +1053,6 @@ static int bmg160_buffer_postdisable(struct iio_dev *indio_dev)
 
 static const struct iio_buffer_setup_ops bmg160_buffer_setup_ops = {
 	.preenable = bmg160_buffer_preenable,
-	.postenable = iio_triggered_buffer_postenable,
-	.predisable = iio_triggered_buffer_predisable,
 	.postdisable = bmg160_buffer_postdisable,
 };
 
@@ -1083,21 +1083,34 @@ int bmg160_core_probe(struct device *dev, struct regmap *regmap, int irq,
 	data->irq = irq;
 	data->regmap = regmap;
 
+	data->regulators[0].supply = "vdd";
+	data->regulators[1].supply = "vddio";
+	ret = devm_regulator_bulk_get(dev, ARRAY_SIZE(data->regulators),
+				      data->regulators);
+	if (ret)
+		return dev_err_probe(dev, ret, "Failed to get regulators\n");
+
 	ret = iio_read_mount_matrix(dev, "mount-matrix",
 				&data->orientation);
 	if (ret)
 		return ret;
 
+	ret = regulator_bulk_enable(ARRAY_SIZE(data->regulators),
+				    data->regulators);
+	if (ret < 0) {
+		dev_err(dev, "Failed to enable regulators\n");
+		return ret;
+	}
+
 	ret = bmg160_chip_init(data);
 	if (ret < 0)
-		return ret;
+		goto err_regulator_disable;
 
 	mutex_init(&data->mutex);
 
 	if (ACPI_HANDLE(dev))
 		name = bmg160_match_acpi_device(dev);
 
-	indio_dev->dev.parent = dev;
 	indio_dev->channels = bmg160_channels;
 	indio_dev->num_channels = ARRAY_SIZE(bmg160_channels);
 	indio_dev->name = name;
@@ -1114,28 +1127,32 @@ int bmg160_core_probe(struct device *dev, struct regmap *regmap, int irq,
 						BMG160_IRQ_NAME,
 						indio_dev);
 		if (ret)
-			return ret;
+			goto err_regulator_disable;
 
 		data->dready_trig = devm_iio_trigger_alloc(dev,
 							   "%s-dev%d",
 							   indio_dev->name,
 							   indio_dev->id);
-		if (!data->dready_trig)
-			return -ENOMEM;
+		if (!data->dready_trig) {
+			ret = -ENOMEM;
+			goto err_regulator_disable;
+		}
 
 		data->motion_trig = devm_iio_trigger_alloc(dev,
 							  "%s-any-motion-dev%d",
 							  indio_dev->name,
 							  indio_dev->id);
-		if (!data->motion_trig)
-			return -ENOMEM;
+		if (!data->motion_trig) {
+			ret = -ENOMEM;
+			goto err_regulator_disable;
+		}
 
 		data->dready_trig->dev.parent = dev;
 		data->dready_trig->ops = &bmg160_trigger_ops;
 		iio_trigger_set_drvdata(data->dready_trig, indio_dev);
 		ret = iio_trigger_register(data->dready_trig);
 		if (ret)
-			return ret;
+			goto err_regulator_disable;
 
 		data->motion_trig->dev.parent = dev;
 		data->motion_trig->ops = &bmg160_trigger_ops;
@@ -1181,6 +1198,8 @@ err_trigger_unregister:
 		iio_trigger_unregister(data->dready_trig);
 	if (data->motion_trig)
 		iio_trigger_unregister(data->motion_trig);
+err_regulator_disable:
+	regulator_bulk_disable(ARRAY_SIZE(data->regulators), data->regulators);
 
 	return ret;
 }
