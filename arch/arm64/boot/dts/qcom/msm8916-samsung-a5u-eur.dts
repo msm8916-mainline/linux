@@ -51,7 +51,7 @@
 	vdd-supply = <&reg_touch_key>;
 };
 
-&accel {
+&accelerometer {
 	mount-matrix = "-1", "0", "0",
 			"0", "1", "0",
 			"0", "0", "1";
@@ -85,71 +85,49 @@
 
 		vdd3-supply = <&reg_vlcd_vdd3>;
 		vci-supply = <&reg_vlcd_vci>;
-		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
 
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			port@0 {
-				reg = <0>;
-				panel_in: endpoint {
-					remote-endpoint = <&dsi0_out>;
-				};
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
 			};
 		};
 	};
+};
 
-	ports {
-		port@1 {
-			endpoint {
-				remote-endpoint = <&panel_in>;
-				data-lanes = <0 1 2 3>;
-			};
-		};
-	};
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
 };
 
 &pronto {
 	iris {
-		compatible = "qcom,wcn3680";
+		compatible = "qcom,wcn3660b";
 	};
 };
 
 &msmgpio {
-	lcd_on_default: lcd_on_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio87";
-		};
-		pinconf {
-			pins = "gpio87";
-			drive-strength = <2>;
-			bias-disable;
-		};
+	lcd_on_default: lcd-on-default {
+		pins = "gpio87";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
-	tkey_en_default: tkey_en_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio97";
-		};
-		pinconf {
-			pins = "gpio97";
-			drive-strength = <2>;
-			bias-disable;
-		};
+	tkey_en_default: tkey-en-default {
+		pins = "gpio97";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
-	ts_int_default: ts_int_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio13";
-		};
-		pinconf {
-			pins = "gpio13";
-			drive-strength = <2>;
-			bias-disable;
-		};
+	ts_int_default: ts-int-default {
+		pins = "gpio13";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 };

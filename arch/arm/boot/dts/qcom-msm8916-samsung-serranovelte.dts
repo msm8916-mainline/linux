@@ -2,9 +2,8 @@
 
 /dts-v1/;
 
-#include "arm64/qcom/msm8916.dtsi"
-#include "arm64/qcom/pm8916.dtsi"
-#include "qcom-msm8916-no-psci.dtsi"
+#include "arm64/qcom/msm8916-pm8916.dtsi"
+#include "arm64/qcom/msm8916-no-psci.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
@@ -46,134 +45,6 @@
 		venus_mem: venus@8c800000 {
 			reg = <0x0 0x8c800000 0x0 0x600000>;
 			no-map;
-		};
-	};
-
-	soc {
-		sdhci@7824000 {
-			status = "okay";
-
-			vmmc-supply = <&pm8916_l8>;
-			vqmmc-supply = <&pm8916_l5>;
-
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
-			pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
-		};
-
-		sdhci@7864000 {
-			status = "okay";
-
-			vmmc-supply = <&pm8916_l11>;
-			vqmmc-supply = <&pm8916_l12>;
-
-			pinctrl-names = "default", "sleep";
-
-			pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on>;
-			pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off>;
-
-			non-removable;
-
-			/*
-			 * FIXME: Disable UHS-I modes since tuning fails with:
-			 *
-			 * sdhci_msm 7864900.sdhci: mmc1: No tuning point found
-			 * mmc1: tuning execution failed: -5
-			 * mmc1: error -5 whilst initialising SD card
-			 *
-			 * This is the quirk used on downstream, which suggests
-			 * this is a hardware limitation. However, I was able
-			 * to probe a card using DDR50 (without tuning),
-			 * so maybe only tuning is broken...?
-			 */
-			no-1-8-v;
-		};
-
-		serial@78b0000 {
-			status = "okay";
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&blsp1_uart2_default>;
-			pinctrl-1 = <&blsp1_uart2_sleep>;
-		};
-
-		usb@78d9000 {
-			status = "okay";
-			dr_mode = "peripheral";
-			extcon = <&usb_vbus>;
-
-			hnp-disable;
-			srp-disable;
-			adp-disable;
-
-			ulpi {
-				phy {
-					extcon = <&usb_vbus>;
-					v1p8-supply = <&pm8916_l7>;
-					v3p3-supply = <&pm8916_l13>;
-				};
-			};
-		};
-
-		lpass@7708000 {
-			status = "okay";
-		};
-
-		sound {
-			compatible = "qcom,apq8016-sbc-sndcard";
-			reg = <0x07702000 0x4>, <0x07702004 0x4>;
-			reg-names = "mic-iomux", "spkr-iomux";
-
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&cdc_pdm_lines_act>;
-			pinctrl-1 = <&cdc_pdm_lines_sus>;
-
-			qcom,model = "msm8916";
-			qcom,audio-routing =
-				"AMIC1", "MIC BIAS External1",
-				"AMIC2", "MIC BIAS Internal2",
-				"AMIC3", "MIC BIAS External1";
-
-			internal-codec-playback-dai-link@0 {
-				link-name = "WCD";
-				cpu {
-					sound-dai = <&lpass MI2S_PRIMARY>;
-				};
-				codec {
-					sound-dai = <&lpass_codec 0>, <&wcd_codec 0>;
-				};
-			};
-
-			internal-codec-capture-dai-link@0 {
-				link-name = "WCD-Capture";
-				cpu {
-					sound-dai = <&lpass MI2S_TERTIARY>;
-				};
-				codec {
-					sound-dai = <&lpass_codec 1>, <&wcd_codec 1>;
-				};
-			};
-		};
-
-		wcnss@a21b000 {
-			status = "okay";
-
-			iris {
-				compatible = "qcom,wcn3680";
-			};
-		};
-
-		mdss@1a00000 {
-			dsi@1a98000 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				vdda-supply = <&pm8916_l2>;
-				vddio-supply = <&pm8916_l6>;
-			};
-
-			dsi-phy@1a98300 {
-				vddio-supply = <&pm8916_l6>;
-			};
 		};
 	};
 
@@ -304,7 +175,7 @@
 			firmware-gpios = <&msmgpio 49 GPIO_ACTIVE_HIGH>;
 
 			pinctrl-names = "default";
-			pinctrl-0 = <&nfc_default &nfc_int_default>;
+			pinctrl-0 = <&nfc_default>;
 		};
 	};
 
@@ -382,6 +253,10 @@
 	};
 };
 
+&blsp1_uart2 {
+	status = "okay";
+};
+
 &dsi0 {
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&mdss_default>;
@@ -393,69 +268,132 @@
 
 		vdd3-supply = <&pm8916_l17>;
 		vci-supply = <&pm8916_l6>;
-		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
 
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			port@0 {
-				reg = <0>;
-				panel_in: endpoint {
-					remote-endpoint = <&dsi0_out>;
-				};
-			};
-		};
-	};
-
-	ports {
-		port@1 {
-			endpoint {
-				remote-endpoint = <&panel_in>;
-				data-lanes = <0 1>;
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
 			};
 		};
 	};
 };
 
-&spmi_bus {
-	pm8916@0 {
-		pon@800 {
-			volume-down {
-				compatible = "qcom,pm8941-resin";
-				interrupts = <0x0 0x8 1 IRQ_TYPE_EDGE_BOTH>;
-				bias-pull-up;
-				linux,code = <KEY_VOLUMEDOWN>;
-			};
+&dsi0_out {
+	data-lanes = <0 1>;
+	remote-endpoint = <&panel_in>;
+};
+
+&lpass {
+	status = "okay";
+};
+
+&pm8916_resin {
+	status = "okay";
+	linux,code = <KEY_VOLUMEDOWN>;
+};
+
+&pm8916_vib {
+	status = "okay";
+};
+
+&pronto {
+	status = "okay";
+
+	iris {
+		compatible = "qcom,wcn3660b";
+	};
+};
+
+&sdhc_1 {
+	status = "okay";
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
+	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
+};
+
+&sdhc_2 {
+	status = "okay";
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on>;
+	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off>;
+
+	non-removable;
+
+	/*
+	 * FIXME: Disable UHS-I modes since tuning fails with:
+	 *
+	 * sdhci_msm 7864900.sdhci: mmc1: No tuning point found
+	 * mmc1: tuning execution failed: -5
+	 * mmc1: error -5 whilst initialising SD card
+	 *
+	 * This is the quirk used on downstream, which suggests
+	 * this is a hardware limitation. However, I was able
+	 * to probe a card using DDR50 (without tuning),
+	 * so maybe only tuning is broken...?
+	 */
+	no-1-8-v;
+};
+
+&sound {
+	status = "okay";
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&cdc_pdm_lines_act>;
+	pinctrl-1 = <&cdc_pdm_lines_sus>;
+
+	qcom,model = "msm8916";
+	qcom,audio-routing =
+		"AMIC1", "MIC BIAS External1",
+		"AMIC2", "MIC BIAS Internal2",
+		"AMIC3", "MIC BIAS External1";
+
+	dai-link-primary {
+		link-name = "Primary MI2S";
+		cpu {
+			sound-dai = <&lpass MI2S_PRIMARY>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 0>, <&wcd_codec 0>;
 		};
 	};
 
-	pm8916@1 {
-		vibrator@c000 {
-			status = "okay";
+	dai-link-tertiary {
+		link-name = "Tertiary MI2S";
+		cpu {
+			sound-dai = <&lpass MI2S_TERTIARY>;
 		};
-
-		codec@f000 {
-			jack-gpios = <&msmgpio 110 GPIO_ACTIVE_LOW>;
-			qcom,micbias-lvl = <2800>;
-			qcom,mbhc-vthreshold-low = <75 150 237 450 500>;
-			qcom,mbhc-vthreshold-high = <75 150 237 450 500>;
-
-			pinctrl-names = "default";
-			pinctrl-0 = <&jack_default>;
+		codec {
+			sound-dai = <&lpass_codec 1>, <&wcd_codec 1>;
 		};
 	};
+};
+
+&usb {
+	status = "okay";
+	dr_mode = "peripheral";
+	extcon = <&usb_vbus>;
+};
+
+&usb_hs_phy {
+	extcon = <&usb_vbus>;
+};
+
+&wcd_codec {
+	jack-gpios = <&msmgpio 110 GPIO_ACTIVE_LOW>;
+	qcom,micbias-lvl = <2800>;
+	qcom,mbhc-vthreshold-low = <75 150 237 450 500>;
+	qcom,mbhc-vthreshold-high = <75 150 237 450 500>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&jack_default>;
 };
 
 &smd_rpm_regulators {
 	vdd_l1_l2_l3-supply = <&pm8916_s3>;
 	vdd_l4_l5_l6-supply = <&pm8916_s4>;
 	vdd_l7-supply = <&pm8916_s4>;
-
-	s1 {
-		regulator-min-microvolt = <500000>;
-		regulator-max-microvolt = <1300000>;
-	};
 
 	s3 {
 		regulator-min-microvolt = <1200000>;
@@ -475,11 +413,6 @@
 	l2 {
 		regulator-min-microvolt = <1200000>;
 		regulator-max-microvolt = <1200000>;
-	};
-
-	l3 {
-		regulator-min-microvolt = <500000>;
-		regulator-max-microvolt = <1287500>;
 	};
 
 	l4 {
@@ -561,209 +494,140 @@
 };
 
 &msmgpio {
-	fg_alert_default: fg_alert_default {
-		pinmux {
+	fg_alert_default: fg-alert-default {
+		pins = "gpio121";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	gpio_keys_default: gpio-keys-default {
+		pins = "gpio107", "gpio109";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	gpio_hall_sensor_default: gpio-hall-sensor-default {
+		pins = "gpio52";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	imu_int_default: imu-int-default {
+		pins = "gpio115";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	jack_default: jack-default {
+		pins = "gpio110";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	mdss {
+		mdss_default: mdss-default {
+			pins = "gpio25";
 			function = "gpio";
-			pins = "gpio121";
-		};
-		pinconf {
-			pins = "gpio121";
-			drive-strength = <2>;
+
+			drive-strength = <8>;
 			bias-disable;
 		};
-	};
-
-	gpio_keys_default: gpio_keys_default {
-		pinmux {
+		mdss_sleep: mdss-sleep {
+			pins = "gpio25";
 			function = "gpio";
-			pins = "gpio107", "gpio109";
-		};
-		pinconf {
-			pins = "gpio107", "gpio109";
-			drive-strength = <2>;
-			bias-pull-up;
-		};
-	};
 
-	gpio_hall_sensor_default: gpio_hall_sensor_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio52";
-		};
-		pinconf {
-			pins = "gpio52";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
-
-	imu_int_default: imu_int_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio115";
-		};
-		pinconf {
-			pins = "gpio115";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
-
-	jack_default: jack_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio110";
-		};
-		pinconf {
-			pins = "gpio110";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
-
-	nfc_default: nfc_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio20", "gpio49";
-		};
-		pinconf {
-			pins = "gpio20", "gpio49";
 			drive-strength = <2>;
 			bias-pull-down;
 		};
 	};
 
-	nfc_i2c_default: nfc_i2c_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio0", "gpio1";
-		};
-		pinconf {
-			pins = "gpio0", "gpio1";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
+	nfc_default: nfc-default {
+		pins = "gpio20", "gpio49";
+		function = "gpio";
 
-	nfc_int_default: nfc_int_default {
-		pinmux {
+		drive-strength = <2>;
+		bias-pull-down;
+
+		irq {
+			pins = "gpio21";
 			function = "gpio";
-			pins = "gpio21";
-		};
-		pinconf {
-			pins = "gpio21";
+
 			drive-strength = <2>;
 			bias-pull-down;
 		};
 	};
 
-	pmic_int_default: pmic_int_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio62";
-		};
-		pinconf {
-			pins = "gpio62";
-			drive-strength = <2>;
-			bias-disable;
-		};
+	nfc_i2c_default: nfc-i2c-default {
+		pins = "gpio0", "gpio1";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
-	pmx_mdss {
-		mdss_default: mdss_default {
-			pinmux {
-				function = "gpio";
-				pins = "gpio25";
-			};
-			pinconf {
-				pins = "gpio25";
-				drive-strength = <8>;
-				bias-disable;
-			};
-		};
+	pmic_int_default: pmic-int-default {
+		pins = "gpio62";
+		function = "gpio";
 
-		mdss_sleep: mdss_sleep {
-			pinmux {
-				function = "gpio";
-				pins = "gpio25";
-			};
-			pinconf {
-				pins = "gpio25";
-				drive-strength = <2>;
-				bias-pull-down;
-			};
-		};
+		drive-strength = <2>;
+		bias-disable;
 	};
 
-	tkey_default: tkey_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio98";
-		};
-		pinconf {
-			pins = "gpio98";
-			drive-strength = <2>;
-			bias-disable;
-		};
+	tkey_default: tkey-default {
+		pins = "gpio98";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
-	tkey_en_default: tkey_en_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio86";
-		};
-		pinconf {
-			pins = "gpio86";
-			drive-strength = <2>;
-			bias-disable;
-		};
+	tkey_en_default: tkey-en-default {
+		pins = "gpio86";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
-	tkey_i2c_default: tkey_i2c_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio16", "gpio17";
-		};
-		pinconf {
-			pins = "gpio16", "gpio17";
-			drive-strength = <2>;
-			bias-disable;
-		};
+	tkey_i2c_default: tkey-i2c-default {
+		pins = "gpio16", "gpio17";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
-	tkey_led_en_default: tkey_led_en_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio60";
-		};
-		pinconf {
-			pins = "gpio60";
-			drive-strength = <2>;
-			bias-disable;
-		};
+	tkey_led_en_default: tkey-led-en-default {
+		pins = "gpio60";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
-	tsp_en_default: tsp_en_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio73";
-		};
-		pinconf {
-			pins = "gpio73";
-			drive-strength = <2>;
-			bias-disable;
-		};
+	tsp_en_default: tsp-en-default {
+		pins = "gpio73";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
-	tsp_int_default: tsp_int_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio13";
-		};
-		pinconf {
-			pins = "gpio13";
-			drive-strength = <2>;
-			bias-disable;
-		};
+	tsp_int_default: tsp-int-default {
+		pins = "gpio13";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 };

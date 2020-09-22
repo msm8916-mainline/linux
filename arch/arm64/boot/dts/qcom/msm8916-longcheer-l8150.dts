@@ -2,9 +2,8 @@
 
 /dts-v1/;
 
-#include "msm8916.dtsi"
-#include "pm8916.dtsi"
-#include "arm/qcom-msm8916-no-psci.dtsi"
+#include "msm8916-pm8916.dtsi"
+#include "msm8916-no-psci.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/iio/qcom,spmi-vadc.h>
 #include <dt-bindings/input/input.h>
@@ -59,138 +58,6 @@
 		};
 	};
 
-	soc {
-		sdhci@7824000 {
-			status = "okay";
-
-			vmmc-supply = <&pm8916_l8>;
-			vqmmc-supply = <&pm8916_l5>;
-
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
-			pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
-		};
-
-		sdhci@7864000 {
-			status = "okay";
-
-			vmmc-supply = <&pm8916_l11>;
-			vqmmc-supply = <&pm8916_l12>;
-
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on>;
-			pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off>;
-
-			non-removable;
-		};
-
-		serial@78b0000 {
-			status = "okay";
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&blsp1_uart2_default>;
-			pinctrl-1 = <&blsp1_uart2_sleep>;
-		};
-
-		usb@78d9000 {
-			status = "okay";
-			extcon = <&usb_otg_hack>, <&usb_otg_hack>;
-
-			hnp-disable;
-			srp-disable;
-			adp-disable;
-
-			ulpi {
-				phy {
-					extcon = <&usb_otg_hack>;
-					v1p8-supply = <&pm8916_l7>;
-					v3p3-supply = <&pm8916_l13>;
-				};
-			};
-		};
-
-		lpass@7708000 {
-			status = "okay";
-		};
-
-		sound {
-			compatible = "qcom,apq8016-sbc-sndcard";
-			reg = <0x07702000 0x4>, <0x07702004 0x4>;
-			reg-names = "mic-iomux", "spkr-iomux";
-
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&cdc_pdm_lines_act>;
-			pinctrl-1 = <&cdc_pdm_lines_sus>;
-
-			qcom,model = "msm8916";
-			qcom,audio-routing =
-				"AMIC1", "MIC BIAS Internal1",
-				"AMIC2", "MIC BIAS Internal2",
-				"AMIC3", "MIC BIAS Internal3";
-
-			internal-codec-playback-dai-link@0 {
-				link-name = "WCD";
-				cpu {
-					sound-dai = <&lpass MI2S_PRIMARY>;
-				};
-				codec {
-					sound-dai = <&lpass_codec 0>, <&wcd_codec 0>;
-				};
-			};
-
-			internal-codec-capture-dai-link@0 {
-				link-name = "WCD-Capture";
-				cpu {
-					sound-dai = <&lpass MI2S_TERTIARY>;
-				};
-				codec {
-					sound-dai = <&lpass_codec 1>, <&wcd_codec 1>;
-				};
-			};
-		};
-
-		wcnss@a21b000 {
-			status = "okay";
-		};
-
-		mdss@1a00000 {
-			dsi@1a98000 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				vdda-supply = <&pm8916_l2>;
-				vddio-supply = <&pm8916_l6>;
-			};
-
-			dsi-phy@1a98300 {
-				vddio-supply = <&pm8916_l6>;
-				qcom,dsi-phy-regulator-ldo-mode;
-			};
-		};
-
-		/*
-		 * Attempting to enable these devices causes a "synchronous
-		 * external abort". Suspected cause is that the debug power
-		 * domain is not enabled by default on this device.
-		 * Disable these devices for now to avoid the crash.
-		 *
-		 * See: https://lore.kernel.org/linux-arm-msm/20190618202623.GA53651@gerhold.net/
-		 */
-		tpiu@820000 { status = "disabled"; };
-		funnel@821000 { status = "disabled"; };
-		replicator@824000 { status = "disabled"; };
-		etf@825000 { status = "disabled"; };
-		etr@826000 { status = "disabled"; };
-		funnel@841000 { status = "disabled"; };
-		debug@850000 { status = "disabled"; };
-		debug@852000 { status = "disabled"; };
-		debug@854000 { status = "disabled"; };
-		debug@856000 { status = "disabled"; };
-		etm@85c000 { status = "disabled"; };
-		etm@85d000 { status = "disabled"; };
-		etm@85e000 { status = "disabled"; };
-		etm@85f000 { status = "disabled"; };
-	};
-
 	backlight: backlight {
 		compatible = "pwm-backlight";
 		pwms = <&pm8916_pwm 0 100000>;
@@ -216,7 +83,7 @@
 		 * order of SoC and if device will be powered on with adapter attached
 		 * and powered, it will boot into USB BOOT mode.
 		 */
-		id-gpio = <&msmgpio 37 GPIO_ACTIVE_LOW>;
+		id-gpios = <&msmgpio 37 GPIO_ACTIVE_LOW>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&usb_id_default>;
 	};
@@ -335,6 +202,10 @@
 	accelerometer@10 {
 		compatible = "bosch,bmc150_accel";
 		reg = <0x10>;
+
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l6>;
+
 		mount-matrix = "0", "1", "0",
 			      "-1", "0", "0",
 			       "0", "0", "1";
@@ -343,13 +214,20 @@
 	magnetometer@12 {
 		compatible = "bosch,bmc150_magn";
 		reg = <0x12>;
+
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l6>;
 	};
 
 	gyroscope@68 {
 		compatible = "bosch,bmg160";
 		reg = <0x68>;
+
 		interrupt-parent = <&msmgpio>;
 		interrupts = <23 IRQ_TYPE_EDGE_RISING>;
+
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l6>;
 	};
 };
 
@@ -385,6 +263,10 @@
 	};
 };
 
+&blsp1_uart2 {
+	status = "okay";
+};
+
 &dsi0 {
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&mdss_default>;
@@ -394,172 +276,121 @@
 		compatible = "booyi,otm1287";
 		reg = <0>;
 
-		power-supply = <&pm8916_l17>;
 		backlight = <&backlight>;
-		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_HIGH>;
+		power-supply = <&pm8916_l17>;
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
 
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			port@0 {
-				reg = <0>;
-				panel_in: endpoint {
-					remote-endpoint = <&dsi0_out>;
-				};
-			};
-		};
-	};
-
-	ports {
-		port@1 {
-			endpoint {
-				remote-endpoint = <&panel_in>;
-				data-lanes = <0 1 2 3>;
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
 			};
 		};
 	};
 };
 
-&msmgpio {
-	camera_flash_default: camera_flash_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio31", "gpio32";
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&dsi_phy0 {
+	qcom,dsi-phy-regulator-ldo-mode;
+};
+
+&lpass {
+	status = "okay";
+};
+
+&pm8916_pwm {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm_out>;
+};
+
+&pm8916_resin {
+	status = "okay";
+	linux,code = <KEY_VOLUMEDOWN>;
+};
+
+&pm8916_vib {
+	status = "okay";
+};
+
+&pronto {
+	status = "okay";
+};
+
+&sdhc_1 {
+	status = "okay";
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
+	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
+};
+
+&sdhc_2 {
+	status = "okay";
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on>;
+	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off>;
+
+	non-removable;
+};
+
+&sound {
+	status = "okay";
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&cdc_pdm_lines_act>;
+	pinctrl-1 = <&cdc_pdm_lines_sus>;
+
+	model = "msm8916";
+	audio-routing =
+		"AMIC1", "MIC BIAS Internal1",
+		"AMIC2", "MIC BIAS Internal2",
+		"AMIC3", "MIC BIAS Internal3";
+
+	dai-link-primary {
+		link-name = "Primary MI2S";
+		cpu {
+			sound-dai = <&lpass MI2S_PRIMARY>;
 		};
-		pinconf {
-			pins = "gpio31", "gpio32";
-			drive-strength = <2>;
-			bias-disable;
+		codec {
+			sound-dai = <&lpass_codec 0>, <&wcd_codec 0>;
 		};
 	};
 
-	ctp_pwr_en_default: ctp_pwr_en_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio17";
+	dai-link-tertiary {
+		link-name = "Tertiary MI2S";
+		cpu {
+			sound-dai = <&lpass MI2S_TERTIARY>;
 		};
-		pinconf {
-			pins = "gpio17";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
-
-	gpio_keys_default: gpio_keys_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio107";
-		};
-		pinconf {
-			pins = "gpio107";
-			drive-strength = <2>;
-			bias-pull-up;
-		};
-	};
-
-	pmx_mdss {
-		mdss_default: mdss_default {
-			pinmux {
-				function = "gpio";
-				pins = "gpio25";
-			};
-			pinconf {
-				pins = "gpio25";
-				drive-strength = <8>;
-				bias-disable;
-			};
-		};
-
-		mdss_sleep: mdss_sleep {
-			pinmux {
-				function = "gpio";
-				pins = "gpio25";
-			};
-			pinconf {
-				pins = "gpio25";
-				drive-strength = <2>;
-				bias-pull-down;
-			};
-		};
-	};
-
-	tp_int_default: tp_int_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio13";
-		};
-		pinconf {
-			pins = "gpio13";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
-
-	usb_id_default: usb-id-default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio37";
-		};
-		pinconf {
-			pins = "gpio37";
-			bias-pull-down;
+		codec {
+			sound-dai = <&lpass_codec 1>, <&wcd_codec 1>;
 		};
 	};
 };
 
-&pm8916_mpps {
-	pwm_out: pm8916_mpp4 {
-		pinconf {
-			pins = "mpp4";
-			function = "digital";
-			output-low;
-			power-source = <PM8916_MPP_VPH>;
-			qcom,dtest = <1>;
-		};
-	};
+&usb {
+	status = "okay";
+	extcon = <&usb_otg_hack>, <&usb_otg_hack>;
 };
 
-&spmi_bus {
-	pm8916@0 {
-		pon@800 {
-			volume-down {
-				compatible = "qcom,pm8941-resin";
-				interrupts = <0x0 0x8 1 IRQ_TYPE_EDGE_BOTH>;
-				bias-pull-up;
-				linux,code = <KEY_VOLUMEDOWN>;
-			};
-		};
-	};
+&usb_hs_phy {
+	extcon = <&usb_otg_hack>;
+};
 
-	pm8916@1 {
-		pwm@bc00 {
-			status = "okay";
-			pinctrl-names = "default";
-			pinctrl-0 = <&pwm_out>;
-		};
-
-		vibrator@c000 {
-			status = "okay";
-		};
-
-		codec@f000 {
-			qcom,micbias-lvl = <2800>;
-			qcom,mbhc-vthreshold-low = <75 150 237 450 500>;
-			qcom,mbhc-vthreshold-high = <75 150 237 450 500>;
-		};
-	};
+&wcd_codec {
+	qcom,micbias-lvl = <2800>;
+	qcom,mbhc-vthreshold-low = <75 150 237 450 500>;
+	qcom,mbhc-vthreshold-high = <75 150 237 450 500>;
 };
 
 &smd_rpm_regulators {
 	vdd_l1_l2_l3-supply = <&pm8916_s3>;
 	vdd_l4_l5_l6-supply = <&pm8916_s4>;
 	vdd_l7-supply = <&pm8916_s4>;
-
-	s1 {
-		regulator-min-microvolt = <500000>;
-		regulator-max-microvolt = <1300000>;
-	};
 
 	s3 {
 		regulator-min-microvolt = <1200000>;
@@ -579,11 +410,6 @@
 	l2 {
 		regulator-min-microvolt = <1200000>;
 		regulator-max-microvolt = <1200000>;
-	};
-
-	l3 {
-		regulator-min-microvolt = <500000>;
-		regulator-max-microvolt = <1287500>;
 	};
 
 	l4 {
@@ -661,5 +487,75 @@
 	l18 {
 		regulator-min-microvolt = <2700000>;
 		regulator-max-microvolt = <2700000>;
+	};
+};
+
+&msmgpio {
+	camera_flash_default: camera-flash-default {
+		pins = "gpio31", "gpio32";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	ctp_pwr_en_default: ctp-pwr-en-default {
+		pins = "gpio17";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	gpio_keys_default: gpio-keys-default {
+		pins = "gpio107";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	mdss {
+		mdss_default: mdss-default {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <8>;
+			bias-disable;
+		};
+		mdss_sleep: mdss-sleep {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
+
+	tp_int_default: tp-int-default {
+		pins = "gpio13";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	usb_id_default: usb-id-default {
+		pins = "gpio37";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-down;
+	};
+};
+
+&pm8916_mpps {
+	pwm_out: mpp4 {
+		pins = "mpp4";
+		function = "digital";
+
+		output-low;
+		qcom,dtest = <1>;
+		power-source = <PM8916_MPP_VPH>;
 	};
 };

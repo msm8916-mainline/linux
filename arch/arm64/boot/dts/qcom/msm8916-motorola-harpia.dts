@@ -2,9 +2,8 @@
 
 /dts-v1/;
 
-#include "msm8916.dtsi"
-#include "pm8916.dtsi"
-#include "arm/qcom-msm8916-no-psci.dtsi"
+#include "msm8916-pm8916.dtsi"
+#include "msm8916-no-psci.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
@@ -43,154 +42,20 @@
 		};
 	};
 
-	soc {
-		sdhci@7824000 {
-			status = "okay";
+	gpio-keys {
+		compatible = "gpio-keys";
 
-			vmmc-supply = <&pm8916_l8>;
-			vqmmc-supply = <&pm8916_l5>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&gpio_keys_default>;
 
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
-			pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
+		label = "GPIO Buttons";
+
+		volume-up {
+			label = "Volume Up";
+			gpios = <&msmgpio 107 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEUP>;
+			debounce-interval = <15>;
 		};
-
-		sdhci@7864000 {
-			status = "okay";
-
-			vmmc-supply = <&pm8916_l11>;
-			vqmmc-supply = <&pm8916_l12>;
-
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd>;
-			pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd>;
-
-			cd-gpios = <&msmgpio 118 GPIO_ACTIVE_LOW>;
-		};
-
-		serial@78af000 {
-			status = "okay";
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&blsp1_uart1_default>;
-			pinctrl-1 = <&blsp1_uart1_sleep>;
-		};
-
-		usb@78d9000 {
-			status = "okay";
-			extcon = <&usb_id>, <&usb_id>;
-
-			hnp-disable;
-			srp-disable;
-			adp-disable;
-
-			ulpi {
-				phy {
-					extcon = <&usb_id>;
-					v1p8-supply = <&pm8916_l7>;
-					v3p3-supply = <&pm8916_l13>;
-				};
-			};
-		};
-
-		wcnss@a21b000 {
-			status = "okay";
-		};
-
-		gpio-keys {
-			compatible = "gpio-keys";
-
-			pinctrl-names = "default";
-			pinctrl-0 = <&gpio_keys_default>;
-
-			label = "GPIO Buttons";
-
-			volume-up {
-				label = "Volume Up";
-				gpios = <&msmgpio 107 GPIO_ACTIVE_LOW>;
-				linux,code = <KEY_VOLUMEUP>;
-				debounce-interval = <15>;
-			};
-		};
-
-		mdss@1a00000 {
-			dsi@1a98000 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				vdda-supply = <&pm8916_l2>;
-				vddio-supply = <&pm8916_l6>;
-			};
-
-			dsi-phy@1a98300 {
-				vddio-supply = <&pm8916_l6>;
-				qcom,dsi-phy-regulator-ldo-mode;
-			};
-		};
-
-		lpass@7708000 {
-			status = "okay";
-		};
-
-		sound {
-			compatible = "qcom,apq8016-sbc-sndcard";
-			reg = <0x7702000 0x4>, <0x7702004 0x4>;
-			reg-names = "mic-iomux", "spkr-iomux";
-
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&cdc_pdm_lines_act &headset_switch_supply_en
-				     &headset_switch_in>;
-			pinctrl-1 = <&cdc_pdm_lines_sus &headset_switch_supply_en
-				     &headset_switch_in>;
-
-			qcom,model = "msm8916";
-			qcom,audio-routing =
-				"AMIC1", "MIC BIAS External1",
-				"AMIC2", "MIC BIAS Internal2",
-				"AMIC3", "MIC BIAS External1";
-
-			internal-codec-playback-dai-link@0 {
-				link-name = "WCD";
-				cpu {
-					sound-dai = <&lpass MI2S_PRIMARY>;
-				};
-				codec {
-					sound-dai = <&lpass_codec 0>, <&wcd_codec 0>;
-				};
-			};
-
-			internal-codec-capture-dai-link@0 {
-				link-name = "WCD-Capture";
-				cpu {
-					sound-dai = <&lpass MI2S_TERTIARY>;
-				};
-				codec {
-					sound-dai = <&lpass_codec 1>, <&wcd_codec 1>;
-				};
-			};
-		};
-
-		/*
-		 * Attempting to enable these devices causes a "synchronous
-		 * external abort". Suspected cause is that the debug power
-		 * domain is not enabled by default on this device.
-		 * Disable these devices for now to avoid the crash.
-		 *
-		 * See: https://lore.kernel.org/linux-arm-msm/20190618202623.GA53651@gerhold.net/
-		 */
-		tpiu@820000 { status = "disabled"; };
-		funnel@821000 { status = "disabled"; };
-		replicator@824000 { status = "disabled"; };
-		etf@825000 { status = "disabled"; };
-		etr@826000 { status = "disabled"; };
-		funnel@841000 { status = "disabled"; };
-		debug@850000 { status = "disabled"; };
-		debug@852000 { status = "disabled"; };
-		debug@854000 { status = "disabled"; };
-		debug@856000 { status = "disabled"; };
-		etm@85c000 { status = "disabled"; };
-		etm@85d000 { status = "disabled"; };
-		etm@85e000 { status = "disabled"; };
-		etm@85f000 { status = "disabled"; };
 	};
 
 	usb_id: usb-id {
@@ -232,46 +97,6 @@
 		enable-active-high;
 		pinctrl-names = "default";
 		pinctrl-0 = <&lcd_n_en_default>;
-	};
-};
-
-&dsi0 {
-	pinctrl-names = "default", "sleep";
-	pinctrl-0 = <&mdss_default>;
-	pinctrl-1 = <&mdss_sleep>;
-
-	panel@0 {
-		compatible = "tianma,499";
-		reg = <0>;
-
-		vsp-supply = <&nt50358_pos>;
-		vsn-supply = <&nt50358_neg>;
-		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_HIGH>;
-		backlight-gpios = <&msmgpio 37 GPIO_ACTIVE_HIGH>;
-
-		pinctrl-names = "default";
-		pinctrl-0 = <&lcd_bl_en_default>;
-
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			port@0 {
-				reg = <0>;
-				panel_in: endpoint {
-					remote-endpoint = <&dsi0_out>;
-				};
-			};
-		};
-	};
-
-	ports {
-		port@1 {
-			endpoint {
-				remote-endpoint = <&panel_in>;
-				data-lanes = <0 1 2 3>;
-			};
-		};
 	};
 };
 
@@ -352,41 +177,135 @@
 	};
 };
 
-&spmi_bus {
-	pm8916@0 {
-		pon@800 {
-			volume-down {
-				compatible = "qcom,pm8941-resin";
-				interrupts = <0x0 0x8 1 IRQ_TYPE_EDGE_BOTH>;
-				bias-pull-up;
-				linux,code = <KEY_VOLUMEDOWN>;
+&blsp1_uart1 {
+	status = "okay";
+};
+
+&dsi0 {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&mdss_default>;
+	pinctrl-1 = <&mdss_sleep>;
+
+	panel@0 {
+		compatible = "tianma,499";
+		reg = <0>;
+
+		vsp-supply = <&nt50358_pos>;
+		vsn-supply = <&nt50358_neg>;
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+		backlight-gpios = <&msmgpio 37 GPIO_ACTIVE_HIGH>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_bl_en_default>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
 			};
 		};
 	};
+};
 
-	pm8916@1 {
-		vibrator@c000 {
-			status = "okay";
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&dsi_phy0 {
+	qcom,dsi-phy-regulator-ldo-mode;
+};
+
+&lpass {
+	status = "okay";
+};
+
+&pm8916_resin {
+	status = "okay";
+	linux,code = <KEY_VOLUMEDOWN>;
+};
+
+&pm8916_vib {
+	status = "okay";
+};
+
+&pronto {
+	status = "okay";
+};
+
+&sdhc_1 {
+	status = "okay";
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
+	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
+};
+
+&sdhc_2 {
+	status = "okay";
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd>;
+	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd>;
+
+	cd-gpios = <&msmgpio 118 GPIO_ACTIVE_LOW>;
+};
+
+&sound {
+	status = "okay";
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&cdc_pdm_lines_act &headset_switch_supply_en
+		     &headset_switch_in>;
+	pinctrl-1 = <&cdc_pdm_lines_sus &headset_switch_supply_en
+		     &headset_switch_in>;
+
+	model = "msm8916";
+	audio-routing =
+		"AMIC1", "MIC BIAS External1",
+		"AMIC2", "MIC BIAS Internal2",
+		"AMIC3", "MIC BIAS External1";
+
+	dai-link-primary {
+		link-name = "Primary MI2S";
+		cpu {
+			sound-dai = <&lpass MI2S_PRIMARY>;
 		};
-
-		codec@f000 {
-			qcom,micbias-lvl = <2800>;
-			qcom,mbhc-vthreshold-low = <75 150 237 450 500>;
-			qcom,mbhc-vthreshold-high = <75 150 237 450 500>;
-			qcom,micbias1-ext-cap;
+		codec {
+			sound-dai = <&lpass_codec 0>, <&wcd_codec 0>;
 		};
 	};
+
+	dai-link-tertiary {
+		link-name = "Tertiary MI2S";
+		cpu {
+			sound-dai = <&lpass MI2S_TERTIARY>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 1>, <&wcd_codec 1>;
+		};
+	};
+};
+
+&usb {
+	status = "okay";
+	extcon = <&usb_id>, <&usb_id>;
+};
+
+&usb_hs_phy {
+	extcon = <&usb_id>;
+};
+
+&wcd_codec {
+	qcom,micbias-lvl = <2800>;
+	qcom,mbhc-vthreshold-low = <75 150 237 450 500>;
+	qcom,mbhc-vthreshold-high = <75 150 237 450 500>;
+	qcom,micbias1-ext-cap;
 };
 
 &smd_rpm_regulators {
 	vdd_l1_l2_l3-supply = <&pm8916_s3>;
 	vdd_l4_l5_l6-supply = <&pm8916_s4>;
 	vdd_l7-supply = <&pm8916_s4>;
-
-	s1 {
-		regulator-min-microvolt = <500000>;
-		regulator-max-microvolt = <1300000>;
-	};
 
 	s3 {
 		regulator-min-microvolt = <1200000>;
@@ -406,11 +325,6 @@
 	l2 {
 		regulator-min-microvolt = <1200000>;
 		regulator-max-microvolt = <1200000>;
-	};
-
-	l3 {
-		regulator-min-microvolt = <500000>;
-		regulator-max-microvolt = <1287500>;
 	};
 
 	l4 {
@@ -491,204 +405,128 @@
 	};
 };
 
+/* CTS/RTX are not used */
+&blsp1_uart1_default {
+	pins = "gpio0", "gpio1";
+};
+&blsp1_uart1_sleep {
+	pins = "gpio0", "gpio1";
+};
+
 &msmgpio {
-	/delete-node/ blsp1_uart1_default;
-	/delete-node/ blsp1_uart1_sleep;
-	/delete-node/ pmx_sdc2_cd_pin;
+	accel_int_default: accel-int-default {
+		pins = "gpio115", "gpio119";
+		function = "gpio";
 
-	accel_int_default: accel_int_default {
-		pinmux {
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	battery_alert_default: battery-alert-default {
+		pins = "gpio62";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	gpio_keys_default: gpio-keys-default {
+		pins = "gpio107";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	headset_switch_in: headset-switch-in {
+		pins = "gpio112";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+		output-low;
+	};
+
+	headset_switch_supply_en: headset-switch-supply-en {
+		pins = "gpio111";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+		output-high;
+	};
+
+	lcd_bl_en_default: lcd-bl-en-default {
+		pins = "gpio37";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	lcd_p_en_default: lcd-p-en-default {
+		pins = "gpio97";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	lcd_n_en_default: lcd-n-en-default {
+		pins = "gpio98";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	mdss {
+		mdss_default: mdss-default {
+			pins = "gpio25";
 			function = "gpio";
-			pins = "gpio115", "gpio119";
-		};
-		pinconf {
-			pins = "gpio115", "gpio119";
-			drive-strength = <2>;
+
+			drive-strength = <8>;
 			bias-disable;
 		};
-	};
-
-	battery_alert_default: battery_alert_default {
-		pinmux {
+		mdss_sleep: mdss-sleep {
+			pins = "gpio25";
 			function = "gpio";
-			pins = "gpio62";
-		};
-		pinconf {
-			pins = "gpio62";
-			drive-strength = <2>;
-			bias-pull-up;
-		};
-	};
 
-	blsp1_uart1_default: blsp1_uart1_default {
-		pinmux {
-			function = "blsp_uart1";
-			pins = "gpio0", "gpio1";
-		};
-		pinconf {
-			pins = "gpio0", "gpio1";
-			drive-strength = <16>;
-			bias-disable;
-		};
-	};
-
-	blsp1_uart1_sleep: blsp1_uart1_sleep {
-		pinmux {
-			function = "gpio";
-			pins = "gpio0", "gpio1";
-		};
-		pinconf {
-			pins = "gpio0", "gpio1";
 			drive-strength = <2>;
 			bias-pull-down;
 		};
 	};
 
-	gpio_keys_default: gpio_keys_default {
-		pinmux {
+	sdc2_cd: sdc2-cd-default {
+		pins = "gpio118";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	ts_int_default: ts-int-default {
+		pins = "gpio13";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	usb-id {
+		usb_id_default: id-default {
+			pins = "gpio91";
 			function = "gpio";
-			pins = "gpio107";
-		};
-		pinconf {
-			pins = "gpio107";
-			drive-strength = <2>;
+
+			drive-strength = <8>;
 			bias-pull-up;
 		};
-	};
-
-	headset_switch_in: headset_switch_in {
-		pinmux {
+		usb_id_sleep: id-sleep {
+			pins = "gpio91";
 			function = "gpio";
-			pins = "gpio112";
-		};
-		pinconf {
-			pins = "gpio112";
-			drive-strength = <2>;
-			output-low;
+
+			drive-strength = <8>;
 			bias-disable;
-		};
-	};
-
-	headset_switch_supply_en: headset_switch_supply_en {
-		pinmux {
-			function = "gpio";
-			pins = "gpio111";
-		};
-		pinconf {
-			pins = "gpio111";
-			drive-strength = <2>;
-			output-high;
-			bias-disable;
-		};
-	};
-
-	lcd_bl_en_default: lcd_bl_en_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio37";
-		};
-		pinconf {
-			pins = "gpio37";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
-
-	lcd_p_en_default: lcd_p_en_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio97";
-		};
-		pinconf {
-			pins = "gpio97";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
-
-	lcd_n_en_default: lcd_n_en_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio98";
-		};
-		pinconf {
-			pins = "gpio98";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
-
-	pmx_mdss {
-		mdss_default: mdss_default {
-			pinmux {
-				function = "gpio";
-				pins = "gpio25";
-			};
-			pinconf {
-				pins = "gpio25";
-				drive-strength = <8>;
-				bias-disable;
-			};
-		};
-		mdss_sleep: mdss_sleep {
-			pinmux {
-				function = "gpio";
-				pins = "gpio25";
-			};
-			pinconf {
-				pins = "gpio25";
-				drive-strength = <2>;
-				bias-pull-down;
-			};
-		};
-	};
-
-	sdc2_cd: pmx_sdc2_cd_pin {
-		pinmux {
-			function = "gpio";
-			pins = "gpio118";
-		};
-		pinconf {
-			pins = "gpio118";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
-
-	ts_int_default: ts_int_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio13";
-		};
-		pinconf {
-			pins = "gpio13";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
-
-	usb_id {
-		usb_id_default: id_default {
-			pinmux {
-				function = "gpio";
-				pins = "gpio91";
-			};
-			pinconf {
-				pins = "gpio91";
-				drive-strength = <8>;
-				bias-pull-up;
-			};
-		};
-		usb_id_sleep: id_sleep {
-			pinmux {
-				function = "gpio";
-				pins = "gpio91";
-			};
-			pinconf {
-				pins = "gpio91";
-				drive-strength = <8>;
-				bias-disable;
-			};
 		};
 	};
 };

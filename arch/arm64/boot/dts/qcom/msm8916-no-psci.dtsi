@@ -1,0 +1,100 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/ {
+	cpus {
+		cpu@0 {
+			enable-method = "qcom,arm-cortex-acc";
+			qcom,acc = <&acc0>;
+			qcom,saw = <&saw0>;
+
+			/* TODO: power domain support */
+			cpu-idle-states = <&CPU_SLEEP_0>;
+			/delete-property/ power-domains;
+			/delete-property/ power-domain-names;
+		};
+		cpu@1 {
+			enable-method = "qcom,arm-cortex-acc";
+			qcom,acc = <&acc1>;
+			qcom,saw = <&saw1>;
+
+			/* TODO: power domain support */
+			cpu-idle-states = <&CPU_SLEEP_0>;
+			/delete-property/ power-domains;
+			/delete-property/ power-domain-names;
+		};
+		cpu@2 {
+			enable-method = "qcom,arm-cortex-acc";
+			qcom,acc = <&acc2>;
+			qcom,saw = <&saw2>;
+
+			/* TODO: power domain support */
+			cpu-idle-states = <&CPU_SLEEP_0>;
+			/delete-property/ power-domains;
+			/delete-property/ power-domain-names;
+		};
+		cpu@3 {
+			enable-method = "qcom,arm-cortex-acc";
+			qcom,acc = <&acc3>;
+			qcom,saw = <&saw3>;
+
+			/* TODO: power domain support */
+			cpu-idle-states = <&CPU_SLEEP_0>;
+			/delete-property/ power-domains;
+			/delete-property/ power-domain-names;
+		};
+
+		l2-cache {
+			power-domain = <&l2ccc_0>;
+		};
+
+		idle-states {
+			/delete-property/ entry-method;
+			cpu-sleep-0 {
+				compatible = "qcom,idle-state-spc";
+			};
+		};
+	};
+
+	/delete-node/ psci;
+
+	soc {
+		l2ccc_0: clock-controller@b011000 {
+			compatible = "qcom,8916-l2ccc";
+			reg = <0x0b011000 0x1000>;
+		};
+
+		acc0: clock-controller@b088000 {
+			compatible = "qcom,arm-cortex-acc";
+			reg = <0x0b088000 0x1000>, <0x0b008000 0x1000>;
+		};
+		acc1: clock-controller@b098000 {
+			compatible = "qcom,arm-cortex-acc";
+			reg = <0x0b098000 0x1000>, <0x0b008000 0x1000>;
+		};
+		acc2: clock-controller@b0a8000 {
+			compatible = "qcom,arm-cortex-acc";
+			reg = <0x0b0a8000 0x1000>, <0x0b008000 0x1000>;
+		};
+		acc3: clock-controller@b0b8000 {
+			compatible = "qcom,arm-cortex-acc";
+			reg = <0x0b0b8000 0x1000>, <0x0b008000 0x1000>;
+		};
+
+		saw0: power-controller@b089000 {
+			compatible = "qcom,msm8916-saw2-v3.0-cpu";
+			reg = <0xb089000 0x1000>, <0xb009000 0x1000>;
+		};
+		saw1: power-controller@b099000 {
+			compatible = "qcom,msm8916-saw2-v3.0-cpu";
+			reg = <0xb099000 0x1000>, <0xb009000 0x1000>;
+		};
+		saw2: power-controller@b0a9000 {
+			compatible = "qcom,msm8916-saw2-v3.0-cpu";
+			reg = <0xb0a9000 0x1000>, <0xb009000 0x1000>;
+		};
+		saw3: power-controller@b0b9000 {
+			compatible = "qcom,msm8916-saw2-v3.0-cpu";
+			reg = <0xb0b9000 0x1000>, <0xb009000 0x1000>;
+		};
+	};
+};

@@ -2,9 +2,8 @@
 
 /dts-v1/;
 
-#include "msm8916.dtsi"
-#include "pm8916.dtsi"
-#include "arm/qcom-msm8916-no-psci.dtsi"
+#include "msm8916-pm8916.dtsi"
+#include "msm8916-no-psci.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
@@ -28,157 +27,6 @@
 			reg = <0x0 0x85500000 0x0 0xb00000>;
 			no-map;
 		};
-	};
-
-	soc {
-		sdhci@7824000 {
-			status = "okay";
-
-			vmmc-supply = <&pm8916_l8>;
-			vqmmc-supply = <&pm8916_l5>;
-
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
-			pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
-		};
-
-		sdhci@7864000 {
-			status = "okay";
-
-			vmmc-supply = <&pm8916_l11>;
-			vqmmc-supply = <&pm8916_l12>;
-
-			pinctrl-names = "default", "sleep";
-
-			pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
-			pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
-
-			cd-gpios = <&msmgpio 38 GPIO_ACTIVE_LOW>;
-		};
-
-		serial@78b0000 {
-			status = "okay";
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&blsp1_uart2_default>;
-			pinctrl-1 = <&blsp1_uart2_sleep>;
-		};
-
-		lpass@7708000 {
-			status = "okay";
-
-			dai@3 {
-				reg = <MI2S_QUATERNARY>;
-				qcom,playback-sd-lines = <1>;
-			};
-		};
-
-		sound {
-			compatible = "qcom,apq8016-sbc-sndcard";
-			reg = <0x07702000 0x4>, <0x07702004 0x4>;
-			reg-names = "mic-iomux", "spkr-iomux";
-
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&cdc_pdm_lines_act &ext_sec_tlmm_lines_act>;
-			pinctrl-1 = <&cdc_pdm_lines_sus &ext_sec_tlmm_lines_sus>;
-
-			qcom,model = "samsung-gt510";
-			qcom,audio-routing =
-				"AMIC1", "MIC BIAS External1",
-				"AMIC2", "MIC BIAS Internal2",
-				"AMIC3", "MIC BIAS External1";
-
-			internal-codec-playback-dai-link@0 {
-				link-name = "WCD";
-				cpu {
-					sound-dai = <&lpass MI2S_PRIMARY>;
-				};
-				codec {
-					sound-dai = <&lpass_codec 0>, <&wcd_codec 0>;
-				};
-			};
-
-			internal-codec-capture-dai-link@0 {
-				link-name = "WCD-Capture";
-				cpu {
-					sound-dai = <&lpass MI2S_TERTIARY>;
-				};
-				codec {
-					sound-dai = <&lpass_codec 1>, <&wcd_codec 1>;
-				};
-			};
-
-			external-dai-link@0 {
-				link-name = "Speaker";
-				cpu {
-					sound-dai = <&lpass MI2S_QUATERNARY>;
-				};
-				codec {
-					sound-dai = <&speaker_codec>;
-				};
-			};
-		};
-
-		usb@78d9000 {
-			status = "okay";
-			extcon = <&muic>, <&muic>;
-
-			hnp-disable;
-			srp-disable;
-			adp-disable;
-
-			ulpi {
-				phy {
-					extcon = <&muic>;
-					v1p8-supply = <&pm8916_l7>;
-					v3p3-supply = <&pm8916_l13>;
-				};
-			};
-		};
-
-		wcnss@a21b000 {
-			status = "okay";
-
-			iris {
-				compatible = "qcom,wcn3680";
-			};
-		};
-
-		mdss@1a00000 {
-			dsi@1a98000 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				vdda-supply = <&pm8916_l2>;
-				vddio-supply = <&pm8916_l6>;
-			};
-
-			dsi-phy@1a98300 {
-				vddio-supply = <&pm8916_l6>;
-			};
-		};
-
-		/*
-		 * Attempting to enable these devices causes a "synchronous
-		 * external abort". Suspected cause is that the debug power
-		 * domain is not enabled by default on this device.
-		 * Disable these devices for now to avoid the crash.
-		 *
-		 * See: https://lore.kernel.org/linux-arm-msm/20190618202623.GA53651@gerhold.net/
-		 */
-		tpiu@820000 { status = "disabled"; };
-		funnel@821000 { status = "disabled"; };
-		replicator@824000 { status = "disabled"; };
-		etf@825000 { status = "disabled"; };
-		etr@826000 { status = "disabled"; };
-		funnel@841000 { status = "disabled"; };
-		debug@850000 { status = "disabled"; };
-		debug@852000 { status = "disabled"; };
-		debug@854000 { status = "disabled"; };
-		debug@856000 { status = "disabled"; };
-		etm@85c000 { status = "disabled"; };
-		etm@85d000 { status = "disabled"; };
-		etm@85e000 { status = "disabled"; };
-		etm@85f000 { status = "disabled"; };
 	};
 
 	speaker_codec: audio-codec {
@@ -274,7 +122,7 @@
 &blsp_i2c1 {
 	status = "okay";
 
-	muic: muic@25 {
+	muic: extcon@25 {
 		compatible = "siliconmitus,sm5502-muic";
 
 		reg = <0x25>;
@@ -319,8 +167,12 @@
 		reset-gpios = <&msmgpio 114 GPIO_ACTIVE_HIGH>;
 
 		pinctrl-names = "default";
-		pinctrl-0 = <&tsp_int_default &tsp_rst_default>;
+		pinctrl-0 = <&tsp_int_rst_default>;
 	};
+};
+
+&blsp1_uart2 {
+	status = "okay";
 };
 
 &dsi0 {
@@ -334,68 +186,131 @@
 
 		lcd-supply = <&reg_lcd>;
 		lvds-supply = <&reg_lvds>;
-		reset-gpios = <&msmgpio 31 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&msmgpio 31 GPIO_ACTIVE_LOW>;
 
 		clocks = <&gcc GCC_GP3_CLK>;
 		clock-names = "pwm";
 
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			port@0 {
-				reg = <0>;
-				panel_in: endpoint {
-					remote-endpoint = <&dsi0_out>;
-				};
-			};
-		};
-	};
-
-	ports {
-		port@1 {
-			endpoint {
-				remote-endpoint = <&panel_in>;
-				data-lanes = <0 1 2 3>;
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
 			};
 		};
 	};
 };
 
-&spmi_bus {
-	pm8916@0 {
-		pon@800 {
-			volume-down {
-				compatible = "qcom,pm8941-resin";
-				interrupts = <0x0 0x8 1 IRQ_TYPE_EDGE_BOTH>;
-				bias-pull-up;
-				linux,code = <KEY_VOLUMEDOWN>;
-			};
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&lpass {
+	status = "okay";
+
+	dai@3 {
+		reg = <MI2S_QUATERNARY>;
+		qcom,playback-sd-lines = <1>;
+	};
+};
+
+&pm8916_resin {
+	status = "okay";
+	linux,code = <KEY_VOLUMEDOWN>;
+};
+
+&pronto {
+	status = "okay";
+
+	iris {
+		compatible = "qcom,wcn3660b";
+	};
+};
+
+&sdhc_1 {
+	status = "okay";
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
+	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
+};
+
+&sdhc_2 {
+	status = "okay";
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
+	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
+
+	cd-gpios = <&msmgpio 38 GPIO_ACTIVE_LOW>;
+};
+
+&sound {
+	status = "okay";
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&cdc_pdm_lines_act &ext_sec_tlmm_lines_act>;
+	pinctrl-1 = <&cdc_pdm_lines_sus &ext_sec_tlmm_lines_sus>;
+
+	model = "samsung-gt510";
+	audio-routing =
+		"AMIC1", "MIC BIAS External1",
+		"AMIC2", "MIC BIAS Internal2",
+		"AMIC3", "MIC BIAS External1";
+
+	dai-link-primary {
+		link-name = "Primary MI2S";
+		cpu {
+			sound-dai = <&lpass MI2S_PRIMARY>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 0>, <&wcd_codec 0>;
 		};
 	};
 
-	pm8916@1 {
-		codec@f000 {
-			jack-gpios = <&msmgpio 110 GPIO_ACTIVE_LOW>;
-			qcom,micbias-lvl = <2800>;
-			qcom,mbhc-vtreshold-low = <75 150 237 450 500>;
-			qcom,mbhc-vtreshold-high = <75 150 237 450 500>;
-
-			pinctrl-names = "default";
-			pinctrl-0 = <&jack_default>;
+	dai-link-tertiary {
+		link-name = "Tertiary MI2S";
+		cpu {
+			sound-dai = <&lpass MI2S_TERTIARY>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 1>, <&wcd_codec 1>;
 		};
 	};
+
+	dai-link-quaternary {
+		link-name = "Quaternary MI2S";
+		cpu {
+			sound-dai = <&lpass MI2S_QUATERNARY>;
+		};
+		codec {
+			sound-dai = <&speaker_codec>;
+		};
+	};
+};
+
+&usb {
+	status = "okay";
+	extcon = <&muic>, <&muic>;
+};
+
+&usb_hs_phy {
+	extcon = <&muic>;
+};
+
+&wcd_codec {
+	jack-gpios = <&msmgpio 110 GPIO_ACTIVE_LOW>;
+	qcom,micbias-lvl = <2800>;
+	qcom,mbhc-vtreshold-low = <75 150 237 450 500>;
+	qcom,mbhc-vtreshold-high = <75 150 237 450 500>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&jack_default>;
 };
 
 &smd_rpm_regulators {
 	vdd_l1_l2_l3-supply = <&pm8916_s3>;
 	vdd_l4_l5_l6-supply = <&pm8916_s4>;
 	vdd_l7-supply = <&pm8916_s4>;
-
-	s1 {
-		regulator-min-microvolt = <500000>;
-		regulator-max-microvolt = <1300000>;
-	};
 
 	s3 {
 		regulator-min-microvolt = <1200000>;
@@ -415,11 +330,6 @@
 	l2 {
 		regulator-min-microvolt = <1200000>;
 		regulator-max-microvolt = <1200000>;
-	};
-
-	l3 {
-		regulator-min-microvolt = <500000>;
-		regulator-max-microvolt = <1287500>;
 	};
 
 	l4 {
@@ -501,149 +411,92 @@
 };
 
 &msmgpio {
-	accel_int_default: accel_int_default {
-		pinmux {
+	accel_int_default: accel-int-default {
+		pins = "gpio115";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	gpio_keys_default: gpio-keys-default {
+		pins = "gpio107", "gpio109";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	jack_default: jack-default {
+		pins = "gpio110";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	lcd_en_default: lcd-en-default {
+		pins = "gpio8";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	lvds_en_default: lvds-en-default {
+		pins = "gpio17";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	mdss {
+		mdss_default: mdss-default {
+			pins = "gpio31";
 			function = "gpio";
-			pins = "gpio115";
-		};
-		pinconf {
-			pins = "gpio115";
-			drive-strength = <2>;
+
+			drive-strength = <8>;
 			bias-disable;
 		};
-	};
-
-	gpio_keys_default: gpio_keys_default {
-		pinmux {
+		mdss_sleep: mdss-sleep {
+			pins = "gpio31";
 			function = "gpio";
-			pins = "gpio107", "gpio109";
-		};
-		pinconf {
-			pins = "gpio107", "gpio109";
+
 			drive-strength = <2>;
-			bias-pull-up;
+			bias-pull-down;
 		};
 	};
 
-	jack_default: jack_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio110";
-		};
-		pinconf {
-			pins = "gpio110";
-			drive-strength = <2>;
-			bias-disable;
-		};
+	muic_int_default: muic-int-default {
+		pins = "gpio12";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
-	lcd_en_default: lcd_en_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio8";
-		};
-		pinconf {
-			pins = "gpio8";
-			drive-strength = <2>;
-			bias-disable;
-		};
+	tsp_en_default: tsp-en-default {
+		pins = "gpio73";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
-	lvds_en_default: lvds_en_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio17";
-		};
-		pinconf {
-			pins = "gpio17";
-			drive-strength = <2>;
-			bias-disable;
-		};
+	tsp_en1_default: tsp-en1-default {
+		pins = "gpio98";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
-	muic_int_default: muic_int_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio12";
-		};
-		pinconf {
-			pins = "gpio12";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
+	tsp_int_rst_default: tsp-int-rst-default {
+		pins = "gpio13", "gpio114";
+		function = "gpio";
 
-	pmx_mdss {
-		mdss_default: mdss_default {
-			pinmux {
-				function = "gpio";
-				pins = "gpio31";
-			};
-			pinconf {
-				pins = "gpio31";
-				drive-strength = <8>;
-				bias-disable;
-			};
-		};
-
-		mdss_sleep: mdss_sleep {
-			pinmux {
-				function = "gpio";
-				pins = "gpio31";
-			};
-			pinconf {
-				pins = "gpio31";
-				drive-strength = <2>;
-				bias-pull-down;
-			};
-		};
-	};
-
-	tsp_en_default: tsp_en_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio73";
-		};
-		pinconf {
-			pins = "gpio73";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
-
-	tsp_en1_default: tsp_en1_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio98";
-		};
-		pinconf {
-			pins = "gpio98";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
-
-	tsp_int_default: tsp_int_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio13";
-		};
-		pinconf {
-			pins = "gpio13";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
-
-	tsp_rst_default: tsp_rst_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio114";
-		};
-		pinconf {
-			pins = "gpio114";
-			drive-strength = <2>;
-			bias-disable;
-		};
+		drive-strength = <2>;
+		bias-disable;
 	};
 };
