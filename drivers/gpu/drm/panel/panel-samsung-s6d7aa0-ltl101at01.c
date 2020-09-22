@@ -40,11 +40,11 @@ struct s6d7aa0_ltl101at01 *to_s6d7aa0_ltl101at01(struct drm_panel *panel)
 
 static void s6d7aa0_ltl101at01_reset(struct s6d7aa0_ltl101at01 *ctx)
 {
-	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-	msleep(20);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
 	msleep(20);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+	msleep(20);
+	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
 	msleep(20);
 }
 
@@ -151,7 +151,7 @@ static int s6d7aa0_ltl101at01_prepare(struct drm_panel *panel)
 	ret = s6d7aa0_ltl101at01_on(ctx);
 	if (ret < 0) {
 		dev_err(dev, "Failed to initialize panel: %d\n", ret);
-		gpiod_set_value_cansleep(ctx->reset_gpio, 0);
+		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 		regulator_bulk_disable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
 		return ret;
 	}
@@ -173,7 +173,7 @@ static int s6d7aa0_ltl101at01_unprepare(struct drm_panel *panel)
 	if (ret < 0)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
 
-	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
+	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	regulator_bulk_disable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
 
 	ctx->prepared = false;
@@ -190,7 +190,6 @@ static const struct drm_display_mode s6d7aa0_ltl101at01_mode = {
 	.vsync_start = 1024 + 8,
 	.vsync_end = 1024 + 8 + 2,
 	.vtotal = 1024 + 8 + 2 + 6,
-	.vrefresh = 60,
 	.width_mm = 148,
 	.height_mm = 197,
 };
@@ -292,17 +291,13 @@ static int s6d7aa0_ltl101at01_probe(struct mipi_dsi_device *dsi)
 	ctx->supplies[1].supply = "5p4v";
 	ret = devm_regulator_bulk_get(dev, ARRAY_SIZE(ctx->supplies),
 				      ctx->supplies);
-	if (ret < 0) {
-		dev_err(dev, "Failed to get regulators: %d\n", ret);
-		return ret;
-	}
+	if (ret < 0)
+		return dev_err_probe(dev, ret, "Failed to get regulators\n");
 
-	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_LOW);
-	if (IS_ERR(ctx->reset_gpio)) {
-		ret = PTR_ERR(ctx->reset_gpio);
-		dev_err(dev, "Failed to get reset-gpios: %d\n", ret);
-		return ret;
-	}
+	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
+	if (IS_ERR(ctx->reset_gpio))
+		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
+				     "Failed to get reset-gpios\n");
 
 	ctx->dsi = dsi;
 	mipi_dsi_set_drvdata(dsi, ctx);
@@ -316,11 +311,9 @@ static int s6d7aa0_ltl101at01_probe(struct mipi_dsi_device *dsi)
 		       DRM_MODE_CONNECTOR_DSI);
 
 	ctx->panel.backlight = s6d7aa0_ltl101at01_create_backlight(dsi);
-	if (IS_ERR(ctx->panel.backlight)) {
-		ret = PTR_ERR(ctx->panel.backlight);
-		dev_err(dev, "Failed to create backlight: %d\n", ret);
-		return ret;
-	}
+	if (IS_ERR(ctx->panel.backlight))
+		return dev_err_probe(dev, PTR_ERR(ctx->panel.backlight),
+				     "Failed to create backlight\n");
 
 	ret = drm_panel_add(&ctx->panel);
 	if (ret < 0) {

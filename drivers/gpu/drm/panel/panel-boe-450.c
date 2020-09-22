@@ -15,7 +15,7 @@
 #include <drm/drm_modes.h>
 #include <drm/drm_panel.h>
 
-struct boe_450_v3 {
+struct boe_450 {
 	struct drm_panel panel;
 	struct mipi_dsi_device *dsi;
 	struct regulator *supply;
@@ -23,9 +23,9 @@ struct boe_450_v3 {
 	bool prepared;
 };
 
-static inline struct boe_450_v3 *to_boe_450_v3(struct drm_panel *panel)
+static inline struct boe_450 *to_boe_450(struct drm_panel *panel)
 {
-	return container_of(panel, struct boe_450_v3, panel);
+	return container_of(panel, struct boe_450, panel);
 }
 
 #define dsi_dcs_write_seq(dsi, seq...) do {				\
@@ -36,17 +36,17 @@ static inline struct boe_450_v3 *to_boe_450_v3(struct drm_panel *panel)
 			return ret;					\
 	} while (0)
 
-static void boe_450_v3_reset(struct boe_450_v3 *ctx)
+static void boe_450_reset(struct boe_450 *ctx)
 {
-	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-	usleep_range(2000, 3000);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
-	usleep_range(1000, 2000);
+	usleep_range(2000, 3000);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+	usleep_range(1000, 2000);
+	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
 	msleep(21);
 }
 
-static int boe_450_v3_on(struct boe_450_v3 *ctx)
+static int boe_450_on(struct boe_450 *ctx)
 {
 	struct mipi_dsi_device *dsi = ctx->dsi;
 	struct device *dev = &dsi->dev;
@@ -78,7 +78,7 @@ static int boe_450_v3_on(struct boe_450_v3 *ctx)
 	return 0;
 }
 
-static int boe_450_v3_off(struct boe_450_v3 *ctx)
+static int boe_450_off(struct boe_450 *ctx)
 {
 	struct mipi_dsi_device *dsi = ctx->dsi;
 	struct device *dev = &dsi->dev;
@@ -101,9 +101,9 @@ static int boe_450_v3_off(struct boe_450_v3 *ctx)
 	return 0;
 }
 
-static int boe_450_v3_prepare(struct drm_panel *panel)
+static int boe_450_prepare(struct drm_panel *panel)
 {
-	struct boe_450_v3 *ctx = to_boe_450_v3(panel);
+	struct boe_450 *ctx = to_boe_450(panel);
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
@@ -116,12 +116,12 @@ static int boe_450_v3_prepare(struct drm_panel *panel)
 		return ret;
 	}
 
-	boe_450_v3_reset(ctx);
+	boe_450_reset(ctx);
 
-	ret = boe_450_v3_on(ctx);
+	ret = boe_450_on(ctx);
 	if (ret < 0) {
 		dev_err(dev, "Failed to initialize panel: %d\n", ret);
-		gpiod_set_value_cansleep(ctx->reset_gpio, 0);
+		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 		regulator_disable(ctx->supply);
 		return ret;
 	}
@@ -130,27 +130,27 @@ static int boe_450_v3_prepare(struct drm_panel *panel)
 	return 0;
 }
 
-static int boe_450_v3_unprepare(struct drm_panel *panel)
+static int boe_450_unprepare(struct drm_panel *panel)
 {
-	struct boe_450_v3 *ctx = to_boe_450_v3(panel);
+	struct boe_450 *ctx = to_boe_450(panel);
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
 	if (!ctx->prepared)
 		return 0;
 
-	ret = boe_450_v3_off(ctx);
+	ret = boe_450_off(ctx);
 	if (ret < 0)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
 
-	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
+	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	regulator_disable(ctx->supply);
 
 	ctx->prepared = false;
 	return 0;
 }
 
-static const struct drm_display_mode boe_450_v3_mode = {
+static const struct drm_display_mode boe_450_mode = {
 	.clock = (540 + 24 + 4 + 40) * (960 + 16 + 2 + 16) * 60 / 1000,
 	.hdisplay = 540,
 	.hsync_start = 540 + 24,
@@ -160,17 +160,16 @@ static const struct drm_display_mode boe_450_v3_mode = {
 	.vsync_start = 960 + 16,
 	.vsync_end = 960 + 16 + 2,
 	.vtotal = 960 + 16 + 2 + 16,
-	.vrefresh = 60,
 	.width_mm = 55,
 	.height_mm = 99,
 };
 
-static int boe_450_v3_get_modes(struct drm_panel *panel,
-				struct drm_connector *connector)
+static int boe_450_get_modes(struct drm_panel *panel,
+			     struct drm_connector *connector)
 {
 	struct drm_display_mode *mode;
 
-	mode = drm_mode_duplicate(connector->dev, &boe_450_v3_mode);
+	mode = drm_mode_duplicate(connector->dev, &boe_450_mode);
 	if (!mode)
 		return -ENOMEM;
 
@@ -184,16 +183,16 @@ static int boe_450_v3_get_modes(struct drm_panel *panel,
 	return 1;
 }
 
-static const struct drm_panel_funcs boe_450_v3_panel_funcs = {
-	.prepare = boe_450_v3_prepare,
-	.unprepare = boe_450_v3_unprepare,
-	.get_modes = boe_450_v3_get_modes,
+static const struct drm_panel_funcs boe_450_panel_funcs = {
+	.prepare = boe_450_prepare,
+	.unprepare = boe_450_unprepare,
+	.get_modes = boe_450_get_modes,
 };
 
-static int boe_450_v3_probe(struct mipi_dsi_device *dsi)
+static int boe_450_probe(struct mipi_dsi_device *dsi)
 {
 	struct device *dev = &dsi->dev;
-	struct boe_450_v3 *ctx;
+	struct boe_450 *ctx;
 	int ret;
 
 	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
@@ -201,18 +200,14 @@ static int boe_450_v3_probe(struct mipi_dsi_device *dsi)
 		return -ENOMEM;
 
 	ctx->supply = devm_regulator_get(dev, "power");
-	if (IS_ERR(ctx->supply)) {
-		ret = PTR_ERR(ctx->supply);
-		dev_err(dev, "Failed to get power regulator: %d\n", ret);
-		return ret;
-	}
+	if (IS_ERR(ctx->supply))
+		return dev_err_probe(dev, PTR_ERR(ctx->supply),
+				     "Failed to get power regulator\n");
 
-	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_LOW);
-	if (IS_ERR(ctx->reset_gpio)) {
-		ret = PTR_ERR(ctx->reset_gpio);
-		dev_err(dev, "Failed to get reset-gpios: %d\n", ret);
-		return ret;
-	}
+	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
+	if (IS_ERR(ctx->reset_gpio))
+		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
+				     "Failed to get reset-gpios\n");
 
 	ctx->dsi = dsi;
 	mipi_dsi_set_drvdata(dsi, ctx);
@@ -222,14 +217,12 @@ static int boe_450_v3_probe(struct mipi_dsi_device *dsi)
 	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_CLOCK_NON_CONTINUOUS |
 			  MIPI_DSI_MODE_LPM;
 
-	drm_panel_init(&ctx->panel, dev, &boe_450_v3_panel_funcs,
+	drm_panel_init(&ctx->panel, dev, &boe_450_panel_funcs,
 		       DRM_MODE_CONNECTOR_DSI);
 
 	ret = drm_panel_of_backlight(&ctx->panel);
-	if (ret) {
-		dev_err(dev, "Failed to get backlight: %d\n", ret);
-		return ret;
-	}
+	if (ret)
+		return dev_err_probe(dev, ret, "Failed to get backlight\n");
 
 	ret = drm_panel_add(&ctx->panel);
 	if (ret < 0) {
@@ -246,9 +239,9 @@ static int boe_450_v3_probe(struct mipi_dsi_device *dsi)
 	return 0;
 }
 
-static int boe_450_v3_remove(struct mipi_dsi_device *dsi)
+static int boe_450_remove(struct mipi_dsi_device *dsi)
 {
-	struct boe_450_v3 *ctx = mipi_dsi_get_drvdata(dsi);
+	struct boe_450 *ctx = mipi_dsi_get_drvdata(dsi);
 	int ret;
 
 	ret = mipi_dsi_detach(dsi);
@@ -260,21 +253,21 @@ static int boe_450_v3_remove(struct mipi_dsi_device *dsi)
 	return 0;
 }
 
-static const struct of_device_id boe_450_v3_of_match[] = {
+static const struct of_device_id boe_450_of_match[] = {
 	{ .compatible = "boe,450" },
 	{ /* sentinel */ }
 };
-MODULE_DEVICE_TABLE(of, boe_450_v3_of_match);
+MODULE_DEVICE_TABLE(of, boe_450_of_match);
 
-static struct mipi_dsi_driver boe_450_v3_driver = {
-	.probe = boe_450_v3_probe,
-	.remove = boe_450_v3_remove,
+static struct mipi_dsi_driver boe_450_driver = {
+	.probe = boe_450_probe,
+	.remove = boe_450_remove,
 	.driver = {
 		.name = "panel-boe-450",
-		.of_match_table = boe_450_v3_of_match,
+		.of_match_table = boe_450_of_match,
 	},
 };
-module_mipi_dsi_driver(boe_450_v3_driver);
+module_mipi_dsi_driver(boe_450_driver);
 
 MODULE_AUTHOR("Wiktor Strzębała <wiktorek140@tlen.pl>");
 MODULE_DESCRIPTION("DRM driver for mipi_mot_video_boe_qhd_450");

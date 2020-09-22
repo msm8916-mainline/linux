@@ -39,11 +39,11 @@ struct s6e88a0_ams427ap24 *to_s6e88a0_ams427ap24(struct drm_panel *panel)
 
 static void s6e88a0_ams427ap24_reset(struct s6e88a0_ams427ap24 *ctx)
 {
-	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-	usleep_range(5000, 6000);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
-	usleep_range(1000, 2000);
+	usleep_range(5000, 6000);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+	usleep_range(1000, 2000);
+	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
 	usleep_range(18000, 19000);
 }
 
@@ -140,7 +140,7 @@ static int s6e88a0_ams427ap24_prepare(struct drm_panel *panel)
 	ret = s6e88a0_ams427ap24_on(ctx);
 	if (ret < 0) {
 		dev_err(dev, "Failed to initialize panel: %d\n", ret);
-		gpiod_set_value_cansleep(ctx->reset_gpio, 0);
+		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 		regulator_bulk_disable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
 		return ret;
 	}
@@ -162,7 +162,7 @@ static int s6e88a0_ams427ap24_unprepare(struct drm_panel *panel)
 	if (ret < 0)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
 
-	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
+	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	regulator_bulk_disable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
 
 	ctx->prepared = false;
@@ -179,7 +179,6 @@ static const struct drm_display_mode s6e88a0_ams427ap24_mode = {
 	.vsync_start = 960 + 12,
 	.vsync_end = 960 + 12 + 1,
 	.vtotal = 960 + 12 + 1 + 3,
-	.vrefresh = 60,
 	.width_mm = 55,
 	.height_mm = 95,
 };
@@ -223,17 +222,13 @@ static int s6e88a0_ams427ap24_probe(struct mipi_dsi_device *dsi)
 	ctx->supplies[1].supply = "vci";
 	ret = devm_regulator_bulk_get(dev, ARRAY_SIZE(ctx->supplies),
 				      ctx->supplies);
-	if (ret < 0) {
-		dev_err(dev, "Failed to get regulators: %d\n", ret);
-		return ret;
-	}
+	if (ret < 0)
+		return dev_err_probe(dev, ret, "Failed to get regulators\n");
 
-	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_LOW);
-	if (IS_ERR(ctx->reset_gpio)) {
-		ret = PTR_ERR(ctx->reset_gpio);
-		dev_err(dev, "Failed to get reset-gpios: %d\n", ret);
-		return ret;
-	}
+	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
+	if (IS_ERR(ctx->reset_gpio))
+		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
+				     "Failed to get reset-gpios\n");
 
 	ctx->dsi = dsi;
 	mipi_dsi_set_drvdata(dsi, ctx);

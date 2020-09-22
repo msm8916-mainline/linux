@@ -18,6 +18,16 @@ config DRM_PANEL_ARM_VERSATILE
 	  reference designs. The panel is detected using special registers
 	  in the Versatile family syscon registers.
 
+config DRM_PANEL_ASUS_Z00T_TM5P5_NT35596
+	tristate "ASUS Z00T TM5P5 NT35596 panel"
+	depends on GPIOLIB && OF
+	depends on DRM_MIPI_DSI
+	depends on BACKLIGHT_CLASS_DEVICE
+	help
+	  Say Y here if you want to enable support for the ASUS TMP5P5
+	  NT35596 1080x1920 video mode panel as found in some Asus
+	  Zenfone 2 Laser Z00T devices.
+
 config DRM_PANEL_BOE_HIMAX8279D
 	tristate "Boe Himax8279d panel"
 	depends on OF
@@ -153,6 +163,17 @@ config DRM_PANEL_KINGDISPLAY_KD097D04
 	  24 bit RGB per pixel. It provides a MIPI DSI interface to
 	  the host and has a built-in LED backlight.
 
+config DRM_PANEL_LEADTEK_LTK050H3146W
+	tristate "Leadtek LTK050H3146W panel"
+	depends on OF
+	depends on DRM_MIPI_DSI
+	depends on BACKLIGHT_CLASS_DEVICE
+	help
+	  Say Y here if you want to enable support for Leadtek LTK050H3146W
+	  TFT-LCD modules. The panel has a 720x1280 resolution and uses
+	  24 bit RGB per pixel. It provides a MIPI DSI interface to
+	  the host and has a built-in LED backlight.
+
 config DRM_PANEL_LEADTEK_LTK500HD1829
 	tristate "Leadtek LTK500HD1829 panel"
 	depends on OF
@@ -224,12 +245,6 @@ config DRM_PANEL_OLIMEX_LCD_OLINUXINO
 	  Say Y here if you want to enable support for Olimex Ltd.
 	  LCD-OLinuXino panel.
 
-config DRM_PANEL_OPPO15009JDI_NT35992
-	tristate "JDI NT35592 for Oppo A51f panel"
-	depends on OF
-	help
-	  Say Y here if you want to enable support for oppo A51f panel.
-
 config DRM_PANEL_ORISETECH_OTM8009A
 	tristate "Orise Technology otm8009a 480x800 dsi 2dl panel"
 	depends on OF
@@ -283,19 +298,6 @@ config DRM_PANEL_RAYDIUM_RM68200
 	help
 	  Say Y here if you want to enable support for Raydium RM68200
 	  720x1280 DSI video mode panel.
-
-config DRM_PANEL_ROCKTECH_JH057N00900
-	tristate "Rocktech JH057N00900 MIPI touchscreen panel"
-	depends on OF
-	depends on DRM_MIPI_DSI
-	depends on BACKLIGHT_CLASS_DEVICE
-	help
-	  Say Y here if you want to enable support for Rocktech JH057N00900
-	  MIPI DSI panel as e.g. used in the Librem 5 devkit. It has a
-	  resolution of 720x1440 pixels, a built in backlight and touch
-	  controller.
-	  Touch input support is provided by the goodix driver and needs to be
-	  selected separately.
 
 config DRM_PANEL_RONBO_RB070D30
 	tristate "Ronbo Electronics RB070D30 panel"
@@ -417,6 +419,19 @@ config DRM_PANEL_SITRONIX_ST7701
 	  ST7701 controller for 480X864 LCD panels with MIPI/RGB/SPI
 	  system interfaces.
 
+config DRM_PANEL_SITRONIX_ST7703
+	tristate "Sitronix ST7703 based MIPI touchscreen panels"
+	depends on OF
+	depends on DRM_MIPI_DSI
+	depends on BACKLIGHT_CLASS_DEVICE
+	help
+	  Say Y here if you want to enable support for Sitronix ST7703 based
+	  panels, souch as Rocktech JH057N00900 MIPI DSI panel as e.g. used in
+	  the Librem 5 devkit. It has a resolution of 720x1440 pixels, a built
+	  in backlight and touch controller.
+	  Touch input support is provided by the goodix driver and needs to be
+	  selected separately.
+
 config DRM_PANEL_SITRONIX_ST7789V
 	tristate "Sitronix ST7789V panel"
 	depends on OF && SPI
@@ -481,6 +496,14 @@ config DRM_PANEL_TRULY_NT35597_WQXGA
 	help
 	  Say Y here if you want to enable support for Truly NT35597 WQXGA Dual DSI
 	  Video Mode panel
+
+config DRM_PANEL_VISIONOX_RM69299
+	tristate "Visionox RM69299"
+	depends on OF
+	depends on DRM_MIPI_DSI
+	help
+	  Say Y here if you want to enable support for Visionox
+	  RM69299  DSI Video Mode panel.
 
 config DRM_PANEL_XINPENG_XPP055C272
 	tristate "Xinpeng XPP055C272 panel driver"

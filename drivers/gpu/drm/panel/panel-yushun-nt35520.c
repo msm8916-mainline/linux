@@ -39,11 +39,11 @@ static inline struct yushun_nt35520 *to_yushun_nt35520(struct drm_panel *panel)
 
 static void yushun_nt35520_reset(struct yushun_nt35520 *ctx)
 {
-	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-	msleep(20);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
 	msleep(20);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+	msleep(20);
+	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
 	msleep(20);
 }
 
@@ -320,7 +320,7 @@ static int yushun_nt35520_prepare(struct drm_panel *panel)
 	ret = yushun_nt35520_on(ctx);
 	if (ret < 0) {
 		dev_err(dev, "Failed to initialize panel: %d\n", ret);
-		gpiod_set_value_cansleep(ctx->reset_gpio, 0);
+		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 		regulator_disable(ctx->supply);
 		return ret;
 	}
@@ -342,7 +342,7 @@ static int yushun_nt35520_unprepare(struct drm_panel *panel)
 	if (ret < 0)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
 
-	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
+	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	regulator_disable(ctx->supply);
 
 	ctx->prepared = false;
@@ -359,7 +359,6 @@ static const struct drm_display_mode yushun_nt35520_mode = {
 	.vsync_start = 1280 + 20,
 	.vsync_end = 1280 + 20 + 4,
 	.vtotal = 1280 + 20 + 4 + 16,
-	.vrefresh = 60,
 	.width_mm = 62,
 	.height_mm = 111,
 };
@@ -400,18 +399,14 @@ static int yushun_nt35520_probe(struct mipi_dsi_device *dsi)
 		return -ENOMEM;
 
 	ctx->supply = devm_regulator_get(dev, "power");
-	if (IS_ERR(ctx->supply)) {
-		ret = PTR_ERR(ctx->supply);
-		dev_err(dev, "Failed to get power regulator: %d\n", ret);
-		return ret;
-	}
+	if (IS_ERR(ctx->supply))
+		return dev_err_probe(dev, PTR_ERR(ctx->supply),
+				     "Failed to get power regulator\n");
 
-	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_LOW);
-	if (IS_ERR(ctx->reset_gpio)) {
-		ret = PTR_ERR(ctx->reset_gpio);
-		dev_err(dev, "Failed to get reset-gpios: %d\n", ret);
-		return ret;
-	}
+	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
+	if (IS_ERR(ctx->reset_gpio))
+		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
+				     "Failed to get reset-gpios\n");
 
 	ctx->dsi = dsi;
 	mipi_dsi_set_drvdata(dsi, ctx);
@@ -426,10 +421,8 @@ static int yushun_nt35520_probe(struct mipi_dsi_device *dsi)
 		       DRM_MODE_CONNECTOR_DSI);
 
 	ret = drm_panel_of_backlight(&ctx->panel);
-	if (ret) {
-		dev_err(dev, "Failed to get backlight: %d\n", ret);
-		return ret;
-	}
+	if (ret)
+		return dev_err_probe(dev, ret, "Failed to get backlight\n");
 
 	ret = drm_panel_add(&ctx->panel);
 	if (ret < 0) {
