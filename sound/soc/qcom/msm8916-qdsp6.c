@@ -46,7 +46,7 @@ struct msm8916_qdsp6_data {
 static int msm8916_qdsp6_get_mi2s_id(struct snd_soc_pcm_runtime *rtd)
 {
 	struct snd_soc_card *card = rtd->card;
-	int id = rtd->cpu_dai->id;
+	int id = asoc_rtd_to_cpu(rtd, 0)->id;
 
 	if (id < PRIMARY_MI2S_RX || id > QUATERNARY_MI2S_TX) {
 		dev_err(card->dev, "Unsupported CPU DAI: %d\n", id);
@@ -58,9 +58,9 @@ static int msm8916_qdsp6_get_mi2s_id(struct snd_soc_pcm_runtime *rtd)
 
 static int msm8916_qdsp6_dai_init(struct snd_soc_pcm_runtime *rtd)
 {
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
+	struct snd_soc_dai *codec_dai;
 	struct snd_soc_component *component;
-	struct snd_soc_dai_link *dai_link = rtd->dai_link;
 	struct snd_soc_card *card = rtd->card;
 	struct msm8916_qdsp6_data *pdata = snd_soc_card_get_drvdata(card);
 	int i, rval, mi2s;
@@ -117,10 +117,9 @@ static int msm8916_qdsp6_dai_init(struct snd_soc_pcm_runtime *rtd)
 		pdata->jack_setup = true;
 	}
 
-	for (i = 0 ; i < dai_link->num_codecs; i++) {
-		struct snd_soc_dai *dai = rtd->codec_dais[i];
+	for_each_rtd_codec_dais(rtd, i, codec_dai) {
+		component = codec_dai->component;
 
-		component = dai->component;
 		/* Set default mclk for internal codec */
 		rval = snd_soc_component_set_sysclk(component, 0, 0, DEFAULT_MCLK_RATE,
 				       SND_SOC_CLOCK_IN);
@@ -145,7 +144,7 @@ static int msm8916_qdsp6_startup(struct snd_pcm_substream *substream)
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_card *card = rtd->card;
 	struct msm8916_qdsp6_data *data = snd_soc_card_get_drvdata(card);
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
 	int mi2s, ret;
 
 	mi2s = msm8916_qdsp6_get_mi2s_id(rtd);
@@ -166,7 +165,7 @@ static void msm8916_qdsp6_shutdown(struct snd_pcm_substream *substream)
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_card *card = rtd->card;
 	struct msm8916_qdsp6_data *data = snd_soc_card_get_drvdata(card);
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
 	int mi2s, ret;
 
 	mi2s = msm8916_qdsp6_get_mi2s_id(rtd);
@@ -233,12 +232,11 @@ static int msm8916_qdsp6_platform_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	card->dev = dev;
-	ret = qcom_snd_parse_of(card);
-	if (ret) {
-		dev_err(&pdev->dev, "Error parsing device tree: %d\n", ret);
-		return ret;
-	}
+	card->owner = THIS_MODULE;
 	card->components = "qdsp6";
+	ret = qcom_snd_parse_of(card);
+	if (ret)
+		return ret;
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mic-iomux");
 	data->mic_iomux = devm_ioremap_resource(dev, res);

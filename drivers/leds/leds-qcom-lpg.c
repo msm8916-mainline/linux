@@ -773,8 +773,8 @@ static int lpg_pwm_apply(struct pwm_chip *chip, struct pwm_device *pwm,
 	struct lpg *lpg = container_of(chip, struct lpg, pwm);
 	struct lpg_channel *chan = &lpg->channels[pwm->hwpwm];
 
-	lpg_calc_freq(chan, state->period / NSEC_PER_USEC);
-	lpg_calc_duty(chan, state->duty_cycle / NSEC_PER_USEC);
+	lpg_calc_freq(chan, div_u64(state->period, NSEC_PER_USEC));
+	lpg_calc_duty(chan, div_u64(state->duty_cycle, NSEC_PER_USEC));
 	chan->enabled = state->enabled;
 
 	lpg_apply(chan);
