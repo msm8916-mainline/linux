@@ -367,13 +367,15 @@ static netdev_tx_t bam_dmux_netdev_start_xmit(struct sk_buff *skb, struct net_de
 {
 	struct bam_dmux_netdev *bndev = netdev_priv(netdev);
 	struct bam_dmux *dmux = bndev->dmux;
-	struct bam_dmux_skb_dma *skb_dma;
+	struct bam_dmux_skb_dma *skb_dma = NULL;
 	unsigned int num;
 	int active, ret;
 
 	active = pm_runtime_get(dmux->dev);
-	if (active < 0)
+	if (active < 0 && active != -EINPROGRESS) {
+		dev_err_ratelimited(dmux->dev, "Failed to request resume: %d\n", active);
 		goto drop;
+	}
 
 	ret = bam_dmux_tx_prepare_skb(bndev, skb);
 	if (ret)
@@ -390,7 +392,7 @@ static netdev_tx_t bam_dmux_netdev_start_xmit(struct sk_buff *skb, struct net_de
 	if (!bam_dmux_skb_dma_map(skb_dma, DMA_TO_DEVICE))
 		goto drop;
 
-	if (!active) {
+	if (active <= 0) {
 		/* Cannot sleep here so mark skb for wakeup handler and return */
 		if (!atomic_fetch_or(BIT(num), &dmux->tx_deferred_skb))
 			schedule_work(&dmux->tx_wakeup_work);
