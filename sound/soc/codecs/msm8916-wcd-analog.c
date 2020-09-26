@@ -822,22 +822,22 @@ static const struct snd_soc_dapm_route pm8916_wcd_analog_audio_map[] = {
 	{"EAR PA", NULL, "EAR CP"},
 
 	/* Headset (RX MIX1 and RX MIX2) */
-	{"HPH_L", NULL, "HPHL PA"},
-	{"HPH_R", NULL, "HPHR PA"},
+	{"HPH_L", NULL, "HPHL"},
+	{"HPH_R", NULL, "HPHR"},
+	{"HPHL", "Switch", "HPHL PA"},
+	{"HPHR", "Switch", "HPHR PA"},
 
 	{"HPHL DAC", NULL, "EAR_HPHL_CLK"},
 	{"HPHR DAC", NULL, "EAR_HPHR_CLK"},
 
 	{"CP", NULL, "NCP_CLK"},
 
-	{"HPHL PA", NULL, "HPHL"},
-	{"HPHR PA", NULL, "HPHR"},
+	{"HPHL PA", NULL, "HPHL DAC"},
+	{"HPHR PA", NULL, "HPHR DAC"},
 	{"HPHL PA", NULL, "CP"},
 	{"HPHL PA", NULL, "RX_BIAS"},
 	{"HPHR PA", NULL, "CP"},
 	{"HPHR PA", NULL, "RX_BIAS"},
-	{"HPHL", "Switch", "HPHL DAC"},
-	{"HPHR", "Switch", "HPHR DAC"},
 
 	{"RX_BIAS", NULL, "DAC_REF"},
 
