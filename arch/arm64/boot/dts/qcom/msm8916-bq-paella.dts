@@ -248,7 +248,7 @@
 
 	model = "bq-paella";
 	audio-routing =
-		"Speaker Amp IN", "HPHR Ext PA",
+		"Speaker Amp IN", "HPH_R_EXT",
 		"AMIC1", "MIC BIAS External1",
 		"AMIC2", "MIC BIAS Internal2",
 		"AMIC3", "MIC BIAS External1";
