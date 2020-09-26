@@ -1882,6 +1882,9 @@ EXPORT_SYMBOL_GPL(dev_pm_opp_set_clkname);
  */
 void dev_pm_opp_put_clkname(struct opp_table *opp_table)
 {
+	if (!opp_table)
+		return;
+
 	/* Make sure there are no concurrent readers while updating opp_table */
 	WARN_ON(!list_empty(&opp_table->opp_list));
 
