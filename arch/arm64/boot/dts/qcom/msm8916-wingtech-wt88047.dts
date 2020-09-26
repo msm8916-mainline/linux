@@ -6,6 +6,8 @@
 /dts-v1/;
 
 #include "msm8916-pm8916.dtsi"
+#include "msm8916-modem.dtsi"
+
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
@@ -21,6 +23,38 @@
 
 	chosen {
 		stdout-path = "serial0";
+	};
+
+	reserved-memory {
+		mpss_mem: gps_mem: mpss@86800000 {
+			reg = <0x0 0x86800000 0x0 0x5100000>;
+			no-map;
+		};
+	};
+
+	speaker_amp: audio-amplifier {
+		compatible = "simple-audio-amplifier";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&speaker_amp_default>;
+
+		enable-gpios = <&msmgpio 117 GPIO_ACTIVE_HIGH>;
+		sound-name-prefix = "Speaker Amp";
+	};
+
+	/*
+	 * According to the schematics this is actually an analog switch,
+	 * but given that we need to enable the GPIO to get sound on headphones,
+	 * modelling it as simple-audio-amplifier seems to work just fine.
+	 */
+	headphones_switch: audio-switch {
+		compatible = "simple-audio-amplifier";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&headphones_switch_default>;
+
+		enable-gpios = <&msmgpio 8 GPIO_ACTIVE_HIGH>;
+		sound-name-prefix = "Headphones Switch";
 	};
 
 	flash-led-controller {
@@ -144,6 +178,17 @@
 	status = "okay";
 };
 
+/*
+ * The modem firmware sends a "query_size" memshare request for client ID 1,
+ * but basically does not do anything with it. GPS works only if:
+ *   - Memshare is not present or
+ *   - Memshare replies to the request with an error
+ * Overall it seems pointless to enable memshare for this device.
+ */
+&memshare {
+	status = "disabled";
+};
+
 &pm8916_resin {
 	status = "okay";
 	linux,code = <KEY_VOLUMEDOWN>;
@@ -175,6 +220,28 @@
 	non-removable;
 };
 
+&sound {
+	status = "okay";
+
+	model = "wt88047";
+	widgets =
+		"Speaker", "Speaker",
+		"Headphone", "Headphones";
+	pin-switches = "Speaker", "Headphones";
+	audio-routing =
+		"Speaker", "Speaker Amp OUTL",
+		"Speaker", "Speaker Amp OUTR",
+		"Speaker Amp INL", "HPH_R",
+		"Speaker Amp INR", "HPH_R",
+		"Headphones", "Headphones Switch OUTL",
+		"Headphones", "Headphones Switch OUTR",
+		"Headphones Switch INL", "HPH_L",
+		"Headphones Switch INR", "HPH_R",
+		"AMIC1", "MIC BIAS External1",
+		"AMIC2", "MIC BIAS Internal2";
+	aux-devs = <&speaker_amp>, <&headphones_switch>;
+};
+
 &usb {
 	status = "okay";
 	extcon = <&usb_id>, <&usb_id>;
@@ -182,6 +249,14 @@
 
 &usb_hs_phy {
 	extcon = <&usb_id>;
+};
+
+&wcd_codec {
+	qcom,micbias1-ext-cap;
+	qcom,micbias-lvl = <2800>;
+	qcom,mbhc-vthreshold-low = <75 100 120 180 500>;
+	qcom,mbhc-vthreshold-high = <75 100 120 180 500>;
+	qcom,hphl-jack-type-normally-open;
 };
 
 &smd_rpm_regulators {
@@ -304,8 +379,24 @@
 		bias-pull-up;
 	};
 
+	headphones_switch_default: headphones-switch-default-state {
+		pins = "gpio8";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	imu_default: imu-default-state {
 		pins = "gpio115";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	speaker_amp_default: speaker-amp-default-state {
+		pins = "gpio117";
 		function = "gpio";
 
 		drive-strength = <2>;
