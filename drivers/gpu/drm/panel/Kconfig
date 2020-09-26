@@ -244,6 +244,12 @@ config DRM_PANEL_OLIMEX_LCD_OLINUXINO
 
 	  Say Y here if you want to enable support for Olimex Ltd.
 	  LCD-OLinuXino panel.
+	  
+config DRM_PANEL_OPPO15009JDI_NT35592
+	tristate "JDI NT35592 for Oppo A51f panel"
+	depends on OF
+	help
+	  Say Y here if you want to enable support for oppo A51f panel.
 
 config DRM_PANEL_ORISETECH_OTM8009A
 	tristate "Orise Technology otm8009a 480x800 dsi 2dl panel"
