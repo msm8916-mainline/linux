@@ -8,6 +8,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
+#include <dt-bindings/sound/apq8016-lpass.h>
 
 / {
 	model = "Wingtech WT88047";
@@ -19,6 +20,31 @@
 
 	chosen {
 		stdout-path = "serial0";
+	};
+
+	speaker_amp: audio-amplifier {
+		compatible = "simple-audio-amplifier";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&speaker_amp_default>;
+
+		enable-gpios = <&msmgpio 117 GPIO_ACTIVE_HIGH>;
+		sound-name-prefix = "Speaker Amp";
+	};
+
+	/*
+	 * According to the schematics this is actually an analog switch,
+	 * but given that we need to enable the GPIO to get sound on headphones,
+	 * modelling it as simple-audio-amplifier seems to work just fine.
+	 */
+	headphones_switch: audio-switch {
+		compatible = "simple-audio-amplifier";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&headphones_switch_default>;
+
+		enable-gpios = <&msmgpio 8 GPIO_ACTIVE_HIGH>;
+		sound-name-prefix = "Headphones Switch";
 	};
 
 	backlight: backlight {
@@ -167,6 +193,10 @@
 	qcom,dsi-phy-regulator-ldo-mode;
 };
 
+&lpass {
+	status = "okay";
+};
+
 &pm8916_pwm {
 	status = "okay";
 	pinctrl-names = "default";
@@ -204,6 +234,44 @@
 	non-removable;
 };
 
+&sound {
+	status = "okay";
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&cdc_pdm_lines_act>;
+	pinctrl-1 = <&cdc_pdm_lines_sus>;
+
+	model = "wt88047";
+	audio-routing =
+		"Speaker Amp INL", "HPH_R_EXT",
+		"Speaker Amp INR", "HPH_R_EXT",
+		"Headphones Switch INL", "HPH_L",
+		"Headphones Switch INR", "HPH_R",
+		"AMIC1", "MIC BIAS External1",
+		"AMIC2", "MIC BIAS Internal2";
+	aux-devs = <&speaker_amp>, <&headphones_switch>;
+
+	dai-link-primary {
+		link-name = "Primary MI2S";
+		cpu {
+			sound-dai = <&lpass MI2S_PRIMARY>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 0>, <&wcd_codec 0>;
+		};
+	};
+
+	dai-link-tertiary {
+		link-name = "Tertiary MI2S";
+		cpu {
+			sound-dai = <&lpass MI2S_TERTIARY>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 1>, <&wcd_codec 1>;
+		};
+	};
+};
+
 &usb {
 	status = "okay";
 	extcon = <&usb_id>, <&usb_id>;
@@ -211,6 +279,14 @@
 
 &usb_hs_phy {
 	extcon = <&usb_id>;
+};
+
+&wcd_codec {
+	qcom,micbias1-ext-cap;
+	qcom,micbias-lvl = <2800>;
+	qcom,mbhc-vthreshold-low = <75 100 120 180 500>;
+	qcom,mbhc-vthreshold-high = <75 100 120 180 500>;
+	qcom,hphl-jack-type-normally-open;
 };
 
 &smd_rpm_regulators {
@@ -325,6 +401,14 @@
 		bias-pull-up;
 	};
 
+	headphones_switch_default: headphones-switch-default {
+		pins = "gpio8";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	imu_default: imu-default {
 		pins = "gpio115";
 		function = "gpio";
@@ -348,6 +432,14 @@
 			drive-strength = <2>;
 			bias-pull-down;
 		};
+	};
+
+	speaker_amp_default: speaker-amp-default {
+		pins = "gpio117";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	touchscreen_default: touchscreen-default {
