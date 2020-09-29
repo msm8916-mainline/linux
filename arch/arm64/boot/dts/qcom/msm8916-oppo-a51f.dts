@@ -5,6 +5,7 @@
 #include "msm8916-pm8916.dtsi"
 #include "msm8916-no-psci.dtsi"
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
 
 / {
 	model = "Oppo Mirror 5s (A51f)";
@@ -12,6 +13,15 @@
 
 	aliases {
 		serial0 = &blsp1_uart2;
+	};
+
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pm8916_pwm 0 100000>;
+
+		brightness-levels = <0 255>;
+		num-interpolated-steps = <255>;
+		default-brightness-level = <255>;
 	};
 
 	chosen {
@@ -78,7 +88,8 @@
 		reg = <0>;
 
 		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
-
+		backlight = <&backlight>;
+		power-supply = <&pm8916_l17>;
 		port {
 			panel_in: endpoint {
 				remote-endpoint = <&dsi0_out>;
@@ -94,6 +105,12 @@
 
 &dsi_phy0 {
 	qcom,dsi-phy-regulator-ldo-mode;
+};
+
+&pm8916_pwm {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm_out>;
 };
 
 &usb {
@@ -239,5 +256,16 @@
 
 		drive-strength = <8>;
 		bias-pull-up;
+	};
+};
+
+&pm8916_mpps {
+	pwm_out: mpp4 {
+		pins = "mpp4";
+		function = "digital";
+
+		output-low;
+		qcom,dtest = <1>;
+		power-source = <PM8916_MPP_VPH>;
 	};
 };
