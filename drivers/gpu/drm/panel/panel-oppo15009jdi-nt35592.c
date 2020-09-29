@@ -47,7 +47,7 @@ static int oppo15009jdi_nt35592_on(struct oppo15009jdi_nt35592 *ctx)
 {
 	struct mipi_dsi_device *dsi = ctx->dsi;
 	struct device *dev = &dsi->dev;
-	int ret;
+	/*int ret;*/
 	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
 
 	dsi_generic_write_seq(dsi, 0xff, 0x01);
