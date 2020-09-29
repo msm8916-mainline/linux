@@ -725,7 +725,7 @@ static int oppo15009jdi_nt35592_remove(struct mipi_dsi_device *dsi)
 }
 
 static const struct of_device_id oppo15009jdi_nt35592_of_match[] = {
-	{ .compatible = "mdss,oppo15009jdi-nt35592" }, // FIXME
+	{ .compatible = "oppo,15009-nt35592-jdi" },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, oppo15009jdi_nt35592_of_match);
