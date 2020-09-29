@@ -46,7 +46,8 @@ static void oppo15009jdi_nt35592_reset(struct oppo15009jdi_nt35592 *ctx)
 static int oppo15009jdi_nt35592_on(struct oppo15009jdi_nt35592 *ctx)
 {
 	struct mipi_dsi_device *dsi = ctx->dsi;
-
+	struct device *dev = &dsi->dev;
+	int ret;
 	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
 
 	dsi_generic_write_seq(dsi, 0xff, 0x01);
@@ -539,8 +540,20 @@ static int oppo15009jdi_nt35592_on(struct oppo15009jdi_nt35592 *ctx)
 	dsi_generic_write_seq(dsi, 0x53, 0x24);
 	usleep_range(1000, 2000);
 	dsi_generic_write_seq(dsi, 0x11, 0x00);
+	dev_err(dev, "exit sleep\n");
+	/*ret = mipi_dsi_dcs_exit_sleep_mode(dsi);
+	if (ret < 0) {
+		dev_err(dev, "Failed to exit sleep mode: %d\n", ret);
+		return ret;
+	}*/
 	msleep(150);
 	dsi_generic_write_seq(dsi, 0x29, 0x00);
+	dev_err(dev, "display on\n");
+	/*ret = mipi_dsi_dcs_set_display_on(dsi);
+	if (ret < 0) {
+		dev_err(dev, "Failed to exit sleep mode: %d\n", ret);
+		return ret;
+	}*/
 	msleep(64);
 
 	return 0;
@@ -613,7 +626,7 @@ static int oppo15009jdi_nt35592_unprepare(struct drm_panel *panel)
 }
 
 static const struct drm_display_mode oppo15009jdi_nt35592_mode = {
-	.clock = (720 + 160 + 2 + 160) * (1280 + 6 + 1 + 4) * 61 / 1000,
+	.clock = (720 + 160 + 2 + 160) * (1280 + 6 + 1 + 4) * 60 / 1000,
 	.hdisplay = 720,
 	.hsync_start = 720 + 160,
 	.hsync_end = 720 + 160 + 2,
