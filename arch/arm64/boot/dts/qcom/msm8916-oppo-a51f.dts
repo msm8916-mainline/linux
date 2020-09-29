@@ -77,7 +77,6 @@
 		compatible = "mdss,oppo15009jdi-nt35592";
 		reg = <0>;
 
-		/*backlight = <&backlight>;*/
 		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
 
 		port {
