@@ -14,14 +14,6 @@
 		serial0 = &blsp1_uart2;
 	};
 
-	backlight: lm3630@38 {
-		compatible = "ti,lm3630a";
-
-		brightness-levels = <0 255>;
-		num-interpolated-steps = <255>;
-		default-brightness-level = <255>;
-	};
-
 	chosen {
 		stdout-path = "serial0";
 	};
@@ -51,6 +43,15 @@
 
 &blsp_i2c5 {
 	status = "okay";
+
+	backlight: lm3630@38 {
+		compatible = "ti,lm3630a";
+		reg = <0x38>;
+
+		brightness-levels = <0 255>;
+		num-interpolated-steps = <255>;
+		default-brightness-level = <255>;
+	};
 
 	touchscreen@20 {
 		compatible = "synaptics,rmi4_i2c";
