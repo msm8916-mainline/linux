@@ -16,7 +16,6 @@
 
 	backlight: lm3630@38 {
 		compatible = "ti,lm3630a";
-		reg = <0x38>;
 
 		brightness-levels = <0 255>;
 		num-interpolated-steps = <255>;
