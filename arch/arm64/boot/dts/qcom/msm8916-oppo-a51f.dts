@@ -5,7 +5,6 @@
 #include "msm8916-pm8916.dtsi"
 #include "msm8916-no-psci.dtsi"
 #include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
 
 / {
 	model = "Oppo Mirror 5s (A51f)";
@@ -15,9 +14,9 @@
 		serial0 = &blsp1_uart2;
 	};
 
-	backlight: backlight {
-		compatible = "pwm-backlight";
-		pwms = <&pm8916_pwm 0 100000>;
+	backlight: lm3630@38 {
+		compatible = "ti,lm3630a";
+		reg = <0x38>;
 
 		brightness-levels = <0 255>;
 		num-interpolated-steps = <255>;
@@ -48,6 +47,26 @@
 		id-gpio = <&msmgpio 110 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&usb_id_default>;
+	};
+};
+
+&blsp_i2c5 {
+	status = "okay";
+
+	touchscreen@20 {
+		compatible = "synaptics,rmi4_i2c";
+		reg = <0x20>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+
+		/*reset-gpios = <&msmgpio 12 GPIO_ACTIVE_LOW>;*/
+
+		touchscreen-size-x = <720>;
+		touchscreen-size-y = <1280>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&touchscreen_default>;
 	};
 };
 
@@ -105,12 +124,6 @@
 
 &dsi_phy0 {
 	qcom,dsi-phy-regulator-ldo-mode;
-};
-
-&pm8916_pwm {
-	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&pwm_out>;
 };
 
 &usb {
@@ -250,6 +263,22 @@
 		bias-disable;
 	};
 
+	touchscreen_default: touchscreen-default {
+		pins = "gpio13";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+
+		reset {
+			pins = "gpio12";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
 	usb_id_default: usb-id-default {
 		pins = "gpio110";
 		function = "gpio";
@@ -259,13 +288,3 @@
 	};
 };
 
-&pm8916_mpps {
-	pwm_out: mpp4 {
-		pins = "mpp4";
-		function = "digital";
-
-		output-low;
-		qcom,dtest = <1>;
-		power-source = <PM8916_MPP_VPH>;
-	};
-};
