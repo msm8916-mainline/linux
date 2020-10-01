@@ -61,6 +61,26 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&lcd_n_en_default>;
 	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&gpio_keys_default>;
+
+		label = "GPIO Buttons";
+
+		volume-up {
+			label = "Volume Up";
+			gpios = <&msmgpio 107 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEUP>;
+		};
+		volume-down {
+			label = "Volume Down";
+			gpios = <&msmgpio 108 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEDOWN>;
+		};
+	};
 };
 
 &blsp_i2c5 {
@@ -282,6 +302,13 @@
 };
 
 &msmgpio {
+	gpio_keys_default: gpio-keys-default {
+		pins = "gpio107", "gpio108";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+	};
 	mdss {
 		lcd_p_en_default: lcd-p-en-default {
 			pins = "gpio97";
