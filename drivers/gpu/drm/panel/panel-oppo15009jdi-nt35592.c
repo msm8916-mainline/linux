@@ -16,7 +16,7 @@
 struct oppo15009jdi_nt35592 {
 	struct drm_panel panel;
 	struct mipi_dsi_device *dsi;
-	struct regulator *supply;
+	struct regulator_bulk_data supplies[2];
 	struct gpio_desc *reset_gpio;
 	bool prepared;
 };
@@ -48,8 +48,7 @@ static void oppo15009jdi_nt35592_reset(struct oppo15009jdi_nt35592 *ctx)
 static int oppo15009jdi_nt35592_on(struct oppo15009jdi_nt35592 *ctx)
 {
 	struct mipi_dsi_device *dsi = ctx->dsi;
-	struct device *dev = &dsi->dev;
-	/*int ret;*/
+
 	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
 
 	dsi_generic_write_seq(dsi, 0xff, 0x01);
@@ -542,20 +541,8 @@ static int oppo15009jdi_nt35592_on(struct oppo15009jdi_nt35592 *ctx)
 	dsi_generic_write_seq(dsi, 0x53, 0x24);
 	usleep_range(1000, 2000);
 	dsi_generic_write_seq(dsi, 0x11, 0x00);
-	dev_err(dev, "exit sleep\n");
-	/*ret = mipi_dsi_dcs_exit_sleep_mode(dsi);
-	if (ret < 0) {
-		dev_err(dev, "Failed to exit sleep mode: %d\n", ret);
-		return ret;
-	}*/
 	msleep(150);
 	dsi_generic_write_seq(dsi, 0x29, 0x00);
-	dev_err(dev, "display on\n");
-	/*ret = mipi_dsi_dcs_set_display_on(dsi);
-	if (ret < 0) {
-		dev_err(dev, "Failed to exit sleep mode: %d\n", ret);
-		return ret;
-	}*/
 	msleep(64);
 
 	return 0;
@@ -595,9 +582,9 @@ static int oppo15009jdi_nt35592_prepare(struct drm_panel *panel)
 	if (ctx->prepared)
 		return 0;
 
-	ret = regulator_enable(ctx->supply);
+	ret = regulator_bulk_enable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
 	if (ret < 0) {
-		dev_err(dev, "Failed to enable regulator: %d\n", ret);
+		dev_err(dev, "Failed to enable regulators: %d\n", ret);
 		return ret;
 	}
 
@@ -607,7 +594,7 @@ static int oppo15009jdi_nt35592_prepare(struct drm_panel *panel)
 	if (ret < 0) {
 		dev_err(dev, "Failed to initialize panel: %d\n", ret);
 		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-		regulator_disable(ctx->supply);
+		regulator_bulk_disable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
 		return ret;
 	}
 
@@ -629,7 +616,7 @@ static int oppo15009jdi_nt35592_unprepare(struct drm_panel *panel)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
 
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-	regulator_disable(ctx->supply);
+	regulator_bulk_disable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
 
 	ctx->prepared = false;
 	return 0;
@@ -684,10 +671,12 @@ static int oppo15009jdi_nt35592_probe(struct mipi_dsi_device *dsi)
 	if (!ctx)
 		return -ENOMEM;
 
-	ctx->supply = devm_regulator_get(dev, "power");
-	if (IS_ERR(ctx->supply))
-		return dev_err_probe(dev, PTR_ERR(ctx->supply),
-				     "Failed to get power regulator\n");
+	ctx->supplies[0].supply = "vsp";
+	ctx->supplies[1].supply = "vsn";
+	ret = devm_regulator_bulk_get(dev, ARRAY_SIZE(ctx->supplies),
+				      ctx->supplies);
+	if (ret < 0)
+		return dev_err_probe(dev, ret, "Failed to get regulators\n");
 
 	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->reset_gpio))
