@@ -39,6 +39,28 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&usb_id_default>;
 	};
+
+	nt35592_pos: nt35592-pos {
+		compatible = "regulator-fixed";
+		regulator-name = "nt35592-pos";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&msmgpio 97 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_p_en_default>;
+	};
+
+	nt35592_neg: nt35592-neg {
+		compatible = "regulator-fixed";
+		regulator-name = "nt35592-neg";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&msmgpio 98 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_n_en_default>;
+	};
 };
 
 &blsp_i2c5 {
@@ -69,10 +91,8 @@
 		interrupt-parent = <&msmgpio>;
 		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
 
-		/*reset-gpios = <&msmgpio 12 GPIO_ACTIVE_LOW>;*/
-
-		/*vdd-supply = <&reg_ctp>;*/
-		/*vio-supply = <&pm8916_l6>;*/
+		vdd-supply = <&pm8916_l17>;
+		vio-supply = <&pm8916_l6>;
 
 		pinctrl-names = "default";
 		pinctrl-0 = <&touchscreen_default>;
@@ -84,8 +104,8 @@
 			syna,nosleep-mode = <1>; // Allow sleeping
 		};
 
-		rmi4-f12@12 {
-			reg = <0x12>;
+		rmi4-f11@11 {
+			reg = <0x11>;
 			syna,sensor-type = <1>; // Touchscreen
 		};
 	};
@@ -128,6 +148,8 @@
 		reg = <0>;
 
 		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+		vsp-supply = <&nt35592_pos>;
+		vsn-supply = <&nt35592_neg>;
 		backlight = <&backlight>;
 		power-supply = <&pm8916_l17>;
 		port {
@@ -261,6 +283,21 @@
 
 &msmgpio {
 	mdss {
+		lcd_p_en_default: lcd-p-en-default {
+			pins = "gpio97";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-disable;
+		};
+
+		lcd_n_en_default: lcd-n-en-default {
+			pins = "gpio98";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-disable;
+		};
 		mdss_default: mdss-default {
 			pins = "gpio25";
 			function = "gpio";
