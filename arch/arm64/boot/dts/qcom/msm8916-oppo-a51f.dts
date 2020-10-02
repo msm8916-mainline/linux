@@ -56,6 +56,28 @@
 		};
 	};
 
+	reg_lcd_pos: regulator-lcd-pos {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd-pos";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&msmgpio 97 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_p_en_default>;
+	};
+
+	reg_lcd_neg: regulator-lcd-neg {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd-neg";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&msmgpio 98 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_n_en_default>;
+	};
+
 	reg_sd_vmmc: regulator-sdcard-vmmc {
 		compatible = "regulator-fixed";
 		regulator-name = "sdcard-vmmc";
@@ -79,7 +101,64 @@
 	};
 };
 
+&blsp_i2c5 {
+	status = "okay";
+
+	backlight: led-controller@38 {
+		compatible = "ti,lm3630a";
+		reg = <0x38>;
+		enable-gpios = <&msmgpio 69 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&bl_en_default>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led@0 {
+			reg = <0>;
+			led-sources = <0 1>;
+			label = "lcd-backlight";
+			default-brightness = <200>;
+			max-brightness = <255>;
+		};
+	};
+};
+
 &blsp1_uart2 {
+	status = "okay";
+};
+
+&dsi0 {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&mdss_default>;
+	pinctrl-1 = <&mdss_sleep>;
+
+	panel@0 {
+		compatible = "oppo,15009-nt35592-jdi";
+		reg = <0>;
+
+		backlight = <&backlight>;
+		vsp-supply = <&reg_lcd_pos>;
+		vsn-supply = <&reg_lcd_neg>;
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&dsi_phy0 {
+	qcom,dsi-phy-regulator-ldo-mode;
+};
+
+&mdss {
 	status = "okay";
 };
 
@@ -223,6 +302,14 @@
 };
 
 &msmgpio {
+	bl_en_default: bl-en-default {
+		pins = "gpio69";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	gpio_hall_sensor_default: gpio-hall-sensor-default {
 		pins = "gpio121";
 		function = "gpio";
@@ -237,6 +324,39 @@
 
 		drive-strength = <2>;
 		bias-pull-up;
+	};
+
+	lcd_p_en_default: lcd-p-en-default {
+		pins = "gpio97";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	lcd_n_en_default: lcd-n-en-default {
+		pins = "gpio98";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	mdss {
+		mdss_default: mdss-default {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <8>;
+			bias-disable;
+		};
+		mdss_sleep: mdss-sleep {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-pull-down;
+		};
 	};
 
 	sd_vmmc_en_default: sd-vmmc-en-default {
