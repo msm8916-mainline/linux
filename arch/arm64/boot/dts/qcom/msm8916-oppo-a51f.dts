@@ -121,6 +121,36 @@
 			max-brightness = <255>;
 		};
 	};
+
+	rmi4@20 {
+		compatible = "syna,rmi4_i2c";
+		reg = <0x20>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+
+		vdd-supply = <&pm8916_l17>;
+		vio-supply = <&pm8916_l6>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&touchscreen_default>;
+
+		syna,startup-delay-ms = <10>;
+
+		rmi4-f01@1 {
+			reg = <0x1>;
+			syna,nosleep-mode = <1>; // Allow sleeping
+		};
+
+		rmi4-f11@11 {
+			reg = <0x11>;
+			syna,sensor-type = <1>; // Touchscreen
+			syna,clip-x-high = <1100>;
+			syna,clip-y-high = <1770>;
+		};
+	};
 };
 
 &blsp1_uart2 {
@@ -357,6 +387,14 @@
 			drive-strength = <2>;
 			bias-pull-down;
 		};
+	};
+
+	touchscreen_default: touchscreen-default {
+		pins = "gpio13";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
 	};
 
 	sd_vmmc_en_default: sd-vmmc-en-default {
