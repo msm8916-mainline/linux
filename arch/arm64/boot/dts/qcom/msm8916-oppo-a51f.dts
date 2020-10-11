@@ -101,6 +101,32 @@
 	};
 };
 
+&blsp_i2c4 {
+	status = "okay";
+
+	bat: battery@31 {
+		compatible = "simple-battery";
+		reg = <0x31>;
+		/*usbin-switch-gpio = <0x4c 0x04 GPIO_ACTIVE_HIGH>;*/
+		interrupts = <&msmgpio 31 GPIO_ACTIVE_HIGH>;
+		precharge-current-microamp = <256000>;
+		charge-term-current-microamp = <128000>;
+		// etc.
+	};
+
+	bq24190: charger@6a {
+		compatible = "ti,bq24190";
+		reg = <0x6a>;
+		interrupts-extended = <&msmgpio 62 GPIO_ACTIVE_HIGH>;
+		vio-supply = <&pm8916_l5>;
+		monitored-battery = <&bat>;
+		ti,system-minimum-microvolt = <3200000>;
+
+		/*usb_otg_vbus: usb-otg-vbus { };*/
+	};
+
+};
+
 &blsp_i2c5 {
 	status = "okay";
 
