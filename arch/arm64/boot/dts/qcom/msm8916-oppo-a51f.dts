@@ -257,7 +257,7 @@
 			"MIC BIAS External", "Handset Mic",
 			"MIC BIAS External2", "Headset Mic",
 			"MIC BIAS External", "Secondary Mic",*/
-			"AMIC1", "MIC BIAS External",
+			"AMIC1", "MIC BIAS External1",
 			"AMIC2", "MIC BIAS External2",
 			"AMIC3", "MIC BIAS External";
 
