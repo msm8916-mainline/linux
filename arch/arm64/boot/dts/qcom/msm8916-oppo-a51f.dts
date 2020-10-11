@@ -115,7 +115,7 @@
 	};
 
 	bq24190: charger@6a {
-		compatible = "ti,bq24190";
+		compatible = "ti,bq24196";
 		reg = <0x6a>;
 		interrupts-extended = <&msmgpio 62 GPIO_ACTIVE_HIGH>;
 		vio-supply = <&pm8916_l5>;
