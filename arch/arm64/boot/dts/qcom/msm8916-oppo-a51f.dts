@@ -94,6 +94,16 @@
 		pinctrl-0 = <&sd_vmmc_en_default>;
 	};
 
+	speaker_amp: audio-amplifier {
+		compatible = "simple-audio-amplifier";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&speaker_amp_default>;
+
+		enable-gpios = <&msmgpio 120 GPIO_ACTIVE_HIGH>;
+		sound-name-prefix = "Speaker Amp";
+	};
+
 	usb_id: usb-id {
 		compatible = "linux,extcon-usb-gpio";
 		id-gpio = <&msmgpio 110 GPIO_ACTIVE_HIGH>;
@@ -260,6 +270,8 @@
 			"AMIC1", "MIC BIAS External1",
 			"AMIC2", "MIC BIAS External2",
 			"AMIC3", "MIC BIAS External";
+
+	aux-devs = <&speaker_amp>;
 
 	dai-link-primary {
 		link-name = "Primary MI2S";
