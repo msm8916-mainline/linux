@@ -97,9 +97,6 @@
 	speaker_amp: audio-amplifier {
 		compatible = "simple-audio-amplifier";
 
-		pinctrl-names = "default";
-		pinctrl-0 = <&speaker_amp_default>;
-
 		enable-gpios = <&msmgpio 120 GPIO_ACTIVE_HIGH>;
 		sound-name-prefix = "Speaker Amp";
 	};
@@ -109,6 +106,13 @@
 		id-gpio = <&msmgpio 110 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&usb_id_default>;
+	};
+
+	yda145_amp: yda145-amplifier {
+		compatible = "simple-audio-amplifier";
+
+		enable-gpios = <&msmgpio 118 GPIO_ACTIVE_HIGH>;
+		sound-name-prefix = "YDA145 Amp";
 	};
 };
 
@@ -241,37 +245,43 @@
 
 &sound {
 	status = "okay";
+	compatible = "qcom,apq8016-sbc-sndcard";
+	reg = <0x07702000 0x4>, <0x07702004 0x4>;
+	reg-names = "mic-iomux", "spkr-iomux";
 
-		pinctrl-names = "cdc_lines_act",
-				"cdc_lines_sus"/*
+		pinctrl-names = "default",
+				"sleep",
 				"cdc_lines_sec_ext_act",
-				"cdc_lines_sec_ext_sus",
+				"cdc_lines_sec_ext_sus"/*,
 				"cross_conn_det_act",
-				"cross_conn_det_sus";*/;
-		pinctrl-0 = <&cdc_pdm_lines_act &speaker_amp_default &yda145_amp_default>;
-		pinctrl-1 = <&cdc_pdm_lines_sus &speaker_amp_default &yda145_amp_default>;
+				"cross_conn_det_sus"*/;
+		pinctrl-0 = <&cdc_pdm_lines_act &speaker_amp &yda145_amp>;
+		pinctrl-1 = <&cdc_pdm_lines_sus &speaker_amp &yda145_amp>;
+
+		pinctrl-2 = <&cdc_pdm_lines_act>;
+		pinctrl-3 = <&cdc_pdm_lines_sus>;
 		/*
-		pinctrl-2 = <&cdc_pdm_lines_act &cdc_ext_pa_act
-						&cdc_ext_pa_ws_act>;
-		pinctrl-3 = <&cdc_pdm_lines_sus &cdc_ext_pa_sus
-						&cdc_ext_pa_ws_sus>;
 		pinctrl-4 = <&cross_conn_det_act>;
 		pinctrl-5 = <&cross_conn_det_sus>;
 		*/
 
-	model = "mirror5s";
+	model = "oppo15009";
 	audio-routing =
-			/*"RX_BIAS", "MCLK",
+			"Speaker Amp INL", "HPH_R_EXT",
+			"Speaker Amp INR", "HPH_R_EXT",
+			/*"Headphones Switch INL", "HPH_L",
+			"Headphones Switch INR", "HPH_R",
+			"RX_BIAS", "MCLK",
 			"SPK_RX_BIAS", "MCLK",
 			"INT_LDO_H", "MCLK",
 			"MIC BIAS External", "Handset Mic",
 			"MIC BIAS External2", "Headset Mic",
 			"MIC BIAS External", "Secondary Mic",*/
 			"AMIC1", "MIC BIAS External1",
-			"AMIC2", "MIC BIAS External2",
-			"AMIC3", "MIC BIAS External";
+			"AMIC2", "MIC BIAS External2"/*,
+			"AMIC3", "MIC BIAS External"*/;
 
-	aux-devs = <&speaker_amp>;
+	aux-devs = <&speaker_amp>, <&yda145_amp>;
 
 	dai-link-primary {
 		link-name = "Primary MI2S";
@@ -500,7 +510,7 @@
 		function = "gpio";
 
 		drive-strength = <2>;
-		bias-disable;
+		bias-pull-up;
 	};
 
 };
