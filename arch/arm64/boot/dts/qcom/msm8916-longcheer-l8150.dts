@@ -402,11 +402,11 @@
 
 &usb {
 	status = "okay";
-	extcon = <&usb_otg_hack>, <&usb_otg_hack>;
+	extcon = <&pm8916_charger>, <&usb_otg_hack>;
 };
 
 &usb_hs_phy {
-	extcon = <&usb_otg_hack>;
+	extcon = <&pm8916_charger>;
 };
 
 &wcd_codec {
