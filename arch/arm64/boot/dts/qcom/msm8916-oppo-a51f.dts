@@ -261,8 +261,8 @@
 				"cdc_lines_sec_ext_sus"/*,
 				"cross_conn_det_act",
 				"cross_conn_det_sus"*/;
-		pinctrl-0 = <&cdc_pdm_lines_act &speaker_amp &yda145_amp>;
-		pinctrl-1 = <&cdc_pdm_lines_sus &speaker_amp &yda145_amp>;
+		pinctrl-0 = <&cdc_pdm_lines_act &speaker_amp &yda145_amp_default>;
+		pinctrl-1 = <&cdc_pdm_lines_sus &speaker_amp &yda145_amp_default>;
 
 		pinctrl-2 = <&cdc_pdm_lines_act>;
 		pinctrl-3 = <&cdc_pdm_lines_sus>;
@@ -273,8 +273,8 @@
 
 	model = "oppo15009";
 	audio-routing =
-			"Speaker Amp INL", "HPH_R_EXT",
-			"Speaker Amp INR", "HPH_R_EXT",
+			"Speaker Amp INL", "HPH_L_EXT",
+			"Speaker Amp INR", "HPH_L_EXT",
 			/*"Headphones Switch INL", "HPH_L",
 			"Headphones Switch INR", "HPH_R",
 			"RX_BIAS", "MCLK",
@@ -287,7 +287,7 @@
 			"AMIC2", "MIC BIAS External2"/*,
 			"AMIC3", "MIC BIAS External"*/;
 
-	aux-devs = <&speaker_amp>, <&yda145_amp>;
+	aux-devs = <&speaker_amp>, <&yda145_amp_default>;
 
 	dai-link-primary {
 		link-name = "Primary MI2S";
@@ -508,7 +508,7 @@
 		function = "gpio";
 
 		drive-strength = <2>;
-		bias-disable;
+		bias-pull-up;
 	};
 
 };
