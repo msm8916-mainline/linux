@@ -43,6 +43,15 @@
 		pinctrl-0 = <&usb_id_default>;
 		pinctrl-1 = <&usb_id_sleep>;
 	};
+
+	vdda_touch_vreg: vdda_touch_vreg {
+		compatible = "regulator-fixed";
+		regulator-name = "vdda_touch";
+		gpio = <&msmgpio 114 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <300>;
+		enable-active-high;
+		regulator-always-on;
+	};
 };
 
 &dsi0 {
@@ -258,6 +267,13 @@
 		};
 	};
 
+	ts_int_default: ts-int-default {
+		pins = "gpio21";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
 
 	usb-id {
 		usb_id_default: id-default {
@@ -300,5 +316,37 @@
 			};
 		};
 	};
+};
+
+&blsp_i2c2 {
+        status = "okay";
+
+        rmi4@20 {
+                compatible = "syna,rmi4-i2c";
+                reg = <0x20>;
+                #address-cells = <1>;
+                #size-cells = <0>;
+
+                interrupt-parent = <&msmgpio>;
+                interrupts = <21 IRQ_TYPE_EDGE_FALLING>;
+
+                vdd-supply = <&pm8916_l16>;
+                vio-supply = <&pm8916_l6>;
+
+                pinctrl-names = "default";
+                pinctrl-0 = <&ts_int_default>;
+
+                syna,startup-delay-ms = <100>;
+
+                rmi4-f01@1 {
+                        reg = <1>;
+                        syna,nosleep-mode = <1>; // Allow sleeping
+                };
+
+                rmi4-f11@11 {
+                        reg = <11>;
+                        syna,sensor-type = <1>; // Touchscreen
+                };
+        };
 };
 
