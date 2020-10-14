@@ -96,7 +96,6 @@
 
 	speaker_amp: audio-amplifier {
 		compatible = "simple-audio-amplifier";
-		
 		enable-gpios = <&msmgpio 120 GPIO_ACTIVE_HIGH>;
 		sound-name-prefix = "Speaker Amp";
 	};
@@ -110,7 +109,6 @@
 
 	yda145_amp: yda145-amplifier {
 		compatible = "regulator-fixed";
-		
 		regulator-name = "yda145-amp";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
@@ -256,17 +254,18 @@
 	reg-names = "mic-iomux", "spkr-iomux";
 
 		pinctrl-names = "default",
-				"sleep",
+				"sleep"/*,
 				"cdc_lines_sec_ext_act",
-				"cdc_lines_sec_ext_sus"/*,
+				"cdc_lines_sec_ext_sus",
 				"cross_conn_det_act",
 				"cross_conn_det_sus"*/;
-		pinctrl-0 = <&cdc_pdm_lines_act &speaker_amp &yda145_amp_default>;
-		pinctrl-1 = <&cdc_pdm_lines_sus &speaker_amp &yda145_amp_default>;
 
+		pinctrl-0 = <&cdc_pdm_lines_act>;
+		pinctrl-1 = <&cdc_pdm_lines_sus>;
+		/*
 		pinctrl-2 = <&cdc_pdm_lines_act>;
 		pinctrl-3 = <&cdc_pdm_lines_sus>;
-		/*
+
 		pinctrl-4 = <&cross_conn_det_act>;
 		pinctrl-5 = <&cross_conn_det_sus>;
 		*/
@@ -287,7 +286,7 @@
 			"AMIC2", "MIC BIAS External2"/*,
 			"AMIC3", "MIC BIAS External"*/;
 
-	aux-devs = <&speaker_amp>, <&yda145_amp_default>;
+	aux-devs = <&speaker_amp>;
 
 	dai-link-primary {
 		link-name = "Primary MI2S";
@@ -430,6 +429,32 @@
 		bias-disable;
 	};
 
+	cdc-ext-pa-ws-line {
+		pins = "gpio110";
+		function = "gpio";
+			cdc_ext_pa_ws_act: ext_pa_on {
+				drive-strength = <8>;
+				bias-pull-none;
+			};
+			cdc_ext_pa_ws_sus: ext_pa_off {
+				drive-strength = <2>;
+				bias-disable;
+			};
+	};
+
+	ext-cdc-tlmm-lines {
+		pins = "gpio112", "gpio116", "gpio117", "gpio118", "gpio119";
+		function = "gpio";
+			ext_cdc_tlmm_lines_act: tlmm_lines_on {
+				drive-strength = <8>;
+				bias-pull-none;
+			};
+			ext_cdc_tlmm_lines_sus: tlmm_lines_off {
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+		
 	gpio_hall_sensor_default: gpio-hall-sensor-default {
 		pins = "gpio121";
 		function = "gpio";
@@ -487,6 +512,20 @@
 		bias-disable;
 	};
 
+	speaker_amp_default {
+		pins = "gpio120";
+		function = "gpio";
+			cross_conn_det_act: lines_on {
+				drive-strength = <8>;
+				output-low;
+				bias-pull-down;
+			};
+			cross_conn_det_sus: lines_off {
+				drive-strength = <2>;
+				bias-disable;
+			};
+	};
+
 	touchscreen_default: touchscreen-default {
 		pins = "gpio13";
 		function = "gpio";
@@ -504,11 +543,11 @@
 	};
 
 	yda145_amp_default: yda145-amp-default {
-		pins = "gpio118";
+		pins = "gpio120";
 		function = "gpio";
 
-		drive-strength = <2>;
-		bias-pull-up;
+		drive-strength = <8>;
+		bias-pull-none;
 	};
 
 };
