@@ -96,7 +96,11 @@
 
 	speaker_amp: audio-amplifier {
 		compatible = "simple-audio-amplifier";
-
+		
+		regulator-name = "yda145-amp";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		
 		enable-gpios = <&msmgpio 120 GPIO_ACTIVE_HIGH>;
 		sound-name-prefix = "Speaker Amp";
 	};
@@ -109,10 +113,12 @@
 	};
 
 	yda145_amp: yda145-amplifier {
-		compatible = "simple-audio-amplifier";
+		compatible = "regulator-fixed";
 
-		enable-gpios = <&msmgpio 118 GPIO_ACTIVE_HIGH>;
-		sound-name-prefix = "YDA145 Amp";
+		gpios = <&msmgpio 118 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-names = "default";
+		pinctrl-0 = <&yda145_amp_default>;
 	};
 };
 
@@ -481,14 +487,6 @@
 		bias-disable;
 	};
 
-	speaker_amp_default: speaker-amp-default {
-		pins = "gpio120";
-		function = "gpio";
-
-		drive-strength = <2>;
-		bias-disable;
-	};
-
 	touchscreen_default: touchscreen-default {
 		pins = "gpio13";
 		function = "gpio";
@@ -510,7 +508,7 @@
 		function = "gpio";
 
 		drive-strength = <2>;
-		bias-pull-up;
+		bias-disable;
 	};
 
 };
