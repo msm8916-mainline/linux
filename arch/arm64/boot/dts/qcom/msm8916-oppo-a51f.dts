@@ -97,10 +97,6 @@
 	speaker_amp: audio-amplifier {
 		compatible = "simple-audio-amplifier";
 		
-		regulator-name = "yda145-amp";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		
 		enable-gpios = <&msmgpio 120 GPIO_ACTIVE_HIGH>;
 		sound-name-prefix = "Speaker Amp";
 	};
@@ -114,6 +110,10 @@
 
 	yda145_amp: yda145-amplifier {
 		compatible = "regulator-fixed";
+		
+		regulator-name = "yda145-amp";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
 
 		gpios = <&msmgpio 118 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
