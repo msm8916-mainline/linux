@@ -44,6 +44,32 @@
 	status = "okay";
 };
 
+&dsi0 {
+	panel@0 {
+		compatible = "lg,m2db7400-incell-simple";
+		reg = <0>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&dsi_phy0 {
+	qcom,dsi-phy-regulator-ldo-mode;
+};
+
+&mdss {
+	status = "okay";
+};
+
 &pm8916_usbin {
 	status = "okay";
 };
