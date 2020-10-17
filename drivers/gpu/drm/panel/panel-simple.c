@@ -4486,6 +4486,36 @@ static const struct panel_desc_dsi lg_lh500wx1_sd03 = {
 	.lanes = 4,
 };
 
+static const struct drm_display_mode lgd_incell_m2db7400_mode = {
+	.clock = (720 + 82 + 4 + 120) * (1280 + 540 + 1 + 11) * 60 / 1000,
+	.hdisplay = 720,
+	.hsync_start = 720 + 82,
+	.hsync_end = 720 + 82 + 4,
+	.htotal = 720 + 82 + 4 + 120,
+	.vdisplay = 1280,
+	.vsync_start = 1280 + 540,
+	.vsync_end = 1280 + 540 + 1,
+	.vtotal = 1280 + 540 + 1 + 11,
+	.width_mm = 66,
+	.height_mm = 117,
+};
+
+static const struct panel_desc_dsi lgd_incell_m2db7400 = {
+	.desc = {
+		.modes = &lgd_incell_m2db7400_mode,
+		.num_modes = 1,
+		.bpc = 8,
+		.size = {
+			.width = 66,
+			.height = 117,
+		},
+		.connector_type = DRM_MODE_CONNECTOR_DSI,
+	},
+	.flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_NO_EOT_PACKET,
+	.format = MIPI_DSI_FMT_RGB888,
+	.lanes = 4,
+};
+
 static const struct drm_display_mode panasonic_vvx10f004b00_mode = {
 	.clock = 157200,
 	.hdisplay = 1920,
@@ -4587,6 +4617,9 @@ static const struct of_device_id dsi_of_match[] = {
 	}, {
 		.compatible = "lg,lh500wx1-sd03",
 		.data = &lg_lh500wx1_sd03
+	}, {
+		.compatible = "lg,m2db7400-incell-simple",
+		.data = &lgd_incell_m2db7400
 	}, {
 		.compatible = "panasonic,vvx10f004b00",
 		.data = &panasonic_vvx10f004b00
