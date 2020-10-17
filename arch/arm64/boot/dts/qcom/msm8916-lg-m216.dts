@@ -40,6 +40,42 @@
 	};
 };
 
+&blsp_i2c2 {
+	status = "okay";
+
+	accelerometer@11 {
+		compatible = "bosch,bmc150_accel";
+		reg = <0x11>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <115 IRQ_TYPE_EDGE_RISING>;
+
+		mount-matrix =	 "0", "1", "0",
+				"-1", "0", "0",
+				 "0", "0", "1";
+
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l6>;
+
+		pinctrl-0 = <&accel_int_default>;
+		pinctrl-names = "default";
+	};
+
+	magnetometer@13 {
+		compatible = "bosch,bmc150_magn";
+		reg = <0x13>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <69 IRQ_TYPE_EDGE_RISING>;
+
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l6>;
+
+		pinctrl-0 = <&magn_int_default>;
+		pinctrl-names = "default";
+	};
+};
+
 &blsp1_uart2 {
 	status = "okay";
 };
@@ -214,10 +250,24 @@
 };
 
 &msmgpio {
+	accel_int_default: accel-int-default-state {
+		pins = "gpio115";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	gpio_keys_default: gpio-keys-default-state {
 		pins = "gpio107", "gpio108";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-up;
+	};
+
+	magn_int_default: magn-int-default-state {
+		pins = "gpio69";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
 	};
 };
