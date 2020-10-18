@@ -3,6 +3,8 @@
 /dts-v1/;
 
 #include "msm8916-pm8916.dtsi"
+#include "msm8916-modem.dtsi"
+
 #include <dt-bindings/gpio/gpio.h>
 
 / {
@@ -16,6 +18,18 @@
 
 	chosen {
 		stdout-path = "serial0";
+	};
+
+	reserved-memory {
+		mpss_mem: mpss@86800000 {
+			reg = <0x0 0x86800000 0x0 0x4a00000>;
+			no-map;
+		};
+
+		gps_mem: gps@8b200000 {
+			reg = <0x0 0x8b200000 0x0 0x200000>;
+			no-map;
+		};
 	};
 
 	gpio-keys {
@@ -150,6 +164,14 @@
 	status = "okay";
 };
 
+&sound {
+	audio-routing =
+		"AMIC1", "MIC BIAS External1",
+		"AMIC2", "MIC BIAS Internal2",
+		"AMIC3", "MIC BIAS External1";
+	status = "okay";
+};
+
 &usb {
 	dr_mode = "peripheral";
 	extcon = <&pm8916_usbin>;
@@ -158,6 +180,14 @@
 
 &usb_hs_phy {
 	extcon = <&pm8916_usbin>;
+};
+
+&wcd_codec {
+	qcom,micbias1-ext-cap;
+	qcom,micbias-lvl = <2800>;
+	qcom,mbhc-vthreshold-low = <75 100 120 180 500>;
+	qcom,mbhc-vthreshold-high = <75 100 120 180 500>;
+	qcom,hphl-jack-type-normally-open;
 };
 
 &smd_rpm_regulators {
