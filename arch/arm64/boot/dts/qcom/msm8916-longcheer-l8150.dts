@@ -313,6 +313,15 @@
 	status = "okay";
 };
 
+&pm8916_charger {
+	status = "okay";
+
+	qcom,vdd-safe = <4300000>;
+	qcom,ibat-safe = <900000>;
+
+	monitored-battery = <&bat>;
+};
+
 &pm8916_pwm {
 	status = "okay";
 	pinctrl-names = "default";
