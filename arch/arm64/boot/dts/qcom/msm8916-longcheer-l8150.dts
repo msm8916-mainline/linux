@@ -318,6 +318,13 @@
 	monitored-battery = <&bat>;
 };
 
+&pm8916_bms {
+	status = "okay";
+
+	monitored-battery = <&bat>;
+	power-supplies = <&pm8916_charger>;
+};
+
 &pm8916_pwm {
 	status = "okay";
 	pinctrl-names = "default";
