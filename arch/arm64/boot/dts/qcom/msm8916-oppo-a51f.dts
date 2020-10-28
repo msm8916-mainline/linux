@@ -94,26 +94,6 @@
 		pinctrl-0 = <&sd_vmmc_en_default>;
 	};
 
-	speaker_amp: audio-amplifier {
-		compatible = "simple-audio-amplifier";
-		VCC-supply = <&reg_speaker_boost>;
-		enable-gpios = <&msmgpio 120 GPIO_ACTIVE_HIGH>;
-		sound-name-prefix = "Speaker Amp";
-
-		gpios = <&msmgpio 120 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-		pinctrl-names = "default";
-		pinctrl-0 = <&speaker_amp_default>;
-
-	};
-
-	usb_id: usb-id {
-		compatible = "linux,extcon-usb-gpio";
-		id-gpio = <&msmgpio 110 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&usb_id_default>;
-	};
-
 	reg_speaker_boost: regulator-speaker-boost {
 		compatible = "regulator-fixed";
 		regulator-name = "yda145-amp";
@@ -124,6 +104,25 @@
 		enable-active-high;
 		pinctrl-names = "default";
 		pinctrl-0 = <&speaker_boost_default>;
+	};
+
+	speaker_amp: audio-amplifier {
+		compatible = "simple-audio-amplifier";
+		VCC-supply = <&reg_speaker_boost>;
+		enable-gpios = <&msmgpio 120 GPIO_ACTIVE_HIGH>;
+		sound-name-prefix = "Speaker Amp";
+
+		gpios = <&msmgpio 120 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-names = "default";
+		pinctrl-0 = <&speaker_amp_default>;
+	};
+
+	usb_id: usb-id {
+		compatible = "linux,extcon-usb-gpio";
+		id-gpio = <&msmgpio 110 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb_id_default>;
 	};
 };
 
@@ -491,14 +490,6 @@
 		};
 	};
 
-	touchscreen_default: touchscreen-default {
-		pins = "gpio13";
-		function = "gpio";
-
-		drive-strength = <2>;
-		bias-pull-up;
-	};
-
 	sd_vmmc_en_default: sd-vmmc-en-default {
 		pins = "gpio116";
 		function = "gpio";
@@ -521,6 +512,14 @@
 
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+	touchscreen_default: touchscreen-default {
+		pins = "gpio13";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
 	};
 
 	usb_id_default: usb-id-default {
