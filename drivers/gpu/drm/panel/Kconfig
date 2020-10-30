@@ -141,6 +141,11 @@ config DRM_PANEL_INNOLUX_P079ZCA
 	  24 bit RGB per pixel. It provides a MIPI DSI interface to
 	  the host and has a built-in LED backlight.
 
+config DRM_PANEL_INX_500V0
+	tristate "INX 500 v0 panel"
+	depends on GPIOLIB && OF && REGULATOR
+	depends on DRM_MIPI_DSI
+
 config DRM_PANEL_JDI_LT070ME05000
 	tristate "JDI LT070ME05000 WUXGA DSI panel"
 	depends on OF

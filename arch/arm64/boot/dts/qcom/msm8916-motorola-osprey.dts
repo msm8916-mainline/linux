@@ -3,6 +3,7 @@
 /dts-v1/;
 
 #include "msm8916-pm8916.dtsi"
+#include "msm8916-no-psci.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
@@ -42,6 +43,38 @@
 		pinctrl-0 = <&usb_id_default>;
 		pinctrl-1 = <&usb_id_sleep>;
 	};
+};
+
+&dsi0 {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&mdss_default>;
+	pinctrl-1 = <&mdss_sleep>;
+
+	panel@0 {
+		compatible = "inx,500-v0";
+		reg = <0>;
+
+		vsp-supply = <&reg_lcd_pos>;
+		vsn-supply = <&reg_lcd_neg>;
+
+		reset-gpios = <&msmgpio 78 GPIO_ACTIVE_LOW>;
+		backlight-gpios = <&msmgpio 36 GPIO_ACTIVE_HIGH>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&dsi_phy0 {
+	qcom,dsi-phy-regulator-ldo-mode;
 };
 
 &blsp1_uart1 {
@@ -208,6 +241,24 @@
 		bias-pull-up;
 	};
 
+	mdss {
+		mdss_default: mdss-default {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <8>;
+			bias-disable;
+		};
+		mdss_sleep: mdss-sleep {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
+
+
 	usb-id {
 		usb_id_default: id-default {
 			pins = "gpio91";
@@ -225,3 +276,29 @@
 		};
 	};
 };
+
+&blsp_i2c1 {
+	status = "okay";
+
+	tps65132@3e {
+		compatible = "ti,tps65132";
+		reg = <0x3e>;
+
+		regulators {
+			reg_lcd_pos: outp {
+				regulator-name = "outp";
+				regulator-min-microvolt = <5500000>;
+				regulator-max-microvolt = <5500000>;
+				enable-gpios = <&pm8916_gpios 3 0>;
+			};
+
+			reg_lcd_neg: outn {
+				regulator-name = "outn";
+				regulator-min-microvolt = <5500000>;
+				regulator-max-microvolt = <5500000>;
+				enable-gpios = <&pm8916_gpios 4 0>;
+			};
+		};
+	};
+};
+
