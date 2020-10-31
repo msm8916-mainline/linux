@@ -8,6 +8,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 
 / {
 	model = "Motorola Moto G 2015 (osprey)";
@@ -48,6 +49,17 @@
 		pinctrl-names = "default", "sleep";
 	};
 
+	reg_panel_vddio: regulator-panel-vddio {
+		compatible = "regulator-fixed";
+		regulator-name = "vddio_panel";
+		gpio = <&tlmm 36 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-0 = <&panel_vddio_default>;
+		pinctrl-names = "default";
+		startup-delay-us = <300>;
+		regulator-boot-on;
+	};
+
 	reg_touch_vdda: regulator-touch-vdda {
 		compatible = "regulator-fixed";
 		regulator-name = "touch_vdda";
@@ -78,6 +90,30 @@
 
 		pinctrl-0 = <&battery_alert_default>;
 		pinctrl-names = "default";
+	};
+
+	regulator@3e {
+		compatible = "ti,tps65132";
+		reg = <0x3e>;
+
+		pinctrl-0 = <&disp_en_default>;
+		pinctrl-names = "default";
+
+		reg_lcd_pos: outp {
+			regulator-name = "outp";
+			regulator-min-microvolt = <5500000>;
+			regulator-max-microvolt = <5500000>;
+			enable-gpios = <&pm8916_gpios 3 GPIO_ACTIVE_HIGH>;
+			regulator-active-discharge = <1>;
+		};
+
+		reg_lcd_neg: outn {
+			regulator-name = "outn";
+			regulator-min-microvolt = <5500000>;
+			regulator-max-microvolt = <5500000>;
+			enable-gpios = <&pm8916_gpios 4 GPIO_ACTIVE_HIGH>;
+			regulator-active-discharge = <1>;
+		};
 	};
 };
 
@@ -115,6 +151,46 @@
 
 &blsp_uart1 {
 	status = "okay";
+};
+
+&gpu {
+	status = "okay";
+};
+
+&mdss {
+	status = "okay";
+};
+
+&mdss_dsi0 {
+	pinctrl-0 = <&mdss_default>;
+	pinctrl-1 = <&mdss_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	panel@0 {
+		compatible = "motorola,osprey-panel";
+		reg = <0>;
+
+		vsp-supply = <&reg_lcd_pos>;
+		vsn-supply = <&reg_lcd_neg>;
+		vddio-supply = <&reg_panel_vddio>;
+
+		reset-gpios = <&tlmm 78 GPIO_ACTIVE_LOW>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&mdss_dsi0_out>;
+			};
+		};
+	};
+};
+
+&mdss_dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&mdss_dsi0_phy {
+	qcom,dsi-phy-regulator-ldo-mode;
 };
 
 &mpss_mem {
@@ -214,6 +290,27 @@
 		bias-pull-up;
 	};
 
+	mdss_default: mdss-default-state {
+		pins = "gpio78";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	mdss_sleep: mdss-sleep-state {
+		pins = "gpio78";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
+	};
+
+	panel_vddio_default: panel-vddio-default-state {
+		pins = "gpio36";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	sdc2_cd_default: sdc2-cd-default-state {
 		pins = "gpio25";
 		function = "gpio";
@@ -246,6 +343,15 @@
 		pins = "gpio91";
 		function = "gpio";
 		drive-strength = <8>;
+		bias-disable;
+	};
+};
+
+&pm8916_gpios {
+	disp_en_default: disp-en-default-state {
+		pins = "gpio3", "gpio4";
+		function = PMIC_GPIO_FUNC_NORMAL;
+		power-source = <PM8916_GPIO_L2>;
 		bias-disable;
 	};
 };
