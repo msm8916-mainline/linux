@@ -71,6 +71,23 @@
 &blsp_i2c1 {
 	status = "okay";
 
+	battery@36 {
+		compatible = "maxim,max17050";
+		reg = <0x36>;
+
+		maxim,rsns-microohm = <10000>;
+		maxim,over-heat-temp = <600>;
+		maxim,cold-temp = <(-200)>;
+		maxim,dead-volt = <3200>;
+		maxim,over-volt = <4500>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <49 IRQ_TYPE_EDGE_FALLING>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&battery_alert_default>;
+	};
+
 	regulator@3e {
 		compatible = "ti,tps65132";
 		reg = <0x3e>;
@@ -320,6 +337,14 @@
 };
 
 &msmgpio {
+	battery_alert_default: battery-alert-default {
+		pins = "gpio49";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
 	gpio_keys_default: gpio-keys-default {
 		pins = "gpio107";
 		function = "gpio";
