@@ -52,6 +52,36 @@
 			linux,code = <KEY_HOMEPAGE>;
 		};
 	};
+
+	i2c-sensors {
+		compatible = "i2c-gpio";
+
+		sda-gpios = <&msmgpio 31 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&msmgpio 32 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&sensors_i2c_default>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		accelerometer@1d {
+			compatible = "st,lis2hh12";
+			reg = <0x1d>;
+
+			interrupt-parent = <&msmgpio>;
+			interrupts = <115 IRQ_TYPE_EDGE_RISING>;
+			interrupt-names = "INT1";
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&accel_int_default>;
+
+			vdd-supply = <&pm8916_l17>;
+			vddio-supply = <&pm8916_l5>;
+
+			st,drdy-int-pin = <1>;
+		};
+	};
 };
 
 &blsp1_uart2 {
@@ -232,6 +262,14 @@
 };
 
 &msmgpio {
+	accel_int_default: accel-int-default {
+		pins = "gpio115";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	gpio_keys_default: gpio-keys-default {
 		pins = "gpio107", "gpio109";
 		function = "gpio";
@@ -255,5 +293,13 @@
 			drive-strength = <2>;
 			bias-pull-down;
 		};
+	};
+
+	sensors_i2c_default: sensors-i2c-default {
+		pins = "gpio31", "gpio32";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 };
