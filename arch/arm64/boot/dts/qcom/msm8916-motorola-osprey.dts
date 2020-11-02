@@ -66,6 +66,22 @@
 		startup-delay-us = <300>;
 		vin-supply = <&pm8916_l16>;
 	};
+
+	reg_camr_vdda: regulator-camr-vdda {
+		compatible = "regulator-fixed";
+		regulator-name = "camr_vdda";
+		gpio = <&msmgpio 33 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		statup-delay-us = <300>;
+	};
+
+	reg_camr_vddd: regulator-camr-vddd {
+		compatible = "regulator-fixed";
+		regulator-name = "camr_vddd";
+		gpio = <&msmgpio 81 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		statup-delay-us = <300>;
+	};
 };
 
 &blsp_i2c1 {
@@ -147,6 +163,51 @@
 
 &blsp1_uart1 {
 	status = "okay";
+};
+
+&camss {
+	status = "okay";
+
+	ports {
+		port@0 {
+			reg = <0>;
+			csiphy0_ep: endpoint {
+				clock-lanes = <1>;
+				data-lanes = <0 2 3 4>;
+				remote-endpoint = <&imx214_ep>;
+			};
+		};
+	};
+};
+
+&cci {
+	status = "okay";
+};
+
+&cci_i2c0 {
+	imx214@1a {
+		compatible = "sony,imx214";
+		reg = <0x1a>;
+		vdddo-supply = <&pm8916_l10>;
+		vdda-supply = <&reg_camr_vdda>;
+		vddd-supply = <&reg_camr_vddd>;
+		enable-gpios = <&msmgpio 35 GPIO_ACTIVE_HIGH>;
+		clocks = <&gcc GCC_CAMSS_MCLK0_CLK>;
+		clock-frequency = <23880000>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&camera_rear_default>;
+
+		port {
+			imx214_ep: endpoint {
+				clock-lanes = <1>;
+				data-lanes = <0 2 3 4>;
+				remote-endpoint = <&csiphy0_ep>;
+				clock-noncontinuous;
+				link-frequencies = /bits/ 64 <480000000>;
+			};
+		};
+	};
 };
 
 &dsi0 {
@@ -277,8 +338,8 @@
 	};
 
 	l10 {
-		regulator-min-microvolt = <2800000>;
-		regulator-max-microvolt = <2800000>;
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
 	};
 
 	l11 {
@@ -330,6 +391,24 @@
 };
 &blsp1_uart1_sleep {
 	pins = "gpio0", "gpio1";
+};
+
+&camera_rear_default {
+	ana-en {
+		pins = "gpio33";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	dvdd-en {
+		pins = "gpio81";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
 };
 
 &msmgpio {
