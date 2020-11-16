@@ -104,6 +104,39 @@
 	status = "okay";
 };
 
+&dsi0 {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&mdss_default>;
+	pinctrl-1 = <&mdss_sleep>;
+
+	panel@0 {
+		compatible = "asus,z00l-panel";
+		reg = <0>;
+
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+		backlight-gpios = <&msmgpio 21 GPIO_ACTIVE_HIGH>;
+		power-supply = <&pm8916_l8>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_bl_en_default>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&mdss {
+	status = "okay";
+};
+
 &pronto {
 	status = "okay";
 };
@@ -255,12 +288,37 @@
 		bias-disable;
 	};
 
+	lcd_bl_en_default: lcd-bl-en-default {
+		pins = "gpio21";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	mag_reset_default: mag-reset-default {
 		pins = "gpio112";
 		function = "gpio";
 
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+	mdss {
+		mdss_default: mdss-default {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <8>;
+			bias-disable;
+		};
+		mdss_sleep: mdss-sleep {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-pull-down;
+		};
 	};
 
 	sd_vmmc_en_default: sd-vmmc-en-default {
