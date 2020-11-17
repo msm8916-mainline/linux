@@ -8,6 +8,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+#include <dt-bindings/sound/apq8016-lpass.h>
 
 / {
 	model = "Motorola Moto G 2015 (osprey)";
@@ -181,6 +182,10 @@
 	qcom,dsi-phy-regulator-ldo-mode;
 };
 
+&lpass {
+	status = "okay";
+};
+
 &mdss {
 	status = "okay";
 };
@@ -216,6 +221,39 @@
 	cd-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
 };
 
+&sound {
+	status = "okay";
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&cdc_pdm_lines_act>;
+	pinctrl-1 = <&cdc_pdm_lines_sus>;
+
+	model = "msm8916";
+	audio-routing =
+		"AMIC1", "MIC BIAS External1",
+		"AMIC3", "MIC BIAS External1";
+
+	dai-link-primary {
+		link-name = "Primary MI2S";
+		cpu {
+			sound-dai = <&lpass MI2S_PRIMARY>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 0>, <&wcd_codec 0>;
+		};
+	};
+
+	dai-link-tertiary {
+		link-name = "Tertiary MI2S";
+		cpu {
+			sound-dai = <&lpass MI2S_TERTIARY>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 1>, <&wcd_codec 1>;
+		};
+	};
+};
+
 &usb {
 	status = "okay";
 	extcon = <&usb_id>, <&usb_id>;
@@ -223,6 +261,11 @@
 
 &usb_hs_phy {
 	extcon = <&usb_id>;
+};
+
+&wcd_codec {
+	qcom,micbias1-ext-cap;
+	qcom,micbias2-ext-cap;
 };
 
 &smd_rpm_regulators {
