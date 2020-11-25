@@ -3,6 +3,7 @@
 /dts-v1/;
 
 #include "msm8916-pm8916.dtsi"
+#include "msm8916-no-psci.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 
 / {
@@ -15,13 +16,6 @@
 
 	chosen {
 		stdout-path = "serial0";
-	};
-
-	usb_id: usb-id {
-		compatible = "linux,extcon-usb-gpio";
-		id-gpios = <&msmgpio 110 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&usb_id_default>;
 	};
 
 	gpio-keys {
@@ -40,6 +34,12 @@
 		};
 	};
 
+	usb_id: usb-id {
+		compatible = "linux,extcon-usb-gpio";
+		id-gpios = <&msmgpio 110 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb_id_default>;
+	};
 };
 
 &blsp1_uart2 {
