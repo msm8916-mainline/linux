@@ -550,6 +550,11 @@ config DRM_PANEL_XIAOMI_R61308
 	depends on GPIOLIB && OF && REGULATOR
 	depends on DRM_MIPI_DSI
 
+config DRM_PANEL_XIAOMI_OTM1285A_OTP
+	tristate "Xiaomi OTM1285A_OTP DSI video mode panel"
+	depends on GPIOLIB && OF && REGULATOR
+	depends on DRM_MIPI_DSI
+	
 config DRM_PANEL_XINPENG_XPP055C272
 	tristate "Xinpeng XPP055C272 panel driver"
 	depends on OF
