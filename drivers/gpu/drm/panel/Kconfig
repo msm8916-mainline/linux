@@ -554,6 +554,8 @@ config DRM_PANEL_XIAOMI_OTM1285A_OTP
 	tristate "Xiaomi OTM1285A_OTP DSI video mode panel"
 	depends on GPIOLIB && OF && REGULATOR
 	depends on DRM_MIPI_DSI
+	help
+	  Say Y if you want to enable support
 	
 config DRM_PANEL_XINPENG_XPP055C272
 	tristate "Xinpeng XPP055C272 panel driver"
