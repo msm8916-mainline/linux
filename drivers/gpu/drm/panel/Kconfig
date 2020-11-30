@@ -545,6 +545,13 @@ config DRM_PANEL_WINGTECH_YASSY_ILI9881
 	help
 	  Say Y if you want to enable support for Wingtech Yassy ILI9881 panel.
 
+config DRM_PANEL_XIAOMI_OTM1285A_OTP
+	tristate "Xiaomi OTM1285A_OTP DSI video mode panel"
+	depends on GPIOLIB && OF && REGULATOR
+	depends on DRM_MIPI_DSI
+	help
+	  Say Y if you want to enable support for OTM1285A_OTP
+
 config DRM_PANEL_XIAOMI_R61308
 	tristate "Xiaomi R61308 DSI video mode panel"
 	depends on GPIOLIB && OF && REGULATOR
