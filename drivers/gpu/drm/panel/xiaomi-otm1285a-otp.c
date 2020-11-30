@@ -238,7 +238,7 @@ static int otm1285a_otp_remove(struct mipi_dsi_device *dsi)
 }
 
 static const struct of_device_id otm1285a_otp_of_match[] = {
-	{ .compatible = "mdss,otm1285a-otp" }, // FIXME
+	{ .compatible = "wingtech,ebbg-otm1285a" }, // FIXME
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, otm1285a_otp_of_match);
