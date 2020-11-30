@@ -64,3 +64,4 @@ obj-$(CONFIG_DRM_PANEL_WINGTECH_YASSY_ILI9881) += panel-wingtech-yassy-ili9881.o
 obj-$(CONFIG_DRM_PANEL_XIAOMI_R61308) += panel-xiaomi-r61308.o
 obj-$(CONFIG_DRM_PANEL_XINPENG_XPP055C272) += panel-xinpeng-xpp055c272.o
 obj-$(CONFIG_DRM_PANEL_YUSHUN_NT35520) += panel-yushun-nt35520.o
+obj-$(CONFIG_DRM_PANEL_XIAOMI_OTM1285A-OTP) += panel-xiaomi-otm1285a-otp.o
