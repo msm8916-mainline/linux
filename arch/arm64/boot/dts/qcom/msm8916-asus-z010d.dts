@@ -35,6 +35,23 @@
 		};
 	};
 
+	gpio-hall-sensor {
+		compatible = "gpio-keys";
+
+		pinctrl-0 = <&gpio_hall_sensor_default>;
+		pinctrl-names = "default";
+
+		label = "GPIO Hall Effect Sensor";
+
+		hall-sensor-switch {
+			label = "Hall Effect Sensor";
+			gpios = <&msmgpio 115 GPIO_ACTIVE_LOW>;
+			linux,input-type = <EV_SW>;
+			linux,code = <SW_LID>;
+			linux,can-disable;
+		};
+	};
+
 	usb_id: usb-id {
 		compatible = "linux,extcon-usb-gpio";
 		id-gpios = <&msmgpio 110 GPIO_ACTIVE_HIGH>;
@@ -45,6 +62,33 @@
 
 &blsp_i2c2 {
 	status = "okay";
+
+	accelerometer@e {
+		compatible = "kionix,kxtj21009";
+		reg = <0x0e>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <114 IRQ_TYPE_EDGE_FALLING>;
+
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l6>;
+
+		pinctrl-0 = <&accel_int_default>;
+		pinctrl-names = "default";
+	};
+
+	magnetometer@c {
+		compatible = "asahi-kasei,ak09911";
+		reg = <0x0c>;
+
+		vdd-supply = <&pm8916_l17>;
+		vid-supply = <&pm8916_l6>;
+
+		reset-gpios = <&msmgpio 36 GPIO_ACTIVE_LOW>;
+
+		pinctrl-0 = <&mag_reset_default>;
+		pinctrl-names = "default";
+	};
 
 	led-controller@45 {
 		compatible = "awinic,aw2013";
@@ -218,11 +262,32 @@
 };
 
 &msmgpio {
+	accel_int_default: accel-int-default-state {
+		pins = "gpio114";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	gpio_hall_sensor_default: gpio-hall-sensor-default-state {
+		pins = "gpio115";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	gpio_keys_default: gpio-keys-default-state {
 		pins = "gpio107";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-up;
+	};
+
+	mag_reset_default: mag-reset-default-state {
+		pins = "gpio36";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	usb_id_default: usb-id-default-state {
