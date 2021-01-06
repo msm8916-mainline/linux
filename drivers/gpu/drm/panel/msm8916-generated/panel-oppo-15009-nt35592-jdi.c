@@ -623,7 +623,7 @@ static int oppo15009jdi_nt35592_unprepare(struct drm_panel *panel)
 }
 
 static const struct drm_display_mode oppo15009jdi_nt35592_mode = {
-	.clock = (720 + 160 + 2 + 160) * (1280 + 6 + 1 + 4) * 61 / 1000,
+	.clock = (720 + 160 + 2 + 160) * (1280 + 6 + 1 + 4) * 60 / 1000,
 	.hdisplay = 720,
 	.hsync_start = 720 + 160,
 	.hsync_end = 720 + 160 + 2,
