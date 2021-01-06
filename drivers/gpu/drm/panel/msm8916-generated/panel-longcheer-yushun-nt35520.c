@@ -14,6 +14,9 @@
 #include <drm/drm_panel.h>
 #include <drm/drm_probe_helper.h>
 
+/* From panel-novatek-nt35510.c */
+#define NT35520_DOPCTR_0_DSIM BIT(4) /* Enable video mode on DSI */
+
 struct yushun_nt35520 {
 	struct drm_panel panel;
 	struct mipi_dsi_device *dsi;
@@ -48,7 +51,7 @@ static int yushun_nt35520_on(struct yushun_nt35520 *ctx)
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xf7, 0x00);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x6f, 0x01);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xf3, 0x00);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xb1, 0x68, 0x21);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xb1, 0x68 | NT35520_DOPCTR_0_DSIM, 0x21);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xbd,
 					 0x02, 0x67, 0x20, 0x20, 0x00);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x6f, 0x02);
@@ -414,7 +417,7 @@ static int yushun_nt35520_probe(struct mipi_dsi_device *dsi)
 
 	dsi->lanes = 4;
 	dsi->format = MIPI_DSI_FMT_RGB888;
-	dsi->mode_flags = MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
+	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
 			  MIPI_DSI_CLOCK_NON_CONTINUOUS | MIPI_DSI_MODE_LPM;
 
 	ctx->panel.prepare_prev_first = true;
