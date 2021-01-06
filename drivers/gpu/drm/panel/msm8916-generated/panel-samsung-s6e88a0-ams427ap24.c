@@ -87,6 +87,12 @@ static int s6e88a0_ams427ap24_on(struct s6e88a0_ams427ap24 *ctx)
 	dsi_dcs_write_seq(dsi, 0xf0, 0xa5, 0xa5);
 	dsi_dcs_write_seq(dsi, 0xfc, 0xa5, 0xa5);
 
+	ret = mipi_dsi_dcs_set_display_on(dsi);
+	if (ret < 0) {
+		dev_err(dev, "Failed to set display on: %d\n", ret);
+		return ret;
+	}
+
 	return 0;
 }
 
