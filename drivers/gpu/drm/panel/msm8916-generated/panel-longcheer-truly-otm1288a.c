@@ -46,8 +46,9 @@ static int truly_otm1288a_on(struct truly_otm1288a *ctx)
 	mipi_dsi_generic_write_seq(dsi, 0xff, 0x12, 0x88, 0x01);
 	mipi_dsi_generic_write_seq(dsi, 0x00, 0x80);
 	mipi_dsi_generic_write_seq(dsi, 0xff, 0x12, 0x88);
-	mipi_dsi_generic_write_seq(dsi, 0x00, 0xa0);
-	mipi_dsi_generic_write_seq(dsi, 0xf6, 0x02);
+	/* keep the TE signal for ESD (unneeded for video mode I guess?)
+	 * mipi_dsi_generic_write_seq(dsi, 0x00, 0xa0);
+	 * mipi_dsi_generic_write_seq(dsi, 0xf6, 0x02); */
 	mipi_dsi_generic_write_seq(dsi, 0x00, 0x80);
 	mipi_dsi_generic_write_seq(dsi, 0xc0,
 				   0x00, 0x64, 0x00, 0x10, 0x10, 0x00, 0x64,
@@ -56,7 +57,7 @@ static int truly_otm1288a_on(struct truly_otm1288a *ctx)
 	mipi_dsi_generic_write_seq(dsi, 0xc0,
 				   0x00, 0x00, 0x00, 0x14, 0x00, 0x1b);
 	mipi_dsi_generic_write_seq(dsi, 0x00, 0x00);
-	mipi_dsi_generic_write_seq(dsi, 0x1c, 0x00);
+	mipi_dsi_generic_write_seq(dsi, 0x1c, 0x32); /* 0x00 -> 0x32 for video mode */
 	mipi_dsi_generic_write_seq(dsi, 0x00, 0xc0);
 	mipi_dsi_generic_write_seq(dsi, 0xb0, 0x4d);
 	mipi_dsi_generic_write_seq(dsi, 0x00, 0xa3);
@@ -376,7 +377,7 @@ static int truly_otm1288a_probe(struct mipi_dsi_device *dsi)
 
 	dsi->lanes = 4;
 	dsi->format = MIPI_DSI_FMT_RGB888;
-	dsi->mode_flags = MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
+	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
 			  MIPI_DSI_CLOCK_NON_CONTINUOUS | MIPI_DSI_MODE_LPM;
 
 	drm_panel_init(&ctx->panel, dev, &truly_otm1288a_panel_funcs,
