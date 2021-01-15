@@ -11,10 +11,10 @@ clone:
 
 steps:
   - name: build
-    image: arm64v8/alpine:latest
+    image: arm64v8/alpine:3.12
     commands: [./.drone.sh build]
   - name: check
-    image: arm64v8/alpine:latest
+    image: arm64v8/alpine:3.12
     commands: [./.drone.sh check]
     when:
       event: pull_request
@@ -35,12 +35,12 @@ clone:
 
 steps:
   - name: build
-    image: arm32v7/alpine:latest
+    image: arm32v7/alpine:3.12
     commands:
       - cat arch/arm64/configs/msm8916_defconfig arch/arm/configs/msm8916_defconfig.part > arch/arm/configs/msm8916_defconfig
       - ./.drone.sh build
   - name: check
-    image: arm32v7/alpine:latest
+    image: arm32v7/alpine:3.12
     commands: [./.drone.sh check]
     when:
       event: pull_request
