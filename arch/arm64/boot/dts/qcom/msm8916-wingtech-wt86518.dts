@@ -35,8 +35,16 @@
 	};
 };
 
+&gps_mem {
+	status = "disabled";
+};
+
 &headphones_switch {
 	VCC-supply = <&pm8916_l17>;
+};
+
+&memshare {
+	status = "disabled";
 };
 
 &pm8916_bms {
