@@ -168,6 +168,9 @@ static int tfa9895_i2c_probe(struct i2c_client *i2c)
 	if (IS_ERR(regmap))
 		return PTR_ERR(regmap);
 
+	/* Dummy read to generate i2c clocks, required on some devices */
+	regmap_read(regmap, TFA98XX_REVISIONNUMBER, &val);
+
 	ret = regmap_read(regmap, TFA98XX_REVISIONNUMBER, &val);
 	if (ret) {
 		dev_err(dev, "failed to read revision number: %d\n", ret);
