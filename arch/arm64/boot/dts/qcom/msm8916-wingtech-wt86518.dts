@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-wingtech-wt865x8.dtsi"
+
+/ {
+	model = "Lenovo A6000 (Wingtech WT86518)";
+	compatible = "wingtech,wt86518", "qcom,msm8916";
+
+	usb_vbus: extcon-usb-dummy {
+		compatible = "linux,extcon-usb-dummy";
+	};
+};
+
+&usb {
+	extcon = <&usb_vbus>;
+	dr_mode = "peripheral";
+};
+
+&usb_hs_phy {
+	extcon = <&usb_vbus>;
+};
