@@ -13,4 +13,5 @@ obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-s6e88a0-ams427ap24.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-tc358764-ltl101al06.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-wingtech-auo-r61308.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-wingtech-ebbg-otm1285a.o
+obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-wingtech-tianma-hx8394d.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-wingtech-yassy-ili9881.o
