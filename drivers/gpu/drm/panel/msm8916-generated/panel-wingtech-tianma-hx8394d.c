@@ -9,6 +9,8 @@
 #include <linux/of.h>
 #include <linux/regulator/consumer.h>
 
+#include <video/mipi_display.h>
+
 #include <drm/drm_mipi_dsi.h>
 #include <drm/drm_modes.h>
 #include <drm/drm_panel.h>
@@ -92,14 +94,25 @@ static int hx8394d_on(struct hx8394d *ctx)
 	dsi_dcs_write_seq(dsi, 0xc7, 0x00, 0xc0, 0x40, 0xc0);
 	dsi_dcs_write_seq(dsi, 0xc0, 0x30, 0x14);
 	dsi_dcs_write_seq(dsi, 0xbc, 0x07);
-	dsi_dcs_write_seq(dsi, 0x51, 0xff);
-	dsi_dcs_write_seq(dsi, 0x53, 0x24);
-	dsi_dcs_write_seq(dsi, 0x55, 0x00);
+
+	ret = mipi_dsi_dcs_set_display_brightness(dsi, 0x00ff);
+	if (ret < 0) {
+		dev_err(dev, "Failed to set display brightness: %d\n", ret);
+		return ret;
+	}
+
+	dsi_dcs_write_seq(dsi, MIPI_DCS_WRITE_CONTROL_DISPLAY, 0x24);
+	dsi_dcs_write_seq(dsi, MIPI_DCS_WRITE_POWER_SAVE, 0x00);
 	dsi_dcs_write_seq(dsi, 0xe4, 0x51, 0x00);
 	dsi_dcs_write_seq(dsi, 0xe6,
 			  0x00, 0x00, 0x00, 0x05, 0x05, 0x10, 0x0a, 0x08, 0x10,
 			  0x20, 0x20, 0x0c, 0x08, 0x0f, 0x20, 0x20, 0x20);
-	dsi_dcs_write_seq(dsi, 0x35, 0x00);
+
+	ret = mipi_dsi_dcs_set_tear_on(dsi, MIPI_DSI_DCS_TEAR_MODE_VBLANK);
+	if (ret < 0) {
+		dev_err(dev, "Failed to set tear on: %d\n", ret);
+		return ret;
+	}
 
 	ret = mipi_dsi_dcs_exit_sleep_mode(dsi);
 	if (ret < 0) {
