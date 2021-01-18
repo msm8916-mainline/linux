@@ -94,6 +94,16 @@
 	qcom,micbias1-ext-cap;
 };
 
+&reg_lcd_neg {
+	regulator-min-microvolt = <5000000>;
+	regulator-max-microvolt = <5000000>;
+};
+
+&reg_lcd_pos {
+	regulator-min-microvolt = <5000000>;
+	regulator-max-microvolt = <5000000>;
+};
+
 &sound {
 	model = "wt86528";
 	widgets =
