@@ -38,6 +38,16 @@
 	};
 };
 
+&reg_lcd_neg {
+	regulator-min-microvolt = <5000000>;
+	regulator-max-microvolt = <5000000>;
+};
+
+&reg_lcd_pos {
+	regulator-min-microvolt = <5000000>;
+	regulator-max-microvolt = <5000000>;
+};
+
 &usb {
 	extcon = <&usb_id>, <&usb_id>;
 };
