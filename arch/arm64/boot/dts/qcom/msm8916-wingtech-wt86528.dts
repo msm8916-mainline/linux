@@ -37,6 +37,34 @@
 	};
 };
 
+&blsp_i2c2 {
+	magnetometer@c {
+		compatible = "asahi-kasei,ak09911";
+		reg = <0x0c>;
+
+		vdd-supply = <&pm8916_l17>;
+		vid-supply = <&pm8916_l6>;
+	};
+
+	imu@68 {
+		compatible = "invensense,mpu6880";
+		reg = <0x68>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <115 IRQ_TYPE_EDGE_RISING>;
+
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l6>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&imu_default>;
+
+		mount-matrix = "1",  "0", "0",
+			       "0", "-1", "0",
+			       "0",  "0", "1";
+	};
+};
+
 &reg_lcd_neg {
 	regulator-min-microvolt = <5000000>;
 	regulator-max-microvolt = <5000000>;
@@ -58,6 +86,14 @@
 &msmgpio {
 	gpio_leds_default: gpio-leds-default {
 		pins = "gpio16", "gpio17";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	imu_default: imu-default {
+		pins = "gpio115";
 		function = "gpio";
 
 		drive-strength = <2>;
