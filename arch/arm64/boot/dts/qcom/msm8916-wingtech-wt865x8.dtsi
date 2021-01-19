@@ -23,6 +23,24 @@
 		default-brightness-level = <255>;
 	};
 
+	battery: battery {
+		compatible = "simple-battery";
+		voltage-min-design-microvolt = <3400000>;
+		voltage-max-design-microvolt = <4350000>;
+		energy-full-design-microwatt-hours = <8740000>;
+		charge-full-design-microamp-hours = <2300000>;
+
+		ocv-capacity-celsius = <25>;
+		ocv-capacity-table-0 = <4328000 100>, <4266000 95>, <4208000 90>,
+			<4154000 85>, <4102000 80>, <4062000 75>, <3992000 70>,
+			<3960000 65>, <3914000 60>, <3870000 55>, <3840000 50>,
+			<3818000 45>, <3800000 40>, <3784000 35>, <3770000 30>,
+			<3756000 25>, <3736000 20>, <3714000 16>, <3696000 13>,
+			<3690000 11>, <3689000 10>, <3688000 9>, <3686000 8>,
+			<3682000 7>, <3670000 6>, <3639000 5>, <3592000 4>,
+			<3530000 3>, <3448000 2>, <3320000 1>, <3000000 0>;
+	};
+
 	gpio-keys {
 		compatible = "gpio-keys";
 
@@ -125,6 +143,11 @@
 
 &mdss {
 	status = "okay";
+};
+
+&pm8916_bms {
+	status = "okay";
+	monitored-battery = <&battery>;
 };
 
 &pm8916_pwm {

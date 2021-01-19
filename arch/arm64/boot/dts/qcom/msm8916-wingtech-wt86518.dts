@@ -7,10 +7,6 @@
 / {
 	model = "Lenovo A6000 (Wingtech WT86518)";
 	compatible = "wingtech,wt86518", "qcom,msm8916";
-
-	usb_vbus: extcon-usb-dummy {
-		compatible = "linux,extcon-usb-dummy";
-	};
 };
 
 &blsp_i2c2 {
@@ -27,6 +23,19 @@
 	};
 };
 
+&pm8916_charger {
+	status = "okay";
+
+	qcom,vdd-safe = <4300000>;
+	qcom,ibat-safe = <900000>;
+
+	monitored-battery = <&battery>;
+};
+
+&pm8916_bms {
+	power-supplies = <&pm8916_charger>;
+};
+
 &reg_lcd_neg {
 	regulator-min-microvolt = <5400000>;
 	regulator-max-microvolt = <5400000>;
@@ -38,10 +47,10 @@
 };
 
 &usb {
-	extcon = <&usb_vbus>;
+	extcon = <&pm8916_charger>;
 	dr_mode = "peripheral";
 };
 
 &usb_hs_phy {
-	extcon = <&usb_vbus>;
+	extcon = <&pm8916_charger>;
 };
