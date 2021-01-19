@@ -10,10 +10,6 @@
 	chassis-type = "handset";
 };
 
-&pm8916_usbin {
-	status = "okay";
-};
-
 &blsp_i2c2 {
 	accelerometer@e {
 		compatible = "kionix,kxcj91008";
@@ -28,6 +24,19 @@
 	};
 };
 
+&pm8916_charger {
+	qcom,vdd-safe = <4300000>;
+	qcom,ibat-safe = <900000>;
+
+	monitored-battery = <&battery>;
+
+	status = "okay";
+};
+
+&pm8916_bms {
+	power-supplies = <&pm8916_charger>;
+};
+
 &reg_lcd_neg {
 	regulator-min-microvolt = <5400000>;
 	regulator-max-microvolt = <5400000>;
@@ -40,9 +49,9 @@
 
 &usb {
 	dr_mode = "peripheral";
-	extcon = <&pm8916_usbin>;
+	extcon = <&pm8916_charger>;
 };
 
 &usb_hs_phy {
-	extcon = <&pm8916_usbin>;
+	extcon = <&pm8916_charger>;
 };
