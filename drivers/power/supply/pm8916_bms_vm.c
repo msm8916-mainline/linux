@@ -66,9 +66,9 @@ static int pm8916_bms_vm_battery_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_STATUS:
 		supplied = power_supply_am_i_supplied(psy);
 
-		if (supplied < 0) {
+		if (supplied < 0 && supplied != -ENODEV) {
 			return supplied;
-		} else if (supplied) {
+		} else if (supplied && supplied != -ENODEV) {
 			if (power_supply_batinfo_ocv2cap(info, bat->fake_ocv, 20) > 98)
 				val->intval = POWER_SUPPLY_STATUS_FULL;
 			else
@@ -143,7 +143,10 @@ static irqreturn_t pm8916_bms_vm_fifo_update_done_irq(int irq, void *data)
 		return IRQ_HANDLED;
 
 	supplied = power_supply_am_i_supplied(bat->battery);
-	if (supplied < 0)
+	// We assume that we don't charge if no charger is present.
+	if (supplied == -ENODEV)
+		supplied = 0;
+	else if (supplied < 0)
 		return IRQ_HANDLED;
 
 	for (i = 0; i < PM8916_BMS_VM_FIFO_COUNT; i++) {
