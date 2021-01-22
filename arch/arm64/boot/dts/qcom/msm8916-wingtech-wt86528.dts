@@ -8,6 +8,30 @@
 	model = "Lenovo A6010 (Wingtech WT86528)";
 	compatible = "wingtech,wt86528", "qcom,msm8916";
 
+	/* left AW8736 */
+	speaker_amp_left: audio-amplifier-left {
+		compatible = "awinic,aw8738";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&spk_ext_pa_left_default>;
+
+		enable-gpios = <&msmgpio 119 GPIO_ACTIVE_HIGH>;
+		aw8738,mode = <3>;
+		sound-name-prefix = "Speaker Amp L";
+	};
+
+	/* right AW8736 */
+	speaker_amp_right: audio-amplifier-right {
+		compatible = "awinic,aw8738";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&spk_ext_pa_right_default>;
+
+		enable-gpios = <&msmgpio 121 GPIO_ACTIVE_HIGH>;
+		aw8738,mode = <3>;
+		sound-name-prefix = "Speaker Amp R";
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -75,12 +99,29 @@
 	regulator-max-microvolt = <5000000>;
 };
 
+&sound {
+	model = "wt86528";
+	audio-routing =
+		"Speaker Amp L IN", "HPH_L_EXT",
+		"Speaker Amp R IN", "HPH_R_EXT",
+		"Headphones Switch INL", "HPH_L",
+		"Headphones Switch INR", "HPH_R",
+		"AMIC1", "MIC BIAS External1",
+		"AMIC2", "MIC BIAS Internal2",
+		"AMIC3", "MIC BIAS External1";
+	aux-devs = <&speaker_amp_left>, <&speaker_amp_right>, <&headphones_switch>;
+};
+
 &usb {
 	extcon = <&usb_id>, <&usb_id>;
 };
 
 &usb_hs_phy {
 	extcon = <&usb_id>;
+};
+
+&wcd_codec {
+	qcom,micbias1-ext-cap;
 };
 
 &msmgpio {
@@ -94,6 +135,22 @@
 
 	imu_default: imu-default {
 		pins = "gpio115";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	spk_ext_pa_left_default: spk-ext-pa-left-default {
+		pins = "gpio119";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	spk_ext_pa_right_default: spk-ext-pa-right-default {
+		pins = "gpio121";
 		function = "gpio";
 
 		drive-strength = <2>;
