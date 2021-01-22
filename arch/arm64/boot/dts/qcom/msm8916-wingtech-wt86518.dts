@@ -7,6 +7,17 @@
 / {
 	model = "Lenovo A6000 (Wingtech WT86518)";
 	compatible = "wingtech,wt86518", "qcom,msm8916";
+
+	speaker_amp: audio-amplifier {
+		compatible = "awinic,aw8738";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&spk_ext_pa_default>;
+
+		enable-gpios = <&msmgpio 119 GPIO_ACTIVE_HIGH>;
+		aw8738,mode = <1>;
+		sound-name-prefix = "Speaker Amp";
+	};
 };
 
 &blsp_i2c2 {
@@ -21,6 +32,10 @@
 			       "-1", "0", "0",
 			       "0",  "0", "1";
 	};
+};
+
+&headphones_switch {
+	VCC-supply = <&pm8916_l17>;
 };
 
 &pm8916_charger {
@@ -46,6 +61,17 @@
 	regulator-max-microvolt = <5400000>;
 };
 
+&sound {
+	model = "wt88047";
+	audio-routing =
+		"Speaker Amp IN", "HPH_R_EXT",
+		"Headphones Switch INL", "HPH_L",
+		"Headphones Switch INR", "HPH_R",
+		"AMIC1", "MIC BIAS Internal1",
+		"AMIC2", "MIC BIAS Internal2";
+	aux-devs = <&speaker_amp>, <&headphones_switch>;
+};
+
 &usb {
 	extcon = <&pm8916_charger>;
 	dr_mode = "peripheral";
@@ -53,4 +79,14 @@
 
 &usb_hs_phy {
 	extcon = <&pm8916_charger>;
+};
+
+&msmgpio {
+	spk_ext_pa_default: spk-ext-pa-default {
+		pins = "gpio119";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
 };
