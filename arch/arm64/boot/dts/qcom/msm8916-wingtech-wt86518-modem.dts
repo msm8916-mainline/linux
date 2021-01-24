@@ -1,0 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-only
+#include "msm8916-wingtech-wt86518.dts"
+#include "msm8916-wingtech-wt865x8-modem.dtsi"
+
+&memshare { status = "disabled"; };
+&gps_mem { status = "disabled"; };
