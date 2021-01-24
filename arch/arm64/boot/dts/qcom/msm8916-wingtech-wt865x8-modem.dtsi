@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: GPL-2.0-only
+#include "msm8916-modem.dtsi"
+
+&sound {
+	/delete-node/ dai-link-primary;
+	/delete-node/ dai-link-tertiary;
+
+	dai-link-primary-qdsp6 {
+		link-name = "Primary MI2S";
+		cpu {
+			sound-dai = <&q6afedai PRIMARY_MI2S_RX>;
+		};
+		platform {
+			sound-dai = <&q6routing>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 0>, <&wcd_codec 0>;
+		};
+	};
+
+	dai-link-tertiary-qdsp6 {
+		link-name = "Tertiary MI2S";
+		cpu {
+			sound-dai = <&q6afedai TERTIARY_MI2S_TX>;
+		};
+		platform {
+			sound-dai = <&q6routing>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 1>, <&wcd_codec 1>;
+		};
+	};
+};
