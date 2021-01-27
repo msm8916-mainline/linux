@@ -6,6 +6,7 @@
 #include "arm/qcom-msm8916-no-psci.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
 
 / {
 	model = "Alcatel OneTouch Idol 3 (4.7)";
@@ -17,6 +18,15 @@
 
 	chosen {
 		stdout-path = "serial0";
+	};
+
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pm8916_pwm 0 100000>;
+
+		brightness-levels = <0 255>;
+		num-interpolated-steps = <255>;
+		default-brightness-level = <64>;
 	};
 
 	gpio-keys {
@@ -94,6 +104,29 @@
 			       "0", "0", "-1";
 	};
 
+	regulator@3e {
+		compatible = "ti,tps65132";
+		reg = <0x3e>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&tps65132_en_default>;
+
+		reg_lcd_pos: outp {
+			regulator-name = "outp";
+			regulator-min-microvolt = <5500000>;
+			regulator-max-microvolt = <5500000>;
+			enable-gpios = <&msmgpio 2 GPIO_ACTIVE_HIGH>;
+			regulator-active-discharge = <1>;
+		};
+
+		reg_lcd_neg: outn {
+			regulator-name = "outn";
+			regulator-min-microvolt = <5500000>;
+			regulator-max-microvolt = <5500000>;
+			enable-gpios = <&msmgpio 33 GPIO_ACTIVE_HIGH>;
+			regulator-active-discharge = <1>;
+		};
+	};
+
 	proximity@48 {
 		compatible = "sensortek,stk3310";
 		reg = <0x48>;
@@ -114,6 +147,45 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&gyro_int_default>;
 	};
+};
+
+&dsi0 {
+	panel@0 {
+		compatible = "alcatel,idol347-panel";
+		reg = <0>;
+
+		backlight = <&backlight>;
+
+		vsp-supply = <&reg_lcd_pos>;
+		vsn-supply = <&reg_lcd_neg>;
+
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&dsi_phy0 {
+	qcom,dsi-phy-regulator-ldo-mode;
+};
+
+&mdss {
+	status = "okay";
+};
+
+&pm8916_pwm {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm_out>;
 };
 
 &pm8916_resin {
@@ -292,12 +364,37 @@
 		bias-disable;
 	};
 
+	mdss {
+		mdss_active: mdss-active {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <8>;
+			bias-disable;
+		};
+		mdss_suspend: mdss-suspend {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
+
 	proximity_int_default: proximity-int-default {
 		pins = "gpio12";
 		function = "gpio";
 
 		drive-strength = <6>;
 		bias-pull-up;
+	};
+
+	tps65132_en_default: tps65132-en-default {
+		pins = "gpio2", "gpio33";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	ts_int_reset_default: ts-int-reset-default {
@@ -314,5 +411,16 @@
 
 		drive-strength = <8>;
 		bias-pull-up;
+	};
+};
+
+&pm8916_mpps {
+	pwm_out: mpp4 {
+		pins = "mpp4";
+		function = "digital";
+
+		output-low;
+		qcom,dtest = <1>;
+		power-source = <PM8916_MPP_L5>;
 	};
 };
