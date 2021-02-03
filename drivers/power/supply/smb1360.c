@@ -12,6 +12,10 @@
  *    - POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT
  */
 
+#ifdef CONFIG_SMB1360_DEBUG
+#define DEBUG
+#endif
+
 #include <linux/completion.h>
 #include <linux/extcon-provider.h>
 #include <linux/i2c.h>
@@ -1089,9 +1093,38 @@ static int smb1360_check_cycle_stretch(struct smb1360 *smb)
 	return ret;
 }
 
+#ifdef CONFIG_SMB1360_DEBUG
+extern void smb1360_dump(struct i2c_client *client);
+extern void smb1360_dump_fg_scratch(struct i2c_client *fg_client);
+extern void smb1360_dump_fg(struct i2c_client *client);
+
+static void smb1360_dump_fg_access(struct smb1360 *smb)
+{
+	struct i2c_client *client = to_i2c_client(smb->dev);
+	struct i2c_client *fg_client = to_i2c_client(regmap_get_device(smb->fg_regmap));
+	int ret;
+
+	ret = smb1360_enable_fg_access(smb);
+	if (ret)
+		return;
+
+	smb1360_dump_fg_scratch(client);
+	smb1360_dump_fg(fg_client);
+
+	smb1360_disable_fg_access(smb);
+	smb1360_check_cycle_stretch(smb);
+}
+#else
+static inline void smb1360_dump(struct i2c_client *client) {}
+static inline void smb1360_dump_fg_access(struct smb1360 *smb) {}
+#endif
+
 static int smb1360_delayed_hw_init(struct smb1360 *smb)
 {
 	int ret;
+
+	/* Dump initial FG registers */
+	smb1360_dump_fg_access(smb);
 
 	ret = smb1360_check_batt_profile(smb);
 	if (ret) {
@@ -1132,6 +1165,10 @@ static int smb1360_delayed_hw_init(struct smb1360 *smb)
 		dev_err(smb->dev, "couldn't enable battery charging: %d\n", ret);
 		return ret;
 	}
+
+	/* Dump final registers */
+	smb1360_dump(to_i2c_client(smb->dev));
+	smb1360_dump_fg_access(smb);
 
 	return 0;
 }
@@ -1598,6 +1635,9 @@ static int smb1360_probe(struct i2c_client *client)
 
 	device_init_wakeup(smb->dev, 1);
 	i2c_set_clientdata(client, smb);
+
+	/* Dump initial registers */
+	smb1360_dump(client);
 
 	ret = smb1360_hw_init(client);
 	if (ret < 0) {

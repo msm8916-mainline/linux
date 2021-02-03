@@ -801,4 +801,8 @@ config SMB1360
 	help
 	  Say Y to enable support for Qualcomm SMB1360 charger and fuel gauge.
 
+config SMB1360_DEBUG
+	bool "Dump SMB1360 registers before/after driver initialization"
+	depends on SMB1360
+
 endif # POWER_SUPPLY
