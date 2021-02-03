@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #include "msm8916-lg-m216.dts"
-#include "msm8916-modem.dtsi"
+#include "msm8916-modem-please-test-memshare.dtsi"
 
 &sound {
 	/delete-node/ dai-link-primary;

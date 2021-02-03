@@ -1,0 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+gps_mem: &mpss_mem {};
+
+#include "msm8916-modem.dtsi"
+
+&memshare_gps { /delete-property/ memory-region; };
