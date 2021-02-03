@@ -656,6 +656,10 @@ config SMB1360
 	help
 	  Say Y to enable support for Qualcomm SMB1360 charger and fuel gauge.
 
+config SMB1360_DEBUG
+	bool "Dump SMB1360 registers before/after driver initialization"
+	depends on SMB1360
+
 config BATTERY_PM8916_BMS_VM
         tristate "Qualcomm PM8916 BMS-VM support"
         depends on MFD_SPMI_PMIC || COMPILE_TEST
