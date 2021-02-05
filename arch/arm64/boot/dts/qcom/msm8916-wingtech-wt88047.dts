@@ -126,6 +126,62 @@
 	};
 };
 
+&blsp_i2c4 {
+	status = "okay";
+
+	charger: battery@14 {
+		compatible = "qcom,smb1360";
+		reg = <0x14>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <62 IRQ_TYPE_LEVEL_LOW>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&smb_int_default>;
+
+		/*
+		 * Some properties are battery-specific. Battery detection
+		 * happens in the bootloader, so it will fill those appropriately
+		 * and set status = "okay".
+		 */
+		status = "disabled";
+
+		qcom,rsense-10mohm;
+
+		qcom,float-voltage-mv = <4350>;
+		qcom,iterm-ma = <100>;
+		qcom,charging-timeout = <192>; /* Not configured in downstream */
+		qcom,chg-inhibit-disabled;
+
+		qcom,fg-batt-capacity-mah = <0>; /* Set by bootloader */
+		qcom,fg-cc-soc-coeff = <0>; /* Set by bootloader */
+		qcom,fg-cutoff-voltage-mv = <3400>;
+		qcom,fg-iterm-ma = <150>;
+		qcom,fg-ibatt-standby-ma = <200>;
+		qcom,fg-cc-to-cv-mv = <4328>;
+		qcom,thermistor-c1-coeff = <0>; /* Set by bootloader */
+		qcom,fg-auto-recharge-soc = <95>; /* 99 in downstream */
+
+		qcom,otp-hard-jeita-config;
+		qcom,otp-hot-bat-decidegc = <600>;
+		qcom,otp-cold-bat-decidegc = <0>;
+
+		qcom,soft-jeita-config;
+		qcom,warm-bat-decidegc = <450>;
+		qcom,cool-bat-decidegc = <100>;
+		qcom,soft-jeita-comp-voltage-mv = <4000>;
+		qcom,soft-jeita-comp-current-ma = <600>;
+
+		qcom,shdn-after-pwroff;
+		qcom,fg-reset-at-pon;
+		qcom,fg-reset-threshold-mv = <100>;
+
+		usb_otg_vbus: usb-otg-vbus {
+			regulator-max-microamp = <950000>;
+		};
+	};
+};
+
 &blsp_i2c5 {
 	status = "okay";
 
@@ -294,11 +350,12 @@
 
 &usb {
 	status = "okay";
-	extcon = <&usb_id>, <&usb_id>;
+	extcon = <&charger>, <&usb_id>;
+	vbus-supply = <&usb_otg_vbus>;
 };
 
 &usb_hs_phy {
-	extcon = <&usb_id>;
+	extcon = <&charger>;
 };
 
 &wcd_codec {
@@ -458,6 +515,14 @@
 
 		drive-strength = <2>;
 		bias-pull-down;
+	};
+
+	smb_int_default: smb-int-default-state {
+		pins = "gpio62";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
 	};
 
 	speaker_amp_default: speaker-amp-default-state {
