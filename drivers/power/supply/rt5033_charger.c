@@ -449,7 +449,7 @@ static int rt5033_charger_probe(struct platform_device *pdev)
 	charger->ac_chg_desc.num_properties = ARRAY_SIZE(rt5033_charger_props);
 	charger->ac_chg_desc.get_property = rt5033_charger_get_property;
 
-	ret = power_supply_register(&pdev->dev, &charger->ac_chg_desc,
+	ret = (int) power_supply_register(&pdev->dev, &charger->ac_chg_desc,
 						&psy_cfg);
 	if (ret) {
 		dev_err(&pdev->dev, "Failed to register power supply\n");
