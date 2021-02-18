@@ -421,6 +421,8 @@ static struct rt5033_charger_data *rt5033_charger_dt_init(
 static int rt5033_charger_probe(struct platform_device *pdev)
 {
 	struct rt5033_charger *charger;
+	struct power_supply_config psy_cfg = {};
+
 	struct rt5033_dev *rt5033 = dev_get_drvdata(pdev->dev.parent);
 	int ret;
 
@@ -440,13 +442,15 @@ static int rt5033_charger_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	charger->psy.name = "rt5033-charger",
-	charger->psy.type = POWER_SUPPLY_TYPE_BATTERY,
-	charger->psy.properties = rt5033_charger_props,
-	charger->psy.num_properties = ARRAY_SIZE(rt5033_charger_props),
-	charger->psy.get_property = rt5033_charger_get_property,
+	/* AC supply */
+	charger->ac_chg_desc.name = "rt5033-charger";
+	charger->ac_chg_desc.type = POWER_SUPPLY_TYPE_BATTERY;
+	charger->ac_chg_desc.properties = rt5033_charger_props;
+	charger->ac_chg_desc.num_properties = ARRAY_SIZE(rt5033_charger_props);
+	charger->ac_chg_desc.get_property = rt5033_charger_get_property;
 
-	ret = power_supply_register(&pdev->dev, &charger->psy);
+	ret = power_supply_register(&pdev->dev, &charger->ac_chg_desc,
+						&psy_cfg);
 	if (ret) {
 		dev_err(&pdev->dev, "Failed to register power supply\n");
 		return ret;
