@@ -32,13 +32,19 @@
 			no-map;
 		};
 
-		wcnss_mem: wcnss@8bd00000 {
-			reg = <0x0 0x8bd00000 0x0 0x600000>;
+		gps_mem: gps@8bd00000 {
+			status = "disabled";
+			reg = <0x0 0x8bd00000 0x0 0x200000>;
 			no-map;
 		};
 
-		venus_mem: venus@8c300000 {
-			reg = <0x0 0x8c300000 0x0 0x600000>;
+		wcnss_mem: wcnss@8bf00000 {
+			reg = <0x0 0x8bf00000 0x0 0x600000>;
+			no-map;
+		};
+
+		venus_mem: venus@8c500000 {
+			reg = <0x0 0x8c500000 0x0 0x600000>;
 			no-map;
 		};
 	};
