@@ -3,6 +3,8 @@
 /dts-v1/;
 
 #include "msm8916-pm8916.dtsi"
+#include "msm8916-modem.dtsi"
+
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
@@ -19,6 +21,29 @@
 
 	chosen {
 		stdout-path = "serial0";
+	};
+
+	reserved-memory {
+		/delete-node/ rmtfs@86700000;
+		/delete-node/ reserved@86680000;
+
+		rmtfs: rmtfs@86680000 {
+			compatible = "qcom,rmtfs-mem";
+			reg = <0x0 0x86680000 0x0 0x160000>;
+			no-map;
+
+			qcom,client-id = <1>;
+		};
+
+		mpss_mem: mpss@86800000 {
+			reg = <0x0 0x86800000 0x0 0x5000000>;
+			no-map;
+		};
+
+		gps_mem: gps@8b800000 {
+			reg = <0x0 0x8b800000 0x0 0x200000>;
+			no-map;
+		};
 	};
 
 	backlight: backlight {
@@ -68,6 +93,32 @@
 
 &blsp1_uart2 {
 	status = "okay";
+};
+
+&blsp_i2c3 {
+	status = "okay";
+
+	speaker_codec_top: audio-codec@34 {
+		compatible = "nxp,tfa9897";
+		reg = <0x34>;
+		vddd-supply = <&pm8916_l6>;
+		rcv-gpios = <&msmgpio 50 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&speaker_top_default>;
+		sound-name-prefix = "Speaker Top";
+		#sound-dai-cells = <0>;
+	};
+
+	speaker_codec_bottom: audio-codec@36 {
+		compatible = "nxp,tfa9897";
+		reg = <0x36>;
+		vddd-supply = <&pm8916_l6>;
+		rcv-gpios = <&msmgpio 111 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&speaker_bottom_default>;
+		sound-name-prefix = "Speaker Bottom";
+		#sound-dai-cells = <0>;
+	};
 };
 
 &blsp_i2c4 {
@@ -236,6 +287,13 @@
 	status = "okay";
 };
 
+&q6afedai {
+	dai@22 {
+		reg = <QUATERNARY_MI2S_RX>;
+		qcom,sd-lines = <0>;
+	};
+};
+
 &sdhc_1 {
 	status = "okay";
 
@@ -254,6 +312,38 @@
 	cd-gpios = <&msmgpio 38 GPIO_ACTIVE_LOW>;
 };
 
+&sound {
+	status = "okay";
+
+	model = "alcatel-idol3";
+	widgets =
+		"Speaker", "Speaker Top",
+		"Speaker", "Speaker Bottom";
+	pin-switches = "Speaker Top", "Speaker Bottom";
+	audio-routing =
+		"Speaker Top", "Speaker Top OUT",
+		"Speaker Bottom", "Speaker Bottom OUT",
+		"AMIC1", "MIC BIAS External1",
+		"AMIC2", "MIC BIAS Internal2",
+		"AMIC3", "MIC BIAS External1";
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&cdc_pdm_lines_act &ext_sec_tlmm_lines_act>;
+	pinctrl-1 = <&cdc_pdm_lines_sus &ext_sec_tlmm_lines_sus>;
+};
+
+&sound_dai_primary {
+	/* unused primary link is kept so we can use same UCM with modem */
+};
+
+&sound_dai_quaternary {
+	status = "okay";
+
+	codec {
+		sound-dai = <&speaker_codec_top>, <&speaker_codec_bottom>;
+	};
+};
+
 &usb {
 	status = "okay";
 	extcon = <&usb_id>, <&usb_id>;
@@ -261,6 +351,14 @@
 
 &usb_hs_phy {
 	extcon = <&usb_id>;
+};
+
+&wcd_codec {
+	qcom,micbias1-ext-cap;
+	qcom,micbias-lvl = <2800>;
+	qcom,mbhc-vthreshold-low = <75 100 120 180 500>;
+	qcom,mbhc-vthreshold-high = <75 100 120 180 500>;
+	qcom,hphl-jack-type-normally-open;
 };
 
 &smd_rpm_regulators {
@@ -451,6 +549,22 @@
 
 		drive-strength = <6>;
 		bias-pull-up;
+	};
+
+	speaker_bottom_default: speaker-bottom-default-state {
+		pins = "gpio111";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	speaker_top_default: speaker-top-default-state {
+		pins = "gpio50";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	tps65132_en_default: tps65132-en-default-state {
