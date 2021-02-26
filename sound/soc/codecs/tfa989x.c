@@ -43,6 +43,7 @@
 #define TFA989X_CURRENTSENSE4		0x49
 
 #define TFA9895_REVISION		0x12
+#define TFA9897_REVISION		0x97
 
 struct tfa989x_rev {
 	unsigned int rev;
@@ -178,6 +179,29 @@ static const struct tfa989x_rev tfa9895_rev = {
 	.init	= tfa9895_init,
 };
 
+static int tfa9897_init(struct regmap *regmap)
+{
+	int ret;
+
+	/* Reduce slewrate by clearing iddqtestbst to avoid booster damage */
+	ret = regmap_write(regmap, TFA989X_CURRENTSENSE3, 0x0300);
+	if (ret)
+		return ret;
+
+	/* Enable clipping */
+	ret = regmap_clear_bits(regmap, TFA989X_CURRENTSENSE4, 0x1);
+	if (ret)
+		return ret;
+
+	/* TDM setting needed for unclear reason */
+	return regmap_write(regmap, 0x14, 0x0);
+}
+
+static const struct tfa989x_rev tfa9897_rev = {
+	.rev	= TFA9897_REVISION,
+	.init	= tfa9897_init,
+};
+
 /*
  * FIXME: At the moment this driver bypasses the "CoolFlux DSP" built into the
  * TFA989X amplifiers entirely. Unfortunately, there seems to be absolutely
@@ -284,6 +308,7 @@ static int tfa989x_i2c_probe(struct i2c_client *i2c)
 
 static const struct of_device_id tfa989x_of_match[] = {
 	{ .compatible = "nxp,tfa9895", .data = &tfa9895_rev },
+	{ .compatible = "nxp,tfa9897", .data = &tfa9897_rev },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, tfa989x_of_match);
