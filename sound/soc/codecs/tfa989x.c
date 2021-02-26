@@ -77,13 +77,16 @@ static const struct regmap_config tfa989x_regmap = {
 
 static const char * const chsa_text[] = { "Left", "Right", /* "DSP" */ };
 static SOC_ENUM_SINGLE_DECL(chsa_enum, TFA989X_I2SREG, TFA989X_I2SREG_CHSA, chsa_text);
-static const struct snd_kcontrol_new chsa_mux = SOC_DAPM_ENUM("Amp Input", chsa_enum);
+static const struct snd_kcontrol_new
+	chsa_mux = SOC_DAPM_ENUM("Amp Input", chsa_enum),
+	amp_switch = SOC_DAPM_SINGLE("Switch", SND_SOC_NOPM, 0, 1, 1);
 
 static const struct snd_soc_dapm_widget tfa989x_dapm_widgets[] = {
 	SND_SOC_DAPM_OUTPUT("OUT"),
 	SND_SOC_DAPM_SUPPLY("POWER", TFA989X_SYS_CTRL, TFA989X_SYS_CTRL_PWDN, 1, NULL, 0),
 	SND_SOC_DAPM_OUT_DRV("AMPE", TFA989X_SYS_CTRL, TFA989X_SYS_CTRL_AMPE, 0, NULL, 0),
 
+	SND_SOC_DAPM_SWITCH("Amp", SND_SOC_NOPM, 0, 0, &amp_switch),
 	SND_SOC_DAPM_MUX("Amp Input", SND_SOC_NOPM, 0, 0, &chsa_mux),
 	SND_SOC_DAPM_AIF_IN("AIFINL", "HiFi Playback", 0, SND_SOC_NOPM, 0, 0),
 	SND_SOC_DAPM_AIF_IN("AIFINR", "HiFi Playback", 1, SND_SOC_NOPM, 0, 0),
@@ -92,7 +95,8 @@ static const struct snd_soc_dapm_widget tfa989x_dapm_widgets[] = {
 static const struct snd_soc_dapm_route tfa989x_dapm_routes[] = {
 	{"OUT", NULL, "AMPE"},
 	{"AMPE", NULL, "POWER"},
-	{"AMPE", NULL, "Amp Input"},
+	{"AMPE", NULL, "Amp"},
+	{"Amp", "Switch", "Amp Input"},
 	{"Amp Input", "Left", "AIFINL"},
 	{"Amp Input", "Right", "AIFINR"},
 };
