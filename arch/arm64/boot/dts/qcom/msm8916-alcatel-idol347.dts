@@ -7,6 +7,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
+#include <dt-bindings/sound/apq8016-lpass.h>
 
 / {
 	model = "Alcatel OneTouch Idol 3 (4.7)";
@@ -54,6 +55,32 @@
 
 &blsp1_uart2 {
 	status = "okay";
+};
+
+&blsp_i2c3 {
+	status = "okay";
+
+	speaker_codec_top: audio-codec@34 {
+		compatible = "nxp,tfa9897";
+		reg = <0x34>;
+		vddd-supply = <&pm8916_l6>;
+		rcv-gpios = <&msmgpio 50 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&speaker_top_default>;
+		sound-name-prefix = "Speaker Top";
+		#sound-dai-cells = <0>;
+	};
+
+	speaker_codec_bottom: audio-codec@36 {
+		compatible = "nxp,tfa9897";
+		reg = <0x36>;
+		vddd-supply = <&pm8916_l6>;
+		rcv-gpios = <&msmgpio 111 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&speaker_bottom_default>;
+		sound-name-prefix = "Speaker Bottom";
+		#sound-dai-cells = <0>;
+	};
 };
 
 &blsp_i2c4 {
@@ -178,6 +205,10 @@
 	qcom,dsi-phy-regulator-ldo-mode;
 };
 
+&lpass {
+	status = "okay";
+};
+
 &mdss {
 	status = "okay";
 };
@@ -219,6 +250,48 @@
 	cd-gpios = <&msmgpio 38 GPIO_ACTIVE_LOW>;
 };
 
+&sound {
+	status = "okay";
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&cdc_pdm_lines_act &ext_sec_tlmm_lines_act>;
+	pinctrl-1 = <&cdc_pdm_lines_sus &ext_sec_tlmm_lines_sus>;
+
+	model = "alcatel-idol3";
+	audio-routing =
+		"AMIC1", "MIC BIAS External1",
+		"AMIC2", "MIC BIAS Internal2",
+		"AMIC3", "MIC BIAS External1";
+
+	/* unused primary link is kept so we can use same UCM with modem */
+	dai-link-primary {
+		link-name = "Primary MI2S";
+		cpu {
+			sound-dai = <&lpass MI2S_PRIMARY>;
+		};
+	};
+
+	dai-link-tertiary {
+		link-name = "Tertiary MI2S";
+		cpu {
+			sound-dai = <&lpass MI2S_TERTIARY>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 1>, <&wcd_codec 1>;
+		};
+	};
+
+	dai-link-quaternary {
+		link-name = "Quaternary MI2S";
+		cpu {
+			sound-dai = <&lpass MI2S_QUATERNARY>;
+		};
+		codec {
+			sound-dai = <&speaker_codec_top>, <&speaker_codec_bottom>;
+		};
+	};
+};
+
 &usb {
 	status = "okay";
 	extcon = <&usb_id>, <&usb_id>;
@@ -226,6 +299,14 @@
 
 &usb_hs_phy {
 	extcon = <&usb_id>;
+};
+
+&wcd_codec {
+	qcom,micbias1-ext-cap;
+	qcom,micbias-lvl = <2800>;
+	qcom,mbhc-vthreshold-low = <75 100 120 180 500>;
+	qcom,mbhc-vthreshold-high = <75 100 120 180 500>;
+	qcom,hphl-jack-type-normally-open;
 };
 
 &smd_rpm_regulators {
@@ -387,6 +468,22 @@
 
 		drive-strength = <6>;
 		bias-pull-up;
+	};
+
+	speaker_bottom_default: speaker-bottom-default {
+		pins = "gpio111";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	speaker_top_default: speaker-top-default {
+		pins = "gpio50";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	tps65132_en_default: tps65132-en-default {
