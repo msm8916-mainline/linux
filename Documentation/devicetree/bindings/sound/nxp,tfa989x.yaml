@@ -37,6 +37,17 @@ required:
 
 additionalProperties: false
 
+allOf:
+  - if:
+      properties:
+        compatible:
+          contains:
+            const: nxp,tfa9897
+    then:
+      properties:
+        rcv-gpios:
+          description: optional GPIO to be asserted when receiver mode is enabled.
+
 examples:
   - |
     i2c {
