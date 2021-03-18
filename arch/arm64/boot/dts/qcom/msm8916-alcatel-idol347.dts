@@ -23,7 +23,7 @@
 
 	reserved-memory {
 		/delete-node/ rmtfs@86700000;
-		/delete-node/ reserved@8668000;
+		/delete-node/ reserved@86680000;
 		/delete-node/ wcnss@89300000;
 		/delete-node/ venus@89900000;
 
