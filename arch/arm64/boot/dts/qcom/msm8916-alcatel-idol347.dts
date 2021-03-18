@@ -124,7 +124,7 @@
 	status = "okay";
 
 	touchscreen@26 {
-		compatible = "mstar,msg26xx";
+		compatible = "mstar,msg2638";
 		reg = <0x26>;
 		interrupt-parent = <&msmgpio>;
 		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
@@ -133,8 +133,8 @@
 		pinctrl-0 = <&ts_int_reset_default>;
 		vdd-supply = <&pm8916_l17>;
 		vddio-supply = <&pm8916_l5>;
-		touchscreen-size-x = <720>;
-		touchscreen-size-y = <1280>;
+		touchscreen-size-x = <2048>;
+		touchscreen-size-y = <2048>;
 	};
 };
 
