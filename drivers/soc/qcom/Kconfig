@@ -209,4 +209,12 @@ config QCOM_APR
 	  application processor and QDSP6. APR is
 	  used by audio driver to configure QDSP6
 	  ASM, ADM and AFE modules.
+
+config QCOM_MEMSHARE_QMI_SERVICE
+       select QCOM_QMI_HELPERS
+       tristate "Qualcomm QMI Shared Memory Service (MEMSHARE)"
+       help
+	  This service provides additional memory regions on request from
+	  remote processors. On some platforms it is used for GPS by
+	  the location service in the modem subsystem.
 endmenu
