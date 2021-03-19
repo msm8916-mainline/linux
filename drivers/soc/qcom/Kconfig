@@ -246,4 +246,12 @@ config QCOM_ICC_BWMON
 	  the fixed bandwidth votes from cpufreq (CPU nodes) thus achieve high
 	  memory throughput even with lower CPU frequencies.
 
+config QCOM_MEMSHARE_QMI_SERVICE
+       select QCOM_QMI_HELPERS
+       tristate "Qualcomm QMI Shared Memory Service (MEMSHARE)"
+       help
+	  This service provides additional memory regions on request from
+	  remote processors. On some platforms it is used for GPS by
+	  the location service in the modem subsystem.
+
 endmenu
