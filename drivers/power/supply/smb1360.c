@@ -282,9 +282,23 @@
 #define OTP_WRITABLE_REG_6		0xE5
 #define OTP_WRITABLE_REG_7		0xE6
 #define OTP_WRITABLE_REG_8		0xE7
+#define OTP_WRITABLE_REG_9		0xE8
+#define OTP_WRITABLE_REG_10		0xE9
+#define OTP_WRITABLE_REG_11		0xEA
+#define OTP_WRITABLE_REG_12		0xEB
+#define OTP_WRITABLE_REG_13		0xEC
+#define OTP_WRITABLE_REG_14		0xED
+#define OTP_WRITABLE_REG_15		0xEE
+#define OTP_WRITABLE_REG_16		0xEF
 #define OTP_BACKUP_MAP_REG		0xF0
 #define CURRENT_GAIN_BITMAP		0x5000
 #define HARD_JEITA_BITMAP		0x0500
+#define RSLOW_BITMAP			0x00AA
+
+#define RSLOW_0				0x54
+#define RSLOW_1				0x55
+#define RSLOW_2				0x56
+#define RSLOW_3				0x57
 
 #define OTP_HARD_COLD_REG_ADDR		0x12
 #define OTP_HARD_HOT_REG_ADDR		0x13
@@ -924,14 +938,30 @@ static int smb1360_set_otp_hard_jeita_threshold(struct smb1360 *smb)
 	return regmap_raw_write(smb->fg_regmap, OTP_WRITABLE_REG_5, val, ARRAY_SIZE(val));
 }
 
+static int smb1360_set_otp_rslow(struct smb1360 *smb)
+{
+	u8 seq[] = { RSLOW_0, 0x0, RSLOW_1, 0x0, RSLOW_2, 0x0, RSLOW_3, 0x0 };
+	u8 val[4];
+	int i;
+
+	if (device_property_read_u8_array(smb->dev, "qcom,otp-rslow-config", val, 4))
+		return -EINVAL;
+
+	for (i = 0; i < 4; i++)
+		seq[i * 2 + 1] = val[i];
+
+	return regmap_raw_write(smb->fg_regmap, OTP_WRITABLE_REG_9, seq, ARRAY_SIZE(seq));
+}
+
 static int smb1360_reconf_otp(struct smb1360 *smb)
 {
 	bool hard_jeita = device_property_read_bool(smb->dev, "qcom,otp-hard-jeita-config");
+	bool otp_rslow = device_property_present(smb->dev, "qcom,otp-rslow-config");
 	u16 backup_map = 0;
 	__be16 val;
 	int ret;
 
-	if (!smb->rsense_10mohm && !hard_jeita)
+	if (!smb->rsense_10mohm && !hard_jeita && !otp_rslow)
 		return 0;
 
 	ret = smb1360_enable_fg_access(smb);
@@ -953,6 +983,14 @@ static int smb1360_reconf_otp(struct smb1360 *smb)
 			dev_err(smb->dev, "unable to modify otp hard jeita: %d\n", ret);
 		else
 			backup_map |= HARD_JEITA_BITMAP;
+	}
+
+	if (otp_rslow) {
+		ret = smb1360_set_otp_rslow(smb);
+		if (ret)
+			dev_err(smb->dev, "unable to modify otp rslow: %d\n", ret);
+		else
+			backup_map |= RSLOW_BITMAP;
 	}
 
 	val = cpu_to_be16(backup_map);
