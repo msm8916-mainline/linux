@@ -84,6 +84,58 @@
 	};
 };
 
+&blsp_i2c2 {
+	status = "okay";
+
+	charger: battery@14 {
+		compatible = "qcom,smb1360";
+		reg = <0x14>;
+
+		interrupt-parent = <&tlmm>;
+		interrupts = <9 IRQ_TYPE_LEVEL_LOW>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&smb_int_default>;
+		qcom,otp-rslow-config = /bits/ 8 <0x0 0x0 0x0 0x0>;
+
+		qcom,float-voltage-mv = <4350>;
+		qcom,iterm-ma = <75>;
+		qcom,charging-timeout = <768>; /* 0 in downstream */
+		qcom,recharge-thresh-mv = <100>;
+		qcom,chg-inhibit-disabled;
+
+		qcom,battery-profile = <0>;
+		qcom,fg-batt-capacity-mah = <2000>;
+		qcom,fg-cc-soc-coeff = <0x8819>;
+		qcom,fg-cutoff-voltage-mv = <3400>;
+		qcom,fg-ibatt-standby-ma = <200>;
+		qcom,fg-cc-to-cv-mv = <4328>;
+		qcom,thermistor-c1-coeff = <0x86C8>;
+		qcom,fg-auto-recharge-soc = <95>; /* 99 in downstream */
+
+		qcom,otp-hard-jeita-config;
+		qcom,otp-hot-bat-decidegc = <550>;
+		qcom,otp-cold-bat-decidegc = <0>;
+
+		qcom,soft-jeita-config;
+		qcom,warm-bat-decidegc = <450>;
+		qcom,cool-bat-decidegc = <100>;
+		qcom,soft-jeita-comp-voltage-mv = <4100>;
+		qcom,soft-jeita-comp-current-ma = <550>;
+
+		qcom,shdn-after-pwroff;
+		qcom,fg-reset-at-pon;
+		qcom,fg-reset-threshold-mv = <200>;
+
+		/* Set by bootloader */
+		status = "disabled";
+
+		usb_otg_vbus: usb-otg-vbus {
+			regulator-max-microamp = <1500000>;
+		};
+	};
+};
+
 &blsp_i2c3 {
 	status = "okay";
 
@@ -319,11 +371,12 @@
 
 &usb {
 	status = "okay";
-	extcon = <&usb_id>, <&usb_id>;
+	extcon = <&charger>, <&usb_id>;
+	vbus-supply = <&usb_otg_vbus>;
 };
 
 &usb_hs_phy {
-	extcon = <&usb_id>;
+	extcon = <&charger>;
 };
 
 &venus {
@@ -446,6 +499,14 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+	smb_int_default: smb-int-default-state {
+		pins = "gpio9";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
 	};
 
 	speaker_bottom_default: speaker-bottom-default-state {
