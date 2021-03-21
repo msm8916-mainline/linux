@@ -188,6 +188,15 @@ properties:
       If this value is not specified a default value of 50mV is used.
       Unit is in milli-volts.
 
+  qcom,otp-rslow-config:
+    $ref: /schemas/types.yaml#/definitions/uint8-array
+    description:
+      Undocumented feature found on some devices as "qcom,otp-rslow-cfg".
+      Each item is a value keyed respectively to 0x54, 0x55, 0x56 and 0x57
+      and written to OTP.
+    minItems: 4
+    maxItems: 4
+
   usb_otg_vbus:
     description: Regulator controlling USB OTG VBUS.
     # TODO: Reference regulator-max-microamps here somehow?
