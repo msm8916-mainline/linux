@@ -11,6 +11,7 @@ dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-alcatel-alto5-vdf.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-alcatel-idol347.dtb msm8916-alcatel-idol347-modem.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-asus-z00l.dtb msm8916-asus-z00l-modem.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-asus-z010d.dtb msm8916-asus-z010d-modem.dtb
+dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-lg-c50.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-lg-m216.dtb msm8916-lg-m216-modem.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-longcheer-l8150.dtb msm8916-longcheer-l8150-modem.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-longcheer-l8910.dtb msm8916-longcheer-l8910-modem.dtb
