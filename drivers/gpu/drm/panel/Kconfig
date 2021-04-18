@@ -341,6 +341,12 @@ config DRM_PANEL_RONBO_RB070D30
 	help
 	  Say Y here if you want to enable support for Ronbo Electronics
 	  RB070D30 1024x600 DSI panel.
+	  
+config DRM_PANEL_SAMSUNG_S6D7AA0_LSL080A103
+	tristate "Samsung S6D7AA0 LSL080A103 DSI video mode panel"
+	depends on OF && OF && REGULATOR
+	depends on DRM_MIPI_DSI
+	depends on BACKLIGHT_CLASS_DEVICE
 
 config DRM_PANEL_SAMSUNG_S6D16D0
 	tristate "Samsung S6D16D0 DSI video mode panel"

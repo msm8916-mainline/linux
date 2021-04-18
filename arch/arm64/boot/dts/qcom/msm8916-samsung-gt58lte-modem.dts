@@ -1,0 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+#include "msm8916-samsung-gt58lte.dts"
+#include "msm8916-modem.dtsi"
