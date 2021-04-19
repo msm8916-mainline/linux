@@ -284,8 +284,8 @@ static int s6d7aa0_lsl080al03_probe(struct mipi_dsi_device *dsi)
 	if (!ctx)
 		return -ENOMEM;
 
-	ctx->supplies[0].supply = "vmipi";
-	ctx->supplies[1].supply = "5p4v";
+	ctx->supplies[0].supply = "vlcd_5p4v";
+	ctx->supplies[1].supply = "lcd_vmipi";
 	ret = devm_regulator_bulk_get(dev, ARRAY_SIZE(ctx->supplies),
 				      ctx->supplies);
 	if (ret < 0)
@@ -339,7 +339,7 @@ static int s6d7aa0_lsl080al03_remove(struct mipi_dsi_device *dsi)
 }
 
 static const struct of_device_id s6d7aa0_lsl080al03_of_match[] = {
-	{ .compatible = "samsung,s6d7aa0-lsl080al03" },
+	{ .compatible = "samsung,s6d7aa0-lsl080al03" }, // FIXME
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, s6d7aa0_lsl080al03_of_match);

@@ -93,7 +93,7 @@
 		};		
 	};
 
-    reg_lcd_vmipi: regulator-lcd-vmipi {
+    reg_vmipi: regulator-vmipi {
 		compatible = "regulator-fixed";
 		regulator-name = "lcd_vmipi";
 		regulator-min-microvolt = <1800000>;
@@ -106,7 +106,7 @@
 		pinctrl-0 = <&lcd_en_default>;
 	};
 
-	reg_vlcd_5p4v: regulator-vlcd-5p4v {
+	reg_5p4v: regulator-5p4v {
 		compatible = "regulator-fixed";
 		regulator-name = "vlcd_5p4v";
 		regulator-min-microvolt = <5400000>;
@@ -169,39 +169,25 @@
 };
 
 &dsi0 {
-	pinctrl-names = "default", "sleep";
-	pinctrl-0 = <&mdss_default>;
-	pinctrl-1 = <&mdss_sleep>;
+        panel@0 {
+                compatible = "samsung,s6d7aa0-lsl080al03";
+                reg = <0>;
 
-	panel@0 {
-		compatible = "samsung,s6d7aa0-lsl080al03";
-		reg = <0>;
+                vlcd_5p4v-supply = <&reg_5p4v>;
+                lcd_vmipi-supply = <&reg_vmipi>;
+                reset-gpios = <&msmgpio 97 GPIO_ACTIVE_LOW>;
 
-		vmipi-supply = <&reg_lcd_vmipi>;
-		5p4v-supply = <&reg_vlcd_5p4v>;
-		reset-gpios = <&msmgpio 97 GPIO_ACTIVE_HIGH>;
+                port {
+                        panel_in: endpoint {
+                                remote-endpoint = <&dsi0_out>;
+                        };
+                };
+        };
+};
 
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			port@0 {
-				reg = <0>;
-				panel_in: endpoint {
-					remote-endpoint = <&dsi0_out>;
-				};
-			};
-		};
-	};
-
-	ports {
-		port@1 {
-			endpoint {
-				remote-endpoint = <&panel_in>;
-				data-lanes = <0 1 2 3>;
-			};
-		};
-	};
+&dsi0_out {
+        data-lanes = <0 1 2 3>;
+        remote-endpoint = <&panel_in>;
 };
 
 &mdss {
@@ -372,28 +358,20 @@
 		bias-disable;
 	};
 
-	gpio_keys_default: gpio_keys_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio107", "gpio109";
-		};
-		pinconf {
-			pins = "gpio107", "gpio109";
-			drive-strength = <2>;
-			bias-pull-up;
-		};
+	gpio_keys_default: gpio-keys-default {
+		pins = "gpio107", "gpio109";
+        function = "gpio";
+			
+		drive-strength = <2>;
+		bias-pull-up;
 	};
 
-    gpio_hall_sensor_default: gpio_hall_sensor_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio52";
-		};
-		pinconf {
-			pins = "gpio52";
-			drive-strength = <2>;
-			bias-disable;
-		};
+    gpio_hall_sensor_default: gpio-hall-sensor-default {
+		pins = "gpio52";
+		function = "gpio";
+			
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	lcd_en_default: lcd-en-default {
@@ -404,7 +382,7 @@
 		bias-disable;
 	};
 
-    pmx_mdss {
+    mdss {
 		mdss_default: mdss-default {
 			pins = "gpio97";
 			function = "gpio";
@@ -421,39 +399,27 @@
 		};
 	};
 
-	tsp_en_default: tsp_en_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio73";
-		};
-		pinconf {
-			pins = "gpio73";
-			drive-strength = <2>;
-			bias-disable;
-		};
+	tsp_en_default: tsp-en-default {
+		pins = "gpio73";
+		function = "gpio";
+		
+		drive-strength = <2>;
+		bias-disable;
 	};
 
-	tsp_int_default: tsp_int_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio13";
-		};
-		pinconf {
-			pins = "gpio13";
-			drive-strength = <2>;
-			bias-disable;
-		};
+	tsp_int_default: tsp-int-default {
+		pins = "gpio13";
+		function = "gpio";
+		
+		drive-strength = <2>;
+		bias-disable;
 	};
 
-	tsp_rst_default: tsp_rst_default {
-		pinmux {
-			function = "gpio";
-			pins = "gpio114";
-		};
-		pinconf {
-			pins = "gpio114";
-			drive-strength = <2>;
-			bias-disable;
-		};
+	tsp_rst_default: tsp-rst-default {
+	    pins = "gpio114";
+	    function = "gpio";
+	
+		drive-strength = <2>;
+		bias-disable;
 	};
 };
