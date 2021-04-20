@@ -214,7 +214,37 @@
 	status = "okay";
 };
 
+&dsi0 {
+	panel@0 {
+		compatible = "huawei,g7-panel";
+		reg = <0>;
+
+		vsp-supply = <&reg_lcd_pos>;
+		vsn-supply = <&reg_lcd_neg>;
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&dsi_phy0 {
+	qcom,dsi-phy-regulator-ldo-mode;
+};
+
 &lpass {
+	status = "okay";
+};
+
+&mdss {
 	status = "okay";
 };
 
@@ -449,6 +479,20 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+	mdss_active: mdss-active-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	mdss_suspend: mdss-suspend-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
 	};
 
 	prox_irq_default: prox-irq-default-state {
