@@ -211,6 +211,16 @@
 	extcon = <&pm8916_usbin>;
 };
 
+&wcd_codec {
+	jack-gpios = <&msmgpio 110 GPIO_ACTIVE_LOW>;
+	qcom,micbias-lvl = <2800>;
+	qcom,mbhc-vtreshold-low = <75 150 237 450 500>;
+	qcom,mbhc-vtreshold-high = <75 150 237 450 500>;
+
+	pinctrl-0 = <&jack_default>;
+	pinctrl-names = "default";
+};
+
 &smd_rpm_regulators {
 	vdd_l1_l2_l3-supply = <&pm8916_s3>;
 	vdd_l4_l5_l6-supply = <&pm8916_s4>;
@@ -338,6 +348,13 @@
 
 	gpio_hall_sensor_default: gpio-hall-sensor-default-state {
 		pins = "gpio52";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	jack_default: jack-default-state {
+		pins = "gpio110";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
