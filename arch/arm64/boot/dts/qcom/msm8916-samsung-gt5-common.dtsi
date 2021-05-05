@@ -70,6 +70,25 @@
 	};
 };
 
+&blsp_i2c4 {
+	status = "okay";
+
+	fuelgauge@36 {
+		compatible = "maxim,max77849-battery";
+		reg = <0x36>;
+
+		maxim,rsns-microohm = <10000>;
+		maxim,over-heat-temp = <600>;
+		maxim,over-volt = <4400>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <121 IRQ_TYPE_EDGE_FALLING>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&fuelgauge_int_default>;
+	};
+};
+
 &blsp1_uart2 {
 	status = "okay";
 };
@@ -219,6 +238,14 @@
 };
 
 &msmgpio {
+	fuelgauge_int_default: fuelgauge-int-default {
+		pins = "gpio121";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	gpio_keys_default: gpio-keys-default {
 		pins = "gpio107", "gpio109";
 		function = "gpio";
