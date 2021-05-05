@@ -8,6 +8,32 @@
 	model = "Samsung Galaxy Tab A 9.7 (2015)";
 	compatible = "samsung,gt510", "qcom,msm8916";
 
+	reg_lcd_vmipi: regulator-lcd-vmipi {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd_vmipi";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+
+		gpio = <&msmgpio 8 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_en_default>;
+	};
+
+	reg_vlcd_5p4v: regulator-vlcd-5p4v {
+		compatible = "regulator-fixed";
+		regulator-name = "vlcd_5p4v";
+		regulator-min-microvolt = <5400000>;
+		regulator-max-microvolt = <5400000>;
+
+		gpio = <&msmgpio 51 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&buckbooster_en_default>;
+	};
+
 	reg_tsp_1p8v: regulator-tsp-1p8v {
 		compatible = "regulator-fixed";
 		regulator-name = "tsp_1p8v";
@@ -51,7 +77,70 @@
 	};
 };
 
+&dsi0 {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&mdss_default>;
+	pinctrl-1 = <&mdss_sleep>;
+
+	panel@0 {
+		compatible = "samsung,s6d7aa0-ltl101at01";
+		reg = <0>;
+
+		vmipi-supply = <&reg_lcd_vmipi>;
+		5p4v-supply = <&reg_vlcd_5p4v>;
+		reset-gpios = <&msmgpio 97 GPIO_ACTIVE_LOW>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&mdss {
+	status = "okay";
+};
+
 &msmgpio {
+	buckbooster_en_default: buckbooster-en-default {
+		pins = "gpio51";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	lcd_en_default: lcd-en-default {
+		pins = "gpio8";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	mdss {
+		mdss_default: mdss-default {
+			pins = "gpio97";
+			function = "gpio";
+
+			drive-strength = <8>;
+			bias-disable;
+		};
+		mdss_sleep: mdss-sleep {
+			pins = "gpio97";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
+
 	tsp_en_default: tsp-en-default {
 		pins = "gpio73";
 		function = "gpio";
