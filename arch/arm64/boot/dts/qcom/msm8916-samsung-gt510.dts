@@ -32,6 +32,15 @@
 		pinctrl-names = "default";
 	};
 
+	speaker_codec: audio-codec {
+		compatible = "maxim,max98357a";
+		sdmode-gpios = <&msmgpio 55 GPIO_ACTIVE_HIGH>;
+		#sound-dai-cells = <0>;
+
+		pinctrl-0 = <&audio_sdmode_default>;
+		pinctrl-names = "default";
+	};
+
 	reg_tsp_1p8v: regulator-tsp-1p8v {
 		compatible = "regulator-fixed";
 		regulator-name = "tsp_1p8v";
@@ -85,6 +94,13 @@
 };
 
 &msmgpio {
+	audio_sdmode_default: audio-sdmode-default-state {
+		pins = "gpio55";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	motor_en_default: motor-en-default-state {
 		pins = "gpio76";
 		function = "gpio";

@@ -9,6 +9,26 @@
 	compatible = "samsung,gt58", "qcom,msm8916";
 	chassis-type = "tablet";
 
+	i2c-amplifier {
+		compatible = "i2c-gpio";
+		sda-gpios = <&msmgpio 55 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&msmgpio 56 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		pinctrl-0 = <&amp_i2c_default>;
+		pinctrl-names = "default";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		speaker_codec: audio-codec@34 {
+			compatible = "nxp,tfa9895";
+			reg = <0x34>;
+			vddd-supply = <&pm8916_l5>;
+			sound-name-prefix = "Speaker";
+			#sound-dai-cells = <0>;
+		};
+	};
+
 	reg_vdd_tsp: regulator-vdd-tsp {
 		compatible = "regulator-fixed";
 		regulator-name = "vdd_tsp";
@@ -52,7 +72,31 @@
 	};
 };
 
+&sound {
+	/* FIXME: Avoid powering secondary mic permanently */
+	pinctrl-0 = <&cdc_pdm_lines_act &ext_sec_tlmm_lines_act &secondary_mic_default>;
+	pinctrl-1 = <&cdc_pdm_lines_sus &ext_sec_tlmm_lines_sus &secondary_mic_default>;
+	pinctrl-names = "default", "sleep";
+
+	model = "samsung-a2015";
+};
+
 &msmgpio {
+	amp_i2c_default: amp-i2c-default-state {
+		pins = "gpio55", "gpio56";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	secondary_mic_default: secondary-mic-default-state {
+		pins = "gpio98";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+		output-high;
+	};
+
 	reg_tsp_en_default: reg-tsp-en-default-state {
 		pins = "gpio73";
 		function = "gpio";
