@@ -1,0 +1,61 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+#include "msm8916-samsung-gt510.dts"
+#include "msm8916-modem.dtsi"
+
+/ {
+	model = "Samsung Galaxy Tab A 9.7 LTE (2015) (SM-T555)";
+	compatible = "samsung,gt510lte", "samsung.gt510", "qcom,msm8916";
+};
+
+&q6afedai {
+	dai@22 {
+		reg = <QUATERNARY_MI2S_RX>;
+		qcom,sd-lines = <1>;
+	};
+};
+
+&sound {
+	/delete-node/ dai-link-primary;
+	/delete-node/ dai-link-tertiary;
+	/delete-node/ dai-link-quaternary;
+
+	dai-link-primary-qdsp6 {
+		link-name = "Primary MI2S";
+		cpu {
+			sound-dai = <&q6afedai PRIMARY_MI2S_RX>;
+		};
+		platform {
+			sound-dai = <&q6routing>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 0>, <&wcd_codec 0>;
+		};
+	};
+
+	dai-link-tertiary-qdsp6 {
+		link-name = "Tertiary MI2S";
+		cpu {
+			sound-dai = <&q6afedai TERTIARY_MI2S_TX>;
+		};
+		platform {
+			sound-dai = <&q6routing>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 1>, <&wcd_codec 1>;
+		};
+	};
+
+	dai-link-quaternary-qdsp6 {
+		link-name = "Quaternary MI2S";
+		cpu {
+			sound-dai = <&q6afedai QUATERNARY_MI2S_RX>;
+		};
+		platform {
+			sound-dai = <&q6routing>;
+		};
+		codec {
+			sound-dai = <&speaker_codec>;
+		};
+	};
+};
