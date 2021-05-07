@@ -8,6 +8,26 @@
 	model = "Samsung Galaxy Tab A 8.0 (2015)";
 	compatible = "samsung,gt58", "qcom,msm8916";
 
+	i2c-amplifier {
+		compatible = "i2c-gpio";
+		sda-gpios = <&msmgpio 55 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&msmgpio 56 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&amp_i2c_default>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		speaker_codec: audio-codec@34 {
+			compatible = "nxp,tfa9895";
+			reg = <0x34>;
+			vddd-supply = <&pm8916_l5>;
+			sound-name-prefix = "Speaker";
+			#sound-dai-cells = <0>;
+		};
+	};
+
 	reg_5p4v: regulator-5p4v {
 		compatible = "regulator-fixed";
 		regulator-name = "vlcd_5p4v";
@@ -98,7 +118,24 @@
 	status = "okay";
 };
 
+&sound {
+	/* FIXME: Avoid powering secondary mic permanently */
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&cdc_pdm_lines_act &ext_sec_tlmm_lines_act &secondary_mic>;
+	pinctrl-1 = <&cdc_pdm_lines_sus &ext_sec_tlmm_lines_sus &secondary_mic>;
+
+	model = "samsung-a2015";
+};
+
 &msmgpio {
+	amp_i2c_default: amp-i2c-default {
+		pins = "gpio55", "gpio56";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	buckbooster_en_default: buckbooster-en-default {
 		pins = "gpio8";
 		function = "gpio";
@@ -123,6 +160,15 @@
 			drive-strength = <2>;
 			bias-pull-down;
 		};
+	};
+
+	secondary_mic: secondary-mic {
+		pins = "gpio98";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+		output-high;
 	};
 
 	reg_tsp_en_default: reg-tsp-en-default {
