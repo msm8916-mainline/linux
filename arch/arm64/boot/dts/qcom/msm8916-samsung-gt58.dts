@@ -7,4 +7,22 @@
 / {
 	model = "Samsung Galaxy Tab A 8.0 (2015)";
 	compatible = "samsung,gt58", "qcom,msm8916";
+
+	vibrator {
+		compatible = "gpio-vibrator";
+		enable-gpios = <&msmgpio 76 GPIO_ACTIVE_HIGH>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&vibrator_en_default>;
+	};
+};
+
+&msmgpio {
+	vibrator_en_default: vibrator-en-default {
+		pins = "gpio76";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
 };
