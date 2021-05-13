@@ -29,6 +29,19 @@
 		};
 	};
 
+	reg_5p4v: regulator-5p4v {
+		compatible = "regulator-fixed";
+		regulator-name = "vlcd_5p4v";
+		regulator-min-microvolt = <5400000>;
+		regulator-max-microvolt = <5400000>;
+
+		gpio = <&msmgpio 8 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&buckbooster_en_default>;
+	};
+
 	reg_vdd_tsp: regulator-vdd-tsp {
 		compatible = "regulator-fixed";
 		regulator-name = "vdd_tsp";
@@ -72,6 +85,36 @@
 	};
 };
 
+&dsi0 {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&mdss_default>;
+	pinctrl-1 = <&mdss_sleep>;
+
+	panel@0 {
+		compatible = "samsung,s6d7aa0-lsl080al03";
+		reg = <0>;
+
+		5p4v-supply = <&reg_5p4v>;
+		vmipi-supply = <&pm8916_l5>;
+		reset-gpios = <&msmgpio 97 GPIO_ACTIVE_LOW>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&mdss {
+	status = "okay";
+};
+
 &sound {
 	/* FIXME: Avoid powering secondary mic permanently */
 	pinctrl-names = "default", "sleep";
@@ -88,6 +131,32 @@
 
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+	buckbooster_en_default: buckbooster-en-default {
+		pins = "gpio8";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	mdss {
+		mdss_default: mdss-default {
+			pins = "gpio97";
+			function = "gpio";
+
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		mdss_sleep: mdss-sleep {
+			pins = "gpio97";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-pull-down;
+		};
 	};
 
 	secondary_mic: secondary-mic {
