@@ -11,6 +11,7 @@
 #include <linux/qcom_scm.h>
 #include <linux/arm-smccc.h>
 #include <linux/dma-mapping.h>
+#include <asm/cacheflush.h>
 
 #include "qcom_scm.h"
 
@@ -124,12 +125,22 @@ int __scm_smc_call(struct device *dev, const struct qcom_scm_desc *desc,
 						      SCM_SMC_FIRST_EXT_IDX]);
 		}
 
-		args_phys = dma_map_single(dev, args_virt, alloc_len,
-					   DMA_TO_DEVICE);
+		if (likely(dev)) {
+			args_phys = dma_map_single(dev, args_virt, alloc_len,
+						   DMA_TO_DEVICE);
 
-		if (dma_mapping_error(dev, args_phys)) {
+			if (dma_mapping_error(dev, args_phys)) {
+				kfree(args_virt);
+				return -ENOMEM;
+			}
+		} else {
+#ifdef CONFIG_ARM64
+			args_phys = virt_to_phys(args_virt);
+			__flush_dcache_area(args_virt, alloc_len);
+#else
 			kfree(args_virt);
-			return -ENOMEM;
+			return -ENODEV;
+#endif
 		}
 
 		smc.args[SCM_SMC_LAST_REG_IDX] = args_phys;
@@ -138,7 +149,8 @@ int __scm_smc_call(struct device *dev, const struct qcom_scm_desc *desc,
 	__scm_smc_do(&smc, &smc_res, atomic);
 
 	if (args_virt) {
-		dma_unmap_single(dev, args_phys, alloc_len, DMA_TO_DEVICE);
+		if (likely(dev))
+			dma_unmap_single(dev, args_phys, alloc_len, DMA_TO_DEVICE);
 		kfree(args_virt);
 	}
 
