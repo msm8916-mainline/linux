@@ -1,0 +1,77 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/ {
+	cpus {
+		cpu@0 {
+			enable-method = "qcom,arm-cortex-acc";
+			qcom,acc = <&acc0>;
+			qcom,saw = <&saw0>;
+			cpu-idle-states = <&CPU_SLEEP_0>;
+		};
+		cpu@1 {
+			enable-method = "qcom,arm-cortex-acc";
+			qcom,acc = <&acc1>;
+			qcom,saw = <&saw1>;
+			cpu-idle-states = <&CPU_SLEEP_0>;
+		};
+		cpu@2 {
+			enable-method = "qcom,arm-cortex-acc";
+			qcom,acc = <&acc2>;
+			qcom,saw = <&saw2>;
+			cpu-idle-states = <&CPU_SLEEP_0>;
+		};
+		cpu@3 {
+			enable-method = "qcom,arm-cortex-acc";
+			qcom,acc = <&acc3>;
+			qcom,saw = <&saw3>;
+			cpu-idle-states = <&CPU_SLEEP_0>;
+		};
+
+		idle-states {
+			/delete-property/ entry-method;
+			CPU_SLEEP_0: cpu-sleep-0 {
+				compatible = "qcom,idle-state-spc";
+			};
+		};
+	};
+
+	psci {
+		status = "disabled";
+	};
+
+	soc {
+		acc0: clock-controller@b088000 {
+			compatible = "qcom,arm-cortex-acc";
+			reg = <0x0b088000 0x1000>, <0x0b008000 0x1000>;
+		};
+		acc1: clock-controller@b098000 {
+			compatible = "qcom,arm-cortex-acc";
+			reg = <0x0b098000 0x1000>, <0x0b008000 0x1000>;
+		};
+		acc2: clock-controller@b0a8000 {
+			compatible = "qcom,arm-cortex-acc";
+			reg = <0x0b0a8000 0x1000>, <0x0b008000 0x1000>;
+		};
+		acc3: clock-controller@b0b8000 {
+			compatible = "qcom,arm-cortex-acc";
+			reg = <0x0b0b8000 0x1000>, <0x0b008000 0x1000>;
+		};
+
+		saw0: power-controller@b089000 {
+			compatible = "qcom,msm8916-saw2-v3.0-cpu", "qcom,saw2";
+			reg = <0xb089000 0x1000>, <0xb009000 0x1000>;
+		};
+		saw1: power-controller@b099000 {
+			compatible = "qcom,msm8916-saw2-v3.0-cpu", "qcom,saw2";
+			reg = <0xb099000 0x1000>, <0xb009000 0x1000>;
+		};
+		saw2: power-controller@b0a9000 {
+			compatible = "qcom,msm8916-saw2-v3.0-cpu", "qcom,saw2";
+			reg = <0xb0a9000 0x1000>, <0xb009000 0x1000>;
+		};
+		saw3: power-controller@b0b9000 {
+			compatible = "qcom,msm8916-saw2-v3.0-cpu", "qcom,saw2";
+			reg = <0xb0b9000 0x1000>, <0xb009000 0x1000>;
+		};
+	};
+};
