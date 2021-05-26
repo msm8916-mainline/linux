@@ -49,6 +49,7 @@ MODULE_DEVICE_TABLE(acpi, bmc150_accel_acpi_match);
 static const struct spi_device_id bmc150_accel_id[] = {
 	{"bmc150_accel"},
 	{"bmi055_accel"},
+	{"bma253"},
 	{"bma255"},
 	{"bma250e"},
 	{"bma222"},

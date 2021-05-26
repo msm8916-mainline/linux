@@ -3,7 +3,7 @@
  * 3-axis accelerometer driver supporting following Bosch-Sensortec chips:
  *  - BMC150
  *  - BMI055
- *  - BMA255
+ *  - BMA253/BMA255
  *  - BMA250E
  *  - BMA222
  *  - BMA222E
@@ -1130,7 +1130,7 @@ static const struct iio_chan_spec bma280_accel_channels[] =
 
 static const struct bmc150_accel_chip_info bmc150_accel_chip_info_tbl[] = {
 	{
-		.name = "BMC150/BMI055/BMA255",
+		.name = "BMC150/BMI055/BMA253/BMA255",
 		.chip_id = 0xFA,
 		.channels = bmc150_accel_channels,
 		.num_channels = ARRAY_SIZE(bmc150_accel_channels),
