@@ -103,6 +103,7 @@ MODULE_DEVICE_TABLE(acpi, bmc150_accel_acpi_match);
 static const struct i2c_device_id bmc150_accel_id[] = {
 	{"bmc150_accel"},
 	{"bmi055_accel"},
+	{"bma253"},
 	{"bma255"},
 	{"bma250e"},
 	{"bma222"},
@@ -116,6 +117,7 @@ MODULE_DEVICE_TABLE(i2c, bmc150_accel_id);
 static const struct of_device_id bmc150_accel_of_match[] = {
 	{ .compatible = "bosch,bmc150_accel" },
 	{ .compatible = "bosch,bmi055_accel" },
+	{ .compatible = "bosch,bma253" },
 	{ .compatible = "bosch,bma255" },
 	{ .compatible = "bosch,bma250e" },
 	{ .compatible = "bosch,bma222" },
