@@ -63,6 +63,32 @@
 	status = "okay";
 };
 
+&dsi0 {
+	panel@0 {
+		compatible = "lg,c50-panel";
+		reg = <0>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <0 1>;
+	remote-endpoint = <&panel_in>;
+};
+
+&dsi_phy0 {
+	qcom,dsi-phy-regulator-ldo-mode;
+};
+
+&mdss {
+	status = "okay";
+};
+
 &pm8916_vib {
 	status = "okay";
 };
