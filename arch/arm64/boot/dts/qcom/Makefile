@@ -23,6 +23,7 @@ dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-gt510.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-gt58.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-j3ltetw.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-j5.dtb
+dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-j5x.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-serranove.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-zhihe-uf896.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-zhihe-ufi001c.dtb
