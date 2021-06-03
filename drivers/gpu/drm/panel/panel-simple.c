@@ -4430,6 +4430,38 @@ static const struct panel_desc_dsi boe_tv080wum_nl0 = {
 	.lanes = 4,
 };
 
+static const struct drm_display_mode lg_c50_panel_mode = {
+	.clock = (480 + 24 + 8 + 88) * (854 + 1070 + 4 + 12) * 60 / 1000,
+	.hdisplay = 480,
+	.hsync_start = 480 + 24,
+	.hsync_end = 480 + 24 + 8,
+	.htotal = 480 + 24 + 8 + 88,
+	.vdisplay = 854,
+	.vsync_start = 854 + 1070,
+	.vsync_end = 854 + 1070 + 4,
+	.vtotal = 854 + 1070 + 4 + 12,
+	.width_mm = 55,
+	.height_mm = 99,
+};
+
+static const struct panel_desc_dsi lg_c50_panel = {
+	.desc = {
+		.modes = &lg_c50_panel_mode,
+		.num_modes = 1,
+		.bpc = 8,
+		.size = {
+			.width = 55,
+			.height = 99,
+		},
+		.connector_type = DRM_MODE_CONNECTOR_DSI,
+	},
+	.flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_NO_EOT_PACKET |
+		 MIPI_DSI_CLOCK_NON_CONTINUOUS,
+	.format = MIPI_DSI_FMT_RGB888,
+	.lanes = 2,
+};
+
+
 static const struct drm_display_mode lg_ld070wx3_sl01_mode = {
 	.clock = 71000,
 	.hdisplay = 800,
@@ -4611,6 +4643,9 @@ static const struct of_device_id dsi_of_match[] = {
 	}, {
 		.compatible = "boe,tv080wum-nl0",
 		.data = &boe_tv080wum_nl0
+	}, {
+		.compatible = "lg,c50-panel",
+		.data = &lg_c50_panel
 	}, {
 		.compatible = "lg,ld070wx3-sl01",
 		.data = &lg_ld070wx3_sl01
