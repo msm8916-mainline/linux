@@ -37,17 +37,21 @@ enum wwan_port_type {
 struct wwan_port;
 
 /** struct wwan_port_ops - The WWAN port operations
- * @start: The routine for starting the WWAN port device.
- * @stop: The routine for stopping the WWAN port device.
+ * @start: The routine for starting the WWAN port device. Required.
+ * @stop: The routine for stopping the WWAN port device. Required.
  * @tx: The routine that sends WWAN port protocol data to the device.
+ *      May only block if nonblock is false. Required.
+ * @poll: A routine to set additional poll flags. Optional.
  *
  * The wwan_port_ops structure contains a list of low-level operations
- * that control a WWAN port device. All functions are mandatory.
+ * that control a WWAN port device.
  */
 struct wwan_port_ops {
 	int (*start)(struct wwan_port *port);
 	void (*stop)(struct wwan_port *port);
-	int (*tx)(struct wwan_port *port, struct sk_buff *skb);
+	int (*tx)(struct wwan_port *port, struct sk_buff *skb, bool nonblock);
+	__poll_t (*poll)(struct wwan_port *port, struct file *filp,
+			 poll_table *wait);
 };
 
 /**

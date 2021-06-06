@@ -54,12 +54,16 @@ static void rpmsg_wwan_ctrl_stop(struct wwan_port *port)
 	rpwwan->ept = NULL;
 }
 
-static int rpmsg_wwan_ctrl_tx(struct wwan_port *port, struct sk_buff *skb)
+static int rpmsg_wwan_ctrl_tx(struct wwan_port *port, struct sk_buff *skb,
+			      bool nonblock)
 {
 	struct rpmsg_wwan_dev *rpwwan = wwan_port_get_drvdata(port);
 	int ret;
 
-	ret = rpmsg_trysend(rpwwan->ept, skb->data, skb->len);
+	if (nonblock)
+		ret = rpmsg_trysend(rpwwan->ept, skb->data, skb->len);
+	else
+		ret = rpmsg_send(rpwwan->ept, skb->data, skb->len);
 	if (ret)
 		return ret;
 
@@ -67,10 +71,19 @@ static int rpmsg_wwan_ctrl_tx(struct wwan_port *port, struct sk_buff *skb)
 	return 0;
 }
 
+static __poll_t rpmsg_wwan_ctrl_poll(struct wwan_port *port, struct file *filp,
+				     poll_table *wait)
+{
+	struct rpmsg_wwan_dev *rpwwan = wwan_port_get_drvdata(port);
+
+	return rpmsg_poll(rpwwan->ept, filp, wait);
+}
+
 static const struct wwan_port_ops rpmsg_wwan_pops = {
 	.start = rpmsg_wwan_ctrl_start,
 	.stop = rpmsg_wwan_ctrl_stop,
 	.tx = rpmsg_wwan_ctrl_tx,
+	.poll = rpmsg_wwan_ctrl_poll,
 };
 
 static struct device *rpmsg_wwan_find_parent(struct device *dev)

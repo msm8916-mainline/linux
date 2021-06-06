@@ -139,7 +139,8 @@ static void mhi_wwan_ctrl_stop(struct wwan_port *port)
 	mhi_unprepare_from_transfer(mhiwwan->mhi_dev);
 }
 
-static int mhi_wwan_ctrl_tx(struct wwan_port *port, struct sk_buff *skb)
+static int mhi_wwan_ctrl_tx(struct wwan_port *port, struct sk_buff *skb,
+			    bool nonblock)
 {
 	struct mhi_wwan_dev *mhiwwan = wwan_port_get_drvdata(port);
 	int ret;
