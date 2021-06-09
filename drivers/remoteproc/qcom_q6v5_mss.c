@@ -1812,8 +1812,14 @@ static int q6v5_probe(struct platform_device *pdev)
 	if (ret)
 		goto remove_sysmon_subdev;
 
+	ret = of_platform_populate(pdev->dev.of_node, NULL, NULL, &pdev->dev);
+	if (ret)
+		goto remove_rproc;
+
 	return 0;
 
+remove_rproc:
+	rproc_del(rproc);
 remove_sysmon_subdev:
 	qcom_remove_sysmon_subdev(qproc->sysmon);
 remove_subdevs:
@@ -1835,6 +1841,7 @@ static int q6v5_remove(struct platform_device *pdev)
 	struct q6v5 *qproc = platform_get_drvdata(pdev);
 	struct rproc *rproc = qproc->rproc;
 
+	of_platform_depopulate(&pdev->dev);
 	rproc_del(rproc);
 
 	qcom_remove_sysmon_subdev(qproc->sysmon);
