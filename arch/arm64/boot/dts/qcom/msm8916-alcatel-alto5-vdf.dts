@@ -5,10 +5,20 @@
 #include "msm8916-pm8916.dtsi"
 #include "arm/qcom-msm8916-no-psci.dtsi"
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
 
 / {
 	model = "Vodafone Smart prime 6 (alto5-vdf)";
 	compatible = "alcatel,alto5-vdf", "qcom,msm8916";
+
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pm8916_pwm 0 100000>;
+
+		brightness-levels = <1 255>;
+		num-interpolated-steps = <254>;
+		default-brightness-level = <254>;
+	};
 
 	gpio-keys {
 		compatible = "gpio-keys";
@@ -29,6 +39,41 @@
 	usb_vbus: extcon-usb-dummy {
 		compatible = "linux,extcon-usb-dummy";
 	};
+};
+
+&dsi0 {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&mdss_default>;
+	pinctrl-1 = <&mdss_sleep>;
+
+	panel@0 {
+		compatible = "mdss,hx8394a-tdt";
+		reg = <0>;
+
+		backlight = <&backlight>;
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <1 2 3 0>;
+	remote-endpoint = <&panel_in>;
+};
+
+&mdss {
+	status = "okay";
+};
+
+&pm8916_pwm {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm_out>;
 };
 
 &pm8916_resin {
@@ -178,5 +223,33 @@
 
 		drive-strength = <2>;
 		bias-pull-up;
+	};
+
+	mdss {
+		mdss_default: mdss-default {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <8>;
+			bias-disable;
+		};
+		mdss_sleep: mdss-sleep {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
+};
+
+&pm8916_mpps {
+	pwm_out: mpp4 {
+		pins = "mpp4";
+		function = "digital";
+
+		output-low;
+		qcom,dtest = <1>;
+		power-source = <PM8916_MPP_VPH>;
 	};
 };
