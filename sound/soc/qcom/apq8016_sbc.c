@@ -109,6 +109,9 @@ static int apq8016_dai_init(struct snd_soc_pcm_runtime *rtd, int mi2s)
 		snd_jack_set_key(jack, SND_JACK_BTN_1, KEY_VOICECOMMAND);
 		snd_jack_set_key(jack, SND_JACK_BTN_2, KEY_VOLUMEUP);
 		snd_jack_set_key(jack, SND_JACK_BTN_3, KEY_VOLUMEDOWN);
+
+		snd_jack_add_new_kctl(jack, "Headphone", SND_JACK_HEADPHONE);
+		snd_jack_add_new_kctl(jack, "Headset Mic", SND_JACK_MICROPHONE);
 		pdata->jack_setup = true;
 	}
 
