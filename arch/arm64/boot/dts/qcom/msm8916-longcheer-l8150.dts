@@ -8,6 +8,8 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/leds/common.h>
 
+/delete-node/ &wcnss_mem;
+
 / {
 	model = "Longcheer L8150";
 	compatible = "longcheer,l8150", "qcom,msm8916-v1-qrd/9-v1", "qcom,msm8916";
@@ -22,9 +24,7 @@
 	};
 
 	reserved-memory {
-		/* wcnss.mdt is not relocatable, so it must be loaded at 0x8b600000 */
-		/delete-node/ wcnss@89300000;
-
+		/* wcnss.mdt is not relocatable, it must be loaded at 0x8b600000 */
 		wcnss_mem: wcnss@8b600000 {
 			reg = <0x0 0x8b600000 0x0 0x600000>;
 			no-map;
