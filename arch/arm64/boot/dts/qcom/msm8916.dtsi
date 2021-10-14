@@ -83,13 +83,13 @@
 			no-map;
 		};
 
-		wcnss_mem: wcnss@89300000 {
-			reg = <0x0 0x89300000 0x0 0x600000>;
+		wcnss_mem: wcnss@8df00000 {
+			reg = <0x0 0x8df00000 0x0 0x600000>;
 			no-map;
 		};
 
-		venus_mem: venus@89900000 {
-			reg = <0x0 0x89900000 0x0 0x500000>;
+		venus_mem: venus@8e500000 {
+			reg = <0x0 0x8e500000 0x0 0x500000>;
 			no-map;
 		};
 
