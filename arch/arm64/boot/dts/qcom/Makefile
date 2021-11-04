@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0
+dtb-$(CONFIG_ARCH_QCOM)	+= apq8016-samsung-gtelwifiue.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= apq8016-samsung-matissevewifi.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= apq8016-sbc.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= apq8094-sony-xperia-kitakami-karin_windy.dtb
