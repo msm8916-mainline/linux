@@ -64,6 +64,24 @@
 
 		startup-delay-us = <150>;
 	};
+
+	reg_lcd: regulator-lcd {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+
+		gpio = <&tlmm 8 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-0 = <&reg_lcd_en_default>;
+		pinctrl-names = "default";
+
+		// FIXME: This breaks turning panel back on
+		regulator-always-on;
+		regulator-boot-on;
+		startup-delay-us = <150>;
+	};
 };
 
 &blsp_i2c1 {
@@ -130,12 +148,40 @@
 	status = "okay";
 };
 
+&gpu {
+	status = "okay";
+};
+
 &lpass {
 	status = "okay";
 };
 
 &lpass_codec {
 	status = "okay";
+};
+
+&mdss {
+	status = "okay";
+};
+
+&mdss_dsi0 {
+	panel@0 {
+		compatible = "samsung,nt51017-b4p096wx5vp09";
+		reg = <0>;
+
+		lcd-supply = <&reg_lcd>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&mdss_dsi0_out>;
+			};
+		};
+	};
+};
+
+&mdss_dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
 };
 
 &pm8916_codec {
@@ -267,6 +313,13 @@
 
 	muic_int_default: muic-int-default-state {
 		pins = "gpio12";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	reg_lcd_en_default: reg-lcd-en-default-state {
+		pins = "gpio8";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
