@@ -53,8 +53,6 @@ static int nt51017_on(struct nt51017 *ctx)
 
 static int nt51017_off(struct nt51017 *ctx)
 {
-	struct mipi_dsi_device *dsi = ctx->dsi;
-
 	return 0;
 }
 
@@ -72,6 +70,8 @@ static int nt51017_prepare(struct drm_panel *panel)
 		dev_err(dev, "Failed to enable regulator: %d\n", ret);
 		return ret;
 	}
+
+	msleep(30);
 
 	ret = nt51017_on(ctx);
 	if (ret < 0) {
