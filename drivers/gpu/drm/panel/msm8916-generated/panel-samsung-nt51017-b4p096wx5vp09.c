@@ -62,6 +62,8 @@ static int nt51017_prepare(struct drm_panel *panel)
 		return ret;
 	}
 
+	msleep(30);
+
 	ret = nt51017_on(ctx);
 	if (ret < 0) {
 		dev_err(dev, "Failed to initialize panel: %d\n", ret);
