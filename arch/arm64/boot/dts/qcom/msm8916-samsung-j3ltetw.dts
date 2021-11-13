@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-samsung-j5-common.dtsi"
+
+/ {
+	model = "Samsung Galaxy J3 (2016) (SM-J320YZ)";
+	compatible = "samsung,j3ltetw", "qcom,msm8916";
+	chassis-type = "handset";
+
+	reserved-memory {
+		/delete-node/ tz-apps@85500000;
+
+		/* Additional memory used by Samsung firmware modifications */
+		tz-apps@85a00000 {
+			reg = <0x0 0x85a00000 0x0 0x600000>;
+			no-map;
+		};
+	};
+};
+
+&gpio_hall_sensor {
+	status = "disabled";
+};
+
+&i2c_muic {
+	sda-gpios = <&msmgpio 0 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+	scl-gpios = <&msmgpio 1 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+};
+
+&muic_i2c_default {
+	pins = "gpio0", "gpio1";
+};
