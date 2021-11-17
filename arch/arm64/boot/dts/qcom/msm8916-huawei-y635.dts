@@ -33,6 +33,24 @@
 			linux,code = <KEY_VOLUMEUP>;
 		};
 	};
+
+	bat: battery {
+		compatible = "simple-battery";
+		voltage-min-design-microvolt = <3400000>;
+		voltage-max-design-microvolt = <4350000>;
+		energy-full-design-microwatt-hours = <7600000>;
+		charge-full-design-microamp-hours = <2000000>;
+
+		ocv-capacity-celsius = <25>;
+		ocv-capacity-table-0 = <4331000 100>, <4261000 95>, <4204000 90>,
+			<4152000 85>, <4102000 80>, <4060000 75>, <3998000 70>,
+			<3964000 65>, <3924000 60>, <3874000 55>, <3842000 50>,
+			<3820000 45>, <3800000 40>, <3785000 35>, <3720000 30>,
+			<3758000 25>, <3735000 20>, <3706000 16>, <3690000 13>,
+			<3687000 11>, <3686000 10>, <3684000 9>, <3680000 8>,
+			<3668000 7>, <3640000 6>, <3596000 5>, <3542000 4>,
+			<3472000 3>, <3378000 2>, <3239000 1>, <3000000 0>;
+	};
 };
 
 &blsp_i2c2 {
@@ -138,12 +156,24 @@
 	status = "okay";
 };
 
-&pm8916_resin {
-	linux,code = <KEY_VOLUMEDOWN>;
+&pm8916_bms {
+	monitored-battery = <&bat>;
+	power-supplies = <&pm8916_charger>;
+
 	status = "okay";
 };
 
-&pm8916_usbin {
+&pm8916_charger {
+	qcom,vdd-safe = <4300000>;
+	qcom,ibat-safe = <700000>;
+
+	monitored-battery = <&bat>;
+
+	status = "okay";
+};
+
+&pm8916_resin {
+	linux,code = <KEY_VOLUMEDOWN>;
 	status = "okay";
 };
 
@@ -212,13 +242,13 @@
 };
 
 &usb {
-	extcon = <&pm8916_usbin>;
+	extcon = <&pm8916_charger>;
 	dr_mode = "peripheral";
 	status = "okay";
 };
 
 &usb_hs_phy {
-	extcon = <&pm8916_usbin>;
+	extcon = <&pm8916_charger>;
 };
 
 &wcd_codec {
