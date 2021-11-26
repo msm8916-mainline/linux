@@ -72,6 +72,30 @@
 	};
 };
 
+&blsp_i2c5 {
+	status = "okay";
+
+	touchscreen@26 {
+		compatible = "mstar,msg2138";
+		reg = <0x26>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+
+		reset-gpios = <&msmgpio 12 GPIO_ACTIVE_LOW>;
+		pinctrl-0 = <&ts_int_reset_default>;
+		pinctrl-names = "default";
+
+		vdd-supply = <&pm8916_l16>;
+		vddio-supply = <&pm8916_l6>;
+
+		touchscreen-size-x = <2048>;
+		touchscreen-size-y = <2048>;
+
+		linux,keycodes = <KEY_BACK KEY_APPSELECT KEY_HOMEPAGE>;
+	};
+};
+
 &blsp1_uart2 {
 	status = "okay";
 };
@@ -241,6 +265,13 @@
 
 	prox_irq_default: prox-irq-default-state {
 		pins = "gpio113";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	ts_int_reset_default: ts-int-reset-default-state {
+		pins = "gpio12", "gpio13";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
