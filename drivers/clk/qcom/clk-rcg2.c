@@ -424,6 +424,10 @@ static int clk_rcg2_set_duty_cycle(struct clk_hw *hw, struct clk_duty *duty)
 	if (d > mask)
 		d = mask;
 
+	/* Hardware can't handle d=0, make sure it's at least 1 */
+	if (!d)
+		d = 1;
+
 	if ((d / 2) > (n - m))
 		d = (n - m) * 2;
 	else if ((d / 2) < (m / 2))
