@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-samsung-a5u-eur.dts"
+
+/ {
+	model = "Samsung Galaxy A5 (SM-A500YZ)";
+	compatible = "samsung,a5-zt", "samsung,a5u-eur", "qcom,msm8916";
+	chassis-type = "handset";
+
+	/* NOTE: a5-zt doesn't actually have an NFC chip. */
+	i2c-nfc {
+		status = "disabled";
+	};
+};
+
+&accelerometer {
+	mount-matrix = "0", "1", "0",
+			"1", "0", "0",
+			"0", "0", "1";
+};
+
+&reg_touch_key {
+	gpio = <&msmgpio 60 GPIO_ACTIVE_HIGH>;
+};
+
+&tkey_en_default {
+	pins = "gpio60";
+};
