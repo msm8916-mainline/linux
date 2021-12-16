@@ -103,6 +103,52 @@
 		};
 	};
 
+	i2c-tkey {
+		compatible = "i2c-gpio";
+		sda-gpios = <&msmgpio 16 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&msmgpio 17 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&tkey_i2c_default>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		touchkey@20 {
+			compatible = "coreriver,tc360-touchkey";
+			reg = <0x20>;
+
+			interrupt-parent = <&msmgpio>;
+			interrupts = <98 IRQ_TYPE_EDGE_FALLING>;
+
+			vdd-supply = <&reg_vdd_touch>;
+			vddio-supply = <&pm8916_l6>;
+
+			linux,keycodes = <KEY_APPSELECT KEY_BACK>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&tkey_default>;
+		};
+	};
+
+	/*
+	 * NOTE: There is another regulator key_led for keyled, which also uses
+	 * GPIO 97 and the voltage is 3v3. However it seems that simply using
+	 * vdd_touch for both keyled and touchkey is fine.
+	 */
+	reg_vdd_touch: regulator-vdd-touch {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_touch";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+
+		gpio = <&msmgpio 97 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&tkey_en_default>;
+	};
+
 	vibrator {
 		compatible = "gpio-vibrator";
 		enable-gpios = <&msmgpio 76 GPIO_ACTIVE_HIGH>;
@@ -282,6 +328,30 @@
 
 	muic_int_default: muic-int-default {
 		pins = "gpio12";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	tkey_default: tkey-default {
+		pins = "gpio98";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	tkey_en_default: tkey-en-default {
+		pins = "gpio97";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	tkey_i2c_default: tkey-i2c-default {
+		pins = "gpio16", "gpio17";
 		function = "gpio";
 
 		drive-strength = <2>;
