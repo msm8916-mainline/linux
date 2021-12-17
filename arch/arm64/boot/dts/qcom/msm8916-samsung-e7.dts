@@ -102,6 +102,14 @@
 			pinctrl-0 = <&muic_int_default>;
 		};
 	};
+
+	vibrator {
+		compatible = "gpio-vibrator";
+		enable-gpios = <&msmgpio 76 GPIO_ACTIVE_HIGH>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&vibrator_en_default>;
+	};
 };
 
 &blsp1_uart2 {
@@ -274,6 +282,14 @@
 
 	muic_int_default: muic-int-default {
 		pins = "gpio12";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	vibrator_en_default: vibrator-en-default {
+		pins = "gpio76";
 		function = "gpio";
 
 		drive-strength = <2>;
