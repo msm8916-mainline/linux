@@ -4,7 +4,21 @@
 
 #include "msm8916-pm8916.dtsi"
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
+
+/*
+ * NOTE: The original firmware from Samsung can only boot ARM32 kernels on some
+ * variants.
+ * Unfortunately, the firmware is signed and cannot be replaced easily.
+ * There seems to be no way to boot ARM64 kernels on 32-bit devices at the
+ * moment, even though the hardware would support it.
+ *
+ * However, it is possible to use this device tree by compiling an ARM32 kernel
+ * instead. For clarity and build testing this device tree is maintained next
+ * to the other MSM8916 device trees. However, it is actually used through
+ *   arch/arm/boot/dts/qcom-msm8916-samsung-gprime.dts
+ */
 
 / {
 	model = "Samsung Galaxy Grand Prime";
@@ -17,6 +31,35 @@
 
 	chosen {
 		stdout-path = "serial0";
+	};
+
+	reserved-memory {
+		/* Additional memory used by Samsung firmware modifications */
+		tz-apps@85500000 {
+			reg = <0x0 0x85500000 0x0 0xb00000>;
+			no-map;
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&gpio_keys_default>;
+
+		label = "GPIO Buttons";
+
+		volume-up {
+			label = "Volume Up";
+			gpios = <&msmgpio 107 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEUP>;
+		};
+
+		home {
+			label = "Home";
+			gpios = <&msmgpio 109 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_HOMEPAGE>;
+		};
 	};
 };
 
@@ -36,6 +79,15 @@
 };
 
 &blsp1_uart2 {
+	status = "okay";
+};
+
+&pm8916_resin {
+	status = "okay";
+	linux,code = <KEY_VOLUMEDOWN>;
+};
+
+&pronto {
 	status = "okay";
 };
 
@@ -170,6 +222,14 @@
 };
 
 &msmgpio {
+	gpio_keys_default: gpio-keys-default {
+		pins = "gpio107", "gpio109";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
 	muic_int_default: muic-int-default {
 		pins = "gpio12";
 		function = "gpio";
