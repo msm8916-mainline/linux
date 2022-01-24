@@ -33,3 +33,11 @@
 &mpss_mem {
 	reg = <0x0 0x86800000 0x0 0x5000000>;
 };
+
+&st_accel {
+	status = "okay";
+	compatible = "st,lis2hh12";
+	mount-matrix = "1",  "0", "0",
+		       "0", "-1", "0",
+		       "0",  "0", "1";
+};
