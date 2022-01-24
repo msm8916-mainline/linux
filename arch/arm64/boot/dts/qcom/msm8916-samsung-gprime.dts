@@ -61,6 +61,14 @@
 			linux,code = <KEY_HOMEPAGE>;
 		};
 	};
+
+	vibrator {
+		compatible = "gpio-vibrator";
+		enable-gpios = <&msmgpio 72 GPIO_ACTIVE_HIGH>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&motor_en_default>;
+	};
 };
 
 &blsp_i2c1 {
@@ -228,6 +236,14 @@
 
 		drive-strength = <2>;
 		bias-pull-up;
+	};
+
+	motor_en_default: motor-en-default {
+		pins = "gpio72";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	muic_int_default: muic-int-default {
