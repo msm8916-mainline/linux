@@ -38,6 +38,19 @@
 		};
 	};
 
+	reg_vdd_lcd: regulator-vdd-lcd {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_lcd";
+		regulator-min-microvolt = <3000000>;
+		regulator-max-microvolt = <3000000>;
+
+		gpio = <&msmgpio 102 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_on_default>;
+	};
+
 	reg_vdd_tsp_a: regulator-vdd-tsp-a {
 		compatible = "regulator-fixed";
 		regulator-name = "vdd_tsp_a";
@@ -200,6 +213,37 @@
 };
 
 &blsp1_uart2 {
+	status = "okay";
+};
+
+&dsi0 {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&mdss_default>;
+	pinctrl-1 = <&mdss_sleep>;
+
+	panel: panel@0 {
+		compatible = "samsung,gprime-panel";
+		reg = <0>;
+
+		vddio-supply = <&pm8916_l6>;
+		vdd-supply = <&reg_vdd_lcd>;
+
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <0 1>;
+	remote-endpoint = <&panel_in>;
+};
+
+&mdss {
 	status = "okay";
 };
 
@@ -373,6 +417,31 @@
 
 		drive-strength = <2>;
 		bias-pull-up;
+	};
+
+	lcd_on_default: lcd-on-default {
+		pins = "gpio102";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	mdss {
+		mdss_default: mdss-default {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <8>;
+			bias-disable;
+		};
+		mdss_sleep: mdss-sleep {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-pull-down;
+		};
 	};
 
 	motor_en_default: motor-en-default {
