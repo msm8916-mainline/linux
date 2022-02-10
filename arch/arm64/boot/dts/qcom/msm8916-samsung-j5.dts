@@ -19,6 +19,10 @@
 	status = "disabled";
 };
 
+&front_flash_led {
+	ctrl-gpios = <&tlmm 50 GPIO_ACTIVE_HIGH>;
+};
+
 &pm8916_codec {
 	qcom,micbias1-ext-cap;
 };
@@ -29,4 +33,8 @@
 
 &usb_hs_phy {
 	qcom,init-seq = /bits/ 8 <0x1 0x19 0x2 0x0b>;
+};
+
+&vtcam_flash_en_default {
+	pins = "gpio50";
 };

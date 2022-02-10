@@ -36,6 +36,10 @@
 		       "0", "0", "-1";
 };
 
+&front_flash_led {
+	status = "disabled";
+};
+
 &gpio_hall_sensor {
 	status = "disabled";
 };
