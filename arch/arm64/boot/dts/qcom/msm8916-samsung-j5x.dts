@@ -34,6 +34,10 @@
 		       "0", "0", "-1";
 };
 
+&front_flash_led {
+	ctrl-gpios = <&tlmm 85 GPIO_ACTIVE_HIGH>;
+};
+
 &muic {
 	interrupts = <121 IRQ_TYPE_EDGE_FALLING>;
 };
@@ -57,4 +61,8 @@
 
 &muic_int_default {
 	pins = "gpio121";
+};
+
+&vtcam_flash_en_default {
+	pins = "gpio85";
 };
