@@ -6,6 +6,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	aliases {
@@ -23,6 +24,22 @@
 		tz-apps@85500000 {
 			reg = <0x0 0x85500000 0x0 0xb00000>;
 			no-map;
+		};
+	};
+
+	front_flash_led: led-controller {
+		compatible = "kinetic,ktd2692";
+
+		led {
+			function = LED_FUNCTION_FLASH;
+			color = <LED_COLOR_ID_WHITE>;
+
+			led-max-microamp = <300000>;
+			flash-max-microamp = <1500000>;
+			flash-max-timeout-us = <1835000>;
+
+			pinctrl-0 = <&vtcam_flash_en_default>;
+			pinctrl-names = "default";
 		};
 	};
 
@@ -256,6 +273,12 @@
 		pins = "gpio13";
 		function = "gpio";
 
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	vtcam_flash_en_default: vtcam-flash-en-default-state {
+		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
 	};
