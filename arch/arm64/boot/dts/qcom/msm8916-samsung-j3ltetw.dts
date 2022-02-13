@@ -83,6 +83,39 @@
 			pinctrl-0 = <&muic_int_default>;
 		};
 	};
+
+	reg_nfc: regulator-nfc {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_nfc_ldo";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+
+		regulator-always-on;
+
+		gpio = <&msmgpio 50 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&nfc_pvdd_en_default>;
+	};
+};
+
+&blsp_i2c1 {
+	status = "okay";
+
+	nfc@2b {
+		compatible = "nxp,pn547", "nxp,nxp-nci-i2c";
+		reg = <0x2b>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <21 IRQ_TYPE_EDGE_RISING>;
+
+		enable-gpios = <&msmgpio 20 GPIO_ACTIVE_HIGH>;
+		firmware-gpios = <&msmgpio 49 GPIO_ACTIVE_HIGH>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&nfc_default>;
+	};
 };
 
 &blsp_i2c2 {
@@ -352,6 +385,30 @@
 
 	muic_int_default: muic-int-default {
 		pins = "gpio12";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	nfc_default: nfc-default {
+		pins = "gpio20", "gpio49";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+
+		irq {
+			pins = "gpio21";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
+
+	nfc_pvdd_en_default: nfc-pvdd-en-default {
+		pins = "gpio50";
 		function = "gpio";
 
 		drive-strength = <2>;
