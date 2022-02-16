@@ -4,6 +4,8 @@
 
 #include "msm8916-pm8916.dtsi"
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/interrupt-controller/irq.h>
 
 / {
 	model = "Samsung Galaxy J5 (2016)";
@@ -23,6 +25,23 @@
 		tz-apps@85500000 {
 			reg = <0x0 0x85500000 0x0 0xb00000>;
 			no-map;
+		};
+	};
+
+	gpio-hall-sensor {
+		compatible = "gpio-keys";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&gpio_hall_sensor_default>;
+
+		label = "GPIO Hall Effect Sensor";
+
+		hall-sensor {
+			label = "Hall Effect Sensor";
+			gpios = <&msmgpio 52 GPIO_ACTIVE_LOW>;
+			linux,input-type = <EV_SW>;
+			linux,code = <SW_LID>;
+			linux,can-disable;
 		};
 	};
 
@@ -46,20 +65,43 @@
 			linux,code = <KEY_HOMEPAGE>;
 		};
 	};
+
+	i2c-muic {
+		compatible = "i2c-gpio";
+		sda-gpios = <&msmgpio 105 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&msmgpio 106 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&muic_i2c_default>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		muic: extcon@25 {
+			/* NOTE: Actually an SM5703 that implements same interface */
+			compatible = "siliconmitus,sm5502-muic";
+			reg = <0x25>;
+
+			interrupt-parent = <&msmgpio>;
+			interrupts = <121 IRQ_TYPE_EDGE_FALLING>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&muic_int_default>;
+		};
+	};
 };
 
 &blsp1_uart2 {
 	status = "okay";
 };
 
+&pronto {
+	status = "okay";
+};
+
 &pm8916_resin {
 	status = "okay";
 	linux,code = <KEY_VOLUMEDOWN>;
-};
-
-/* FIXME: Replace with SM5703 MUIC when driver is available */
-&pm8916_usbin {
-	status = "okay";
 };
 
 &sdhc_1 {
@@ -82,12 +124,11 @@
 
 &usb {
 	status = "okay";
-	dr_mode = "peripheral";
-	extcon = <&pm8916_usbin>;
+	extcon = <&muic>, <&muic>;
 };
 
 &usb_hs_phy {
-	extcon = <&pm8916_usbin>;
+	extcon = <&muic>;
 };
 
 &smd_rpm_regulators {
@@ -194,11 +235,35 @@
 };
 
 &msmgpio {
+	gpio_hall_sensor_default: gpio-hall-sensor-default {
+		pins = "gpio52";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	gpio_keys_default: gpio-keys-default {
 		pins = "gpio107", "gpio109";
 		function = "gpio";
 
 		drive-strength = <2>;
 		bias-pull-up;
+	};
+
+	muic_i2c_default: muic-i2c-default {
+		pins = "gpio105", "gpio106";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	muic_int_default: muic-int-default {
+		pins = "gpio121";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 };
