@@ -824,9 +824,12 @@ int __init init_common(struct tsens_priv *priv)
 	if (tsens_version(priv) == VER_0)
 		regmap_field_write(priv->rf[TSENS_EN], 1);
 
+	/*HACK For gprime
 	ret = regmap_field_read(priv->rf[TSENS_EN], &enabled);
 	if (ret)
 		goto err_put_device;
+	*/
+	enabled = true;
 	if (!enabled) {
 		dev_err(dev, "%s: device not enabled\n", __func__);
 		ret = -ENODEV;
