@@ -825,6 +825,7 @@ int __init init_common(struct tsens_priv *priv)
 	if (tsens_version(priv) == VER_0)
 		regmap_field_write(priv->rf[TSENS_EN], 1);
 
+	/*HACK For gprime
 	ret = regmap_field_read(priv->rf[TSENS_EN], &enabled);
 	if (ret)
 		goto err_put_device;
@@ -833,6 +834,7 @@ int __init init_common(struct tsens_priv *priv)
 		ret = -ENODEV;
 		goto err_put_device;
 	}
+	*/
 
 	priv->rf[SENSOR_EN] = devm_regmap_field_alloc(dev, priv->srot_map,
 						      priv->fields[SENSOR_EN]);
