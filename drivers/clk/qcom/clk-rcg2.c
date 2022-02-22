@@ -425,7 +425,7 @@ static int clk_rcg2_set_duty_cycle(struct clk_hw *hw, struct clk_duty *duty)
 	 * Check bit widths of 2d. If D is too big reduce duty cycle.
 	 * Also make sure it is never zero.
 	 */
-	d = clamp(d, 1, mask)
+	d = clamp(d, 1, mask);
 
 	if ((d / 2) > (n - m))
 		d = (n - m) * 2;
