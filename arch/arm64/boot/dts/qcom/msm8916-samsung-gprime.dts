@@ -22,3 +22,24 @@
 	compatible = "samsung,gprime", "qcom,msm8916";
 	chassis-type = "handset";
 };
+
+&dsi0 {
+	panel@0 {
+		compatible = "samsung,gprime-panel";
+		reg = <0>;
+		vreg-supply = <&pm8916_l6>;
+		vdd-supply = <&reg_vdd_lcd>;
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <0 1>;
+	remote-endpoint = <&panel_in>;
+};
