@@ -8,4 +8,63 @@
 	model = "Samsung Galaxy Grand Prime 3G (G530H)";
 	compatible = "samsung,fortuna3g", "qcom,msm8916";
 	chassis-type = "handset";
+
+	display_backlight: display-backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pwm_backlight 0 100000>;
+
+		enable-gpios = <&msmgpio 98 GPIO_ACTIVE_HIGH>;
+
+		brightness-levels = <0 255>;
+		num-interpolated-steps = <255>;
+		default-brightness-level = <128>;
+	};
+
+	pwm_backlight: pwm-backlight {
+		compatible = "clk-pwm";
+		#pwm-cells = <2>;
+
+		clocks = <&gcc GCC_GP2_CLK>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&backlight_pwm_default>;
+	};
+};
+
+&dsi0 {
+	panel@0 {
+		compatible = "samsung,s6d78a0-gh9607501a";
+		reg = <0>;
+
+		backlight = <&display_backlight>;
+		vreg-supply = <&pm8916_l6>;
+		vdd-supply = <&reg_vdd_lcd>;
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <0 1>;
+	remote-endpoint = <&panel_in>;
+};
+
+&msmgpio {
+	backlight_en_default: backlight-en-default {
+		pins = "gpio98";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	backlight_pwm_default: backlight-pwm-default {
+		pins = "gpio50";
+		function = "gcc_gp2_clk_a";
+	};
 };
