@@ -58,6 +58,21 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&motor_en_default>;
 	};
+
+	i2c_nfc: i2c-nfc {
+		compatible = "i2c-gpio";
+		sda-gpios = <&msmgpio 0 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&msmgpio 1 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&nfc_i2c_default>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* Used for NFC on some variants */
+		status = "disabled";
+	};
 };
 
 &blsp_i2c1 {
@@ -390,6 +405,14 @@
 			drive-strength = <2>;
 			bias-pull-down;
 		};
+	};
+
+	nfc_i2c_default: nfc-i2c-default {
+		pins = "gpio0", "gpio1";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	tsp_en_default: tsp_en_default {
