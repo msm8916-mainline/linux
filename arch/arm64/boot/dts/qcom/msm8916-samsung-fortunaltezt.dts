@@ -46,6 +46,10 @@
 	status = "okay";
 };
 
+&pn547_nfc {
+	status = "okay";
+};
+
 &st_accel {
 	compatible = "st,lis2hh12";
 	mount-matrix = "1",  "0", "0",
