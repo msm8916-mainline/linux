@@ -112,6 +112,21 @@
 
 			status = "disabled";
 		};
+
+		pn547_nfc: nfc@2b {
+			compatible = "nxp,pn547", "nxp,nxp-nci-i2c";
+			reg = <0x2b>;
+
+			interrupts-extended = <&tlmm 21 IRQ_TYPE_EDGE_RISING>;
+
+			enable-gpios = <&tlmm 20 GPIO_ACTIVE_HIGH>;
+			firmware-gpios = <&tlmm 49 GPIO_ACTIVE_HIGH>;
+
+			pinctrl-0 = <&nfc_default>;
+			pinctrl-names = "default";
+
+			status = "disabled";
+		};
 	};
 
 	reg_motor_vdd: regulator-motor-vdd {
