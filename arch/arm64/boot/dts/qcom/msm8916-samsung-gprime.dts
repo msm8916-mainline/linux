@@ -23,6 +23,14 @@
 	chassis-type = "handset";
 };
 
+&blsp_i2c2 {
+	accelerometer@1d {
+		mount-matrix = "1", "0", "0",
+			      "0", "-1", "0",
+			       "0", "0", "1";
+	};
+};
+
 &dsi0 {
 	panel@0 {
 		compatible = "samsung,gprime-panel";
