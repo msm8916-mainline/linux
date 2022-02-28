@@ -9,11 +9,13 @@
 #include <linux/of.h>
 #include <linux/regulator/consumer.h>
 
+#include <video/mipi_display.h>
+
 #include <drm/drm_mipi_dsi.h>
 #include <drm/drm_modes.h>
 #include <drm/drm_panel.h>
 
-struct ea8061v_ams497ee01 {
+struct ea8061_id400418 {
 	struct drm_panel panel;
 	struct mipi_dsi_device *dsi;
 	struct regulator_bulk_data supplies[2];
@@ -22,9 +24,9 @@ struct ea8061v_ams497ee01 {
 };
 
 static inline
-struct ea8061v_ams497ee01 *to_ea8061v_ams497ee01(struct drm_panel *panel)
+struct ea8061_id400418 *to_ea8061_id400418(struct drm_panel *panel)
 {
-	return container_of(panel, struct ea8061v_ams497ee01, panel);
+	return container_of(panel, struct ea8061_id400418, panel);
 }
 
 #define dsi_dcs_write_seq(dsi, seq...) do {				\
@@ -35,7 +37,7 @@ struct ea8061v_ams497ee01 *to_ea8061v_ams497ee01(struct drm_panel *panel)
 			return ret;					\
 	} while (0)
 
-static void ea8061v_ams497ee01_reset(struct ea8061v_ams497ee01 *ctx)
+static void ea8061_id400418_reset(struct ea8061_id400418 *ctx)
 {
 	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
 	msleep(20);
@@ -45,7 +47,7 @@ static void ea8061v_ams497ee01_reset(struct ea8061v_ams497ee01 *ctx)
 	msleep(20);
 }
 
-static int ea8061v_ams497ee01_on(struct ea8061v_ams497ee01 *ctx)
+static int ea8061_id400418_on(struct ea8061_id400418 *ctx)
 {
 	struct mipi_dsi_device *dsi = ctx->dsi;
 	struct device *dev = &dsi->dev;
@@ -54,22 +56,16 @@ static int ea8061v_ams497ee01_on(struct ea8061v_ams497ee01 *ctx)
 	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
 
 	dsi_dcs_write_seq(dsi, 0xf0, 0x5a, 0x5a);
-	dsi_dcs_write_seq(dsi, 0xf1, 0x5a, 0x5a);
-	dsi_dcs_write_seq(dsi, 0xb8, 0x19, 0x10);
-	dsi_dcs_write_seq(dsi, 0xba, 0x57);
-	dsi_dcs_write_seq(dsi, 0xfc, 0x5a, 0x5a);
-	dsi_dcs_write_seq(dsi, 0xb0, 0x0b);
-	dsi_dcs_write_seq(dsi, 0xd2, 0x00, 0x85);
-	dsi_dcs_write_seq(dsi, 0xcb, 0x70);
-	dsi_dcs_write_seq(dsi, 0xfc, 0xa5, 0xa5);
-	dsi_dcs_write_seq(dsi, 0xca,
-			  0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x80, 0x80, 0x80,
-			  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
-			  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
-			  0x80, 0x80, 0x80, 0x00, 0x00, 0x00);
-	dsi_dcs_write_seq(dsi, 0xb2, 0x00, 0x00, 0x00, 0x0a);
-	dsi_dcs_write_seq(dsi, 0xb6, 0x5c, 0x8a);
-	dsi_dcs_write_seq(dsi, 0xf7, 0x01);
+	dsi_dcs_write_seq(dsi, 0xf7, 0x5a, 0x5a);
+	dsi_dcs_write_seq(dsi, 0xc4,
+			  0x54, 0xb3, 0x54, 0xb3, 0x64, 0x9a, 0x64, 0x9a, 0x00,
+			  0x00, 0x0b, 0xfa, 0x00, 0x0b, 0xfa, 0x00, 0x00, 0x09,
+			  0x09, 0x09, 0x36, 0x68, 0xab, 0x00, 0x00, 0x08, 0x02,
+			  0x05, 0x00, 0x0c, 0x00);
+	dsi_dcs_write_seq(dsi, 0xf7, 0xa5, 0xa5);
+	dsi_dcs_write_seq(dsi, MIPI_DCS_SET_ADDRESS_MODE, 0x02);
+	dsi_dcs_write_seq(dsi, 0xb3, 0x00, 0x30, 0x00, 0x30);
+	dsi_dcs_write_seq(dsi, 0xb4, 0x33, 0x07, 0x00);
 
 	ret = mipi_dsi_dcs_exit_sleep_mode(dsi);
 	if (ret < 0) {
@@ -78,18 +74,45 @@ static int ea8061v_ams497ee01_on(struct ea8061v_ams497ee01 *ctx)
 	}
 	msleep(120);
 
+	dsi_dcs_write_seq(dsi, 0xf7, 0x5a, 0x5a);
+	dsi_dcs_write_seq(dsi, 0xca,
+			  0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x80, 0x80, 0x80,
+			  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+			  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+			  0x80, 0x80, 0x80, 0x00, 0x00);
+	dsi_dcs_write_seq(dsi, 0xb3, 0x00, 0x30, 0x00, 0x30);
+	dsi_dcs_write_seq(dsi, 0xf7, 0xa5, 0xa5);
+	dsi_dcs_write_seq(dsi, 0xb2, 0x0f, 0xb4, 0xa0, 0x13, 0x00, 0x00, 0x00);
+	dsi_dcs_write_seq(dsi, 0xf1, 0x5a, 0x5a);
+	dsi_dcs_write_seq(dsi, 0xd4, 0x38, 0x00, 0x48);
 	dsi_dcs_write_seq(dsi, 0xf1, 0xa5, 0xa5);
+	dsi_dcs_write_seq(dsi, MIPI_DCS_WRITE_POWER_SAVE, 0x02);
+	dsi_dcs_write_seq(dsi, 0xb0, 0x06);
+	dsi_dcs_write_seq(dsi, 0xb2, 0x19);
+	dsi_dcs_write_seq(dsi, 0xf1, 0x5a, 0x5a);
+	dsi_dcs_write_seq(dsi, 0xb0, 0x02);
+	dsi_dcs_write_seq(dsi, 0xd4, 0x48);
+	dsi_dcs_write_seq(dsi, 0xf1, 0xa5, 0xa5);
+	dsi_dcs_write_seq(dsi, 0xb2, 0x0f);
+	dsi_dcs_write_seq(dsi, 0xf1, 0x5a, 0x5a);
+	dsi_dcs_write_seq(dsi, 0xfc, 0x5a, 0x5a);
+	dsi_dcs_write_seq(dsi, 0xb0, 0x01);
+	dsi_dcs_write_seq(dsi, 0xd7, 0x0a);
+	dsi_dcs_write_seq(dsi, 0xff, 0x0a);
+	dsi_dcs_write_seq(dsi, 0xf1, 0xa5, 0xa5);
+	dsi_dcs_write_seq(dsi, 0xfc, 0xa5, 0xa5);
 
 	ret = mipi_dsi_dcs_set_display_on(dsi);
 	if (ret < 0) {
 		dev_err(dev, "Failed to set display on: %d\n", ret);
 		return ret;
 	}
+	msleep(34);
 
 	return 0;
 }
 
-static int ea8061v_ams497ee01_off(struct ea8061v_ams497ee01 *ctx)
+static int ea8061_id400418_off(struct ea8061_id400418 *ctx)
 {
 	struct mipi_dsi_device *dsi = ctx->dsi;
 	struct device *dev = &dsi->dev;
@@ -102,21 +125,21 @@ static int ea8061v_ams497ee01_off(struct ea8061v_ams497ee01 *ctx)
 		dev_err(dev, "Failed to set display off: %d\n", ret);
 		return ret;
 	}
-	msleep(35);
+	msleep(34);
 
 	ret = mipi_dsi_dcs_enter_sleep_mode(dsi);
 	if (ret < 0) {
 		dev_err(dev, "Failed to enter sleep mode: %d\n", ret);
 		return ret;
 	}
-	msleep(100);
+	msleep(150);
 
 	return 0;
 }
 
-static int ea8061v_ams497ee01_prepare(struct drm_panel *panel)
+static int ea8061_id400418_prepare(struct drm_panel *panel)
 {
-	struct ea8061v_ams497ee01 *ctx = to_ea8061v_ams497ee01(panel);
+	struct ea8061_id400418 *ctx = to_ea8061_id400418(panel);
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
@@ -129,9 +152,9 @@ static int ea8061v_ams497ee01_prepare(struct drm_panel *panel)
 		return ret;
 	}
 
-	ea8061v_ams497ee01_reset(ctx);
+	ea8061_id400418_reset(ctx);
 
-	ret = ea8061v_ams497ee01_on(ctx);
+	ret = ea8061_id400418_on(ctx);
 	if (ret < 0) {
 		dev_err(dev, "Failed to initialize panel: %d\n", ret);
 		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
@@ -143,16 +166,16 @@ static int ea8061v_ams497ee01_prepare(struct drm_panel *panel)
 	return 0;
 }
 
-static int ea8061v_ams497ee01_unprepare(struct drm_panel *panel)
+static int ea8061_id400418_unprepare(struct drm_panel *panel)
 {
-	struct ea8061v_ams497ee01 *ctx = to_ea8061v_ams497ee01(panel);
+	struct ea8061_id400418 *ctx = to_ea8061_id400418(panel);
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
 	if (!ctx->prepared)
 		return 0;
 
-	ret = ea8061v_ams497ee01_off(ctx);
+	ret = ea8061_id400418_off(ctx);
 	if (ret < 0)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
 
@@ -163,26 +186,26 @@ static int ea8061v_ams497ee01_unprepare(struct drm_panel *panel)
 	return 0;
 }
 
-static const struct drm_display_mode ea8061v_ams497ee01_mode = {
-	.clock = (720 + 80 + 96 + 128) * (1280 + 14 + 2 + 8) * 60 / 1000,
+static const struct drm_display_mode ea8061_id400418_mode = {
+	.clock = (720 + 114 + 96 + 114) * (1280 + 13 + 2 + 5) * 60 / 1000,
 	.hdisplay = 720,
-	.hsync_start = 720 + 80,
-	.hsync_end = 720 + 80 + 96,
-	.htotal = 720 + 80 + 96 + 128,
+	.hsync_start = 720 + 114,
+	.hsync_end = 720 + 114 + 96,
+	.htotal = 720 + 114 + 96 + 114,
 	.vdisplay = 1280,
-	.vsync_start = 1280 + 14,
-	.vsync_end = 1280 + 14 + 2,
-	.vtotal = 1280 + 14 + 2 + 8,
-	.width_mm = 62,
-	.height_mm = 110,
+	.vsync_start = 1280 + 13,
+	.vsync_end = 1280 + 13 + 2,
+	.vtotal = 1280 + 13 + 2 + 5,
+	.width_mm = 68,
+	.height_mm = 122,
 };
 
-static int ea8061v_ams497ee01_get_modes(struct drm_panel *panel,
-					struct drm_connector *connector)
+static int ea8061_id400418_get_modes(struct drm_panel *panel,
+				     struct drm_connector *connector)
 {
 	struct drm_display_mode *mode;
 
-	mode = drm_mode_duplicate(connector->dev, &ea8061v_ams497ee01_mode);
+	mode = drm_mode_duplicate(connector->dev, &ea8061_id400418_mode);
 	if (!mode)
 		return -ENOMEM;
 
@@ -196,16 +219,16 @@ static int ea8061v_ams497ee01_get_modes(struct drm_panel *panel,
 	return 1;
 }
 
-static const struct drm_panel_funcs ea8061v_ams497ee01_panel_funcs = {
-	.prepare = ea8061v_ams497ee01_prepare,
-	.unprepare = ea8061v_ams497ee01_unprepare,
-	.get_modes = ea8061v_ams497ee01_get_modes,
+static const struct drm_panel_funcs ea8061_id400418_panel_funcs = {
+	.prepare = ea8061_id400418_prepare,
+	.unprepare = ea8061_id400418_unprepare,
+	.get_modes = ea8061_id400418_get_modes,
 };
 
-static int ea8061v_ams497ee01_probe(struct mipi_dsi_device *dsi)
+static int ea8061_id400418_probe(struct mipi_dsi_device *dsi)
 {
 	struct device *dev = &dsi->dev;
-	struct ea8061v_ams497ee01 *ctx;
+	struct ea8061_id400418 *ctx;
 	int ret;
 
 	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
@@ -232,7 +255,7 @@ static int ea8061v_ams497ee01_probe(struct mipi_dsi_device *dsi)
 	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
 			  MIPI_DSI_MODE_NO_EOT_PACKET;
 
-	drm_panel_init(&ctx->panel, dev, &ea8061v_ams497ee01_panel_funcs,
+	drm_panel_init(&ctx->panel, dev, &ea8061_id400418_panel_funcs,
 		       DRM_MODE_CONNECTOR_DSI);
 
 	drm_panel_add(&ctx->panel);
@@ -247,9 +270,9 @@ static int ea8061v_ams497ee01_probe(struct mipi_dsi_device *dsi)
 	return 0;
 }
 
-static int ea8061v_ams497ee01_remove(struct mipi_dsi_device *dsi)
+static int ea8061_id400418_remove(struct mipi_dsi_device *dsi)
 {
-	struct ea8061v_ams497ee01 *ctx = mipi_dsi_get_drvdata(dsi);
+	struct ea8061_id400418 *ctx = mipi_dsi_get_drvdata(dsi);
 	int ret;
 
 	ret = mipi_dsi_detach(dsi);
@@ -261,22 +284,22 @@ static int ea8061v_ams497ee01_remove(struct mipi_dsi_device *dsi)
 	return 0;
 }
 
-static const struct of_device_id ea8061v_ams497ee01_of_match[] = {
-	{ .compatible = "samsung,ea8061v-ams497ee01" }, // FIXME
+static const struct of_device_id ea8061_id400418_of_match[] = {
+	{ .compatible = "samsung,ea8061-ams549bu19-id400418" }, // FIXME
 	{ /* sentinel */ }
 };
-MODULE_DEVICE_TABLE(of, ea8061v_ams497ee01_of_match);
+MODULE_DEVICE_TABLE(of, ea8061_id400418_of_match);
 
-static struct mipi_dsi_driver ea8061v_ams497ee01_driver = {
-	.probe = ea8061v_ams497ee01_probe,
-	.remove = ea8061v_ams497ee01_remove,
+static struct mipi_dsi_driver ea8061_id400418_driver = {
+	.probe = ea8061_id400418_probe,
+	.remove = ea8061_id400418_remove,
 	.driver = {
-		.name = "panel-ea8061v-ams497ee01",
-		.of_match_table = ea8061v_ams497ee01_of_match,
+		.name = "panel-ea8061-id400418",
+		.of_match_table = ea8061_id400418_of_match,
 	},
 };
-module_mipi_dsi_driver(ea8061v_ams497ee01_driver);
+module_mipi_dsi_driver(ea8061_id400418_driver);
 
 MODULE_AUTHOR("linux-mdss-dsi-panel-driver-generator <fix@me>"); // FIXME
-MODULE_DESCRIPTION("DRM driver for ss_dsi_panel_EA8061V_AMS497EE01_HD");
+MODULE_DESCRIPTION("DRM driver for Samsung EA8061_ID400418 HD video mode panel");
 MODULE_LICENSE("GPL v2");
