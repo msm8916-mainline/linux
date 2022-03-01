@@ -13,6 +13,7 @@ obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-motorola-osprey-inx.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-motorola-surnia-boe.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-ea8061-ams549bu19-id400418.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-ea8061v-ams497ee01.o
+obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-hx8389c.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-nt51017-b4p096wx5vp09.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-s6d78a0-gh9607501a.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-s6d7aa0-lsl080al03.o
