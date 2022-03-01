@@ -91,7 +91,7 @@
 };
 
 &panel {
-    compatible = "samsung,hx8389c";
+    compatible = "samsung,hx8389c-gh9607501a";
 };
 
 &msmgpio {
