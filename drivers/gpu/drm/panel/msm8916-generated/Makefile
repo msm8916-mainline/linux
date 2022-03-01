@@ -1,6 +1,7 @@
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-alcatel-auo-hx8394d.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-asus-z00l-otm1284a.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-asus-z010d-r69339.o
+obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-huawei-boe-otm8019a.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-huawei-tianma-nt35521.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-longcheer-booyi-otm1287.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-longcheer-dijing-ili9881c.o
@@ -12,7 +13,9 @@ obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-motorola-osprey-inx.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-motorola-surnia-boe.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-oppo-15009-nt35592-jdi.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-ea8061v-ams497ee01.o
+obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-hx8389c.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-nt51017-b4p096wx5vp09.o
+obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-s6d78a0-gh9607501a.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-s6d7aa0-lsl080al03.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-s6d7aa0-ltl101at01.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-s6e88a0-ams427ap24.o
