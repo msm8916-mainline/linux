@@ -481,10 +481,13 @@ static int wcnss_request_irq(struct qcom_wcnss *wcnss,
 					NULL, thread_fn,
 					IRQF_TRIGGER_RISING | IRQF_ONESHOT,
 					"wcnss", wcnss);
-	if (ret)
+	if (ret) {
 		dev_err(&pdev->dev, "request %s IRQ failed\n", name);
+		return ret;
+	}
 
-	return ret;
+	/* Return > 0 if the IRQ was successfully aquired */
+	return 1;
 }
 
 static int wcnss_alloc_memory_region(struct qcom_wcnss *wcnss)
