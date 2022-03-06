@@ -21,3 +21,11 @@
 &mpss_mem {
 	reg = <0x0 0x86800000 0x0 0x5000000>;
 };
+
+&st_accel {
+	status = "okay";
+};
+
+&st_magn {
+	status = "okay";
+};
