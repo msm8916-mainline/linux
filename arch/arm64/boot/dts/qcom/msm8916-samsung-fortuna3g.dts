@@ -16,6 +16,27 @@
 			no-map;
 		};
 	};
+
+	display_backlight: display-backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pwm_backlight 0 100000>;
+
+		enable-gpios = <&msmgpio 98 GPIO_ACTIVE_HIGH>;
+
+		brightness-levels = <0 255>;
+		num-interpolated-steps = <255>;
+		default-brightness-level = <128>;
+	};
+
+	pwm_backlight: pwm-backlight {
+		compatible = "clk-pwm";
+		#pwm-cells = <2>;
+
+		clocks = <&gcc GCC_GP2_CLK>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&backlight_pwm_default>;
+	};
 };
 
 &blsp_i2c2 {
@@ -42,6 +63,12 @@
 	};
 };
 
+&dsi0 {
+	panel@0 {
+		backlight = <&display_backlight>;
+	};
+};
+
 &msmgpio {
 	accel_int_default: accel-int-default {
 		pins = "gpio115";
@@ -49,5 +76,18 @@
 
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+	backlight_en_default: backlight-en-default {
+		pins = "gpio98";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	backlight_pwm_default: backlight-pwm-default {
+		pins = "gpio50";
+		function = "gcc_gp2_clk_a";
 	};
 };
