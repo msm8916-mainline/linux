@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-samsung-gprime-common.dtsi"
+
+/ {
+	model = "Samsung Galaxy Grand Prime (SM-G530H)";
+	compatible = "samsung,fortuna3g", "samsung,gprime", "qcom,msm8916";
+	chassis-type = "handset";
+
+	reserved-memory {
+		/* Additional memory used by Samsung firmware modifications */
+		tz-apps@85500000 {
+			reg = <0x0 0x85500000 0x0 0xb00000>;
+			no-map;
+		};
+	};
+};
