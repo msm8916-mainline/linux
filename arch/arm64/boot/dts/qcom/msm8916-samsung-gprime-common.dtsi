@@ -38,6 +38,30 @@
 		};
 	};
 
+	clk_pwm_backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&clk_pwm 0 100000>;
+
+		enable-gpios = <&msmgpio 98 GPIO_ACTIVE_HIGH>;
+
+		brightness-levels = <0 255>;
+		num-interpolated-steps = <255>;
+		default-brightness-level = <128>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&backlight_en_default>;
+	};
+
+	clk_pwm: pwm {
+		compatible = "clk-pwm";
+		#pwm-cells = <2>;
+
+		clocks = <&gcc GCC_GP2_CLK>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&backlight_pwm_default>;
+	};
+
 	reg_vdd_lcd: regulator-vdd-lcd {
 		compatible = "regulator-fixed";
 		regulator-name = "vdd_lcd";
@@ -229,6 +253,7 @@
 		vdd-supply = <&reg_vdd_lcd>;
 
 		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+		backlight = <&clk_pwm_backlight>;
 
 		port {
 			panel_in: endpoint {
@@ -401,6 +426,19 @@
 
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+	backlight_en_default: backlight-en-default {
+		pins = "gpio98";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	backlight_pwm_default: backlight-pwm-default {
+		pins = "gpio50";
+		function = "gcc_gp2_clk_a";
 	};
 
 	fg_alert_default: fg-alert-default {
