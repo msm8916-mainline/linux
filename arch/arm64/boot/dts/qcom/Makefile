@@ -17,6 +17,7 @@ dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-motorola-harpia.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-mtp.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-a3u-eur.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-a5u-eur.dtb
+dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-fortuna3g.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-gprimeltecan.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-gt510.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-gt58.dtb
