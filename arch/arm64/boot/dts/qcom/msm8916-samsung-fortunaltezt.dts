@@ -40,6 +40,15 @@
 	};
 };
 
+/* On fortunaltezt backlight is controlled with MIPI DCS commands */
+&clk_pwm {
+	status = "disabled";
+};
+
+&clk_pwm_backlight {
+	status = "disabled";
+};
+
 &i2c_nfc {
 	status = "okay";
 
@@ -56,6 +65,10 @@
 		pinctrl-0 = <&nfc_default>;
 		pinctrl-names = "default";
 	};
+};
+
+&panel {
+	/delete-property/ backlight;
 };
 
 &st_accel {
