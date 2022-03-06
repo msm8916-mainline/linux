@@ -27,3 +27,11 @@
 		};
 	};
 };
+
+&st_accel {
+	status = "okay";
+};
+
+&st_magn {
+	status = "okay";
+};
