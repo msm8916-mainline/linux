@@ -4102,6 +4102,36 @@ static const struct panel_desc_dsi samsung_s6e8aa5x01_ams497hy01 = {
 	.lanes = 4,
 };
 
+static const struct drm_display_mode s6e8aa5x01_ams520kt01_mode = {
+	.clock = (720 + 224 + 20 + 100) * (1280 + 14 + 2 + 8) * 60 / 1000,
+	.hdisplay = 720,
+	.hsync_start = 720 + 224,
+	.hsync_end = 720 + 224 + 20,
+	.htotal = 720 + 224 + 20 + 100,
+	.vdisplay = 1280,
+	.vsync_start = 1280 + 14,
+	.vsync_end = 1280 + 14 + 2,
+	.vtotal = 1280 + 14 + 2 + 8,
+	.width_mm = 65,
+	.height_mm = 115,
+};
+
+static const struct panel_desc_dsi samsung_s6e8aa5x01_ams520kt01 = {
+	.desc = {
+		.modes = &s6e8aa5x01_ams520kt01_mode,
+		.num_modes = 1,
+		.bpc = 8,
+		.size = {
+			.width = 65,
+			.height = 115,
+		},
+		.connector_type = DRM_MODE_CONNECTOR_DSI,
+	},
+	.flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST,
+	.format = MIPI_DSI_FMT_RGB888,
+	.lanes = 4,
+};
+
 static const struct drm_display_mode auo_b080uan01_mode = {
 	.clock = 154500,
 	.hdisplay = 1200,
@@ -4376,6 +4406,9 @@ static const struct of_device_id dsi_of_match[] = {
 	}, {
 		.compatible = "samsung,s6e8aa5x01-ams497hy01",
 		.data = &samsung_s6e8aa5x01_ams497hy01,
+	}, {
+		.compatible = "samsung,s6e8aa5x01-ams520kt01",
+		.data = &samsung_s6e8aa5x01_ams520kt01,
 	}, {
 		.compatible = "lg,c50-panel",
 		.data = &lg_c50_panel
