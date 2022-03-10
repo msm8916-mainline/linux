@@ -50,6 +50,51 @@
 		};
 	};
 
+	i2c-bl {
+		compatible = "i2c-gpio";
+		sda-gpios = <&tlmm 101 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&tlmm 102 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&bl_i2c_default>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		lm3632@11 {
+				compatible = "ti,lm3632";
+				reg = <0x11>;
+
+				enable-gpios = <&tlmm 98 GPIO_ACTIVE_HIGH>;
+
+				regulators {
+						compatible = "ti,lm363x-regulator";
+
+						enable-gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>,
+			       						<&tlmm 120 GPIO_ACTIVE_HIGH>;
+
+						reg_lcd_vboost: vboost {
+								regulator-name = "lcd_boost";
+								regulator-min-microvolt = <6000000>;
+								regulator-max-microvolt = <6000000>;
+								regulator-always-on;
+						};
+
+						reg_lcd_vpos: vpos {
+								regulator-name = "lcd_vpos";
+								regulator-min-microvolt = <5500000>;
+								regulator-max-microvolt = <5500000>;
+						};
+
+						reg_lcd_vneg: vneg {
+								regulator-name = "lcd_vneg";
+								regulator-min-microvolt = <5500000>;
+								regulator-max-microvolt = <5500000>;
+						};
+				};
+		};
+	};
+
 	i2c-muic {
 		compatible = "i2c-gpio";
 		sda-gpios = <&tlmm 105 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
@@ -132,6 +177,14 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-up;
+	};
+
+	bl_i2c_default: bl-i2c-default {
+		pins = "gpio101", "gpio102";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	muic_i2c_default: muic-i2c-default-state {
