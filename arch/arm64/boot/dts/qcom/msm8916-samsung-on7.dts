@@ -117,9 +117,53 @@
 			pinctrl-names = "default";
 		};
 	};
+
+	reg_lcd: regulator-lcd {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd";
+		regulator-min-microvolt = <2100000>;
+		regulator-max-microvolt = <2100000>;
+
+		gpio = <&tlmm 16 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_en_default>;
+	};
 };
 
 &blsp_uart2 {
+	status = "okay";
+};
+
+&mdss_dsi0 {
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&mdss_default>;
+		pinctrl-1 = <&mdss_sleep>;
+
+        panel@0 {
+                compatible = "samsung,s6d7aa0x62-bv050hdm";
+                reg = <0>;
+
+                lcd-supply = <&reg_lcd>;
+				vpos-supply = <&reg_lcd_vpos>;
+				vneg-supply = <&reg_lcd_vneg>;
+                reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+
+                port {
+                        panel_in: endpoint {
+                                remote-endpoint = <&mdss_dsi0_out>;
+                        };
+                };
+        };
+};
+
+&mdss_dsi0_out {
+        data-lanes = <0 1 2 3>;
+        remote-endpoint = <&panel_in>;
+};
+
+&mdss {
 	status = "okay";
 };
 
@@ -185,6 +229,31 @@
 
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+	lcd_en_default: lcd-en-default {
+		pins = "gpio16";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	mdss {
+		mdss_default: mdss-default {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <8>;
+			bias-disable;
+		};
+		mdss_sleep: mdss-sleep {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-pull-down;
+		};
 	};
 
 	muic_i2c_default: muic-i2c-default-state {
