@@ -40,7 +40,9 @@ dtb-$(CONFIG_ARCH_QCOM) += \
 	qcom-msm8909-zte-sapphire.dtb \
 	qcom-msm8916-samsung-e5.dtb \
 	qcom-msm8916-samsung-e7.dtb \
+	qcom-msm8916-samsung-fortunaltezt.dtb \
 	qcom-msm8916-samsung-grandmax.dtb \
+	qcom-msm8916-samsung-heatqlte.dtb \
 	qcom-msm8916-samsung-serranove.dtb \
 	qcom-msm8926-htc-memul.dtb \
 	qcom-msm8926-microsoft-superman-lte.dtb \
