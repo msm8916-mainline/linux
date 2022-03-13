@@ -4,5 +4,5 @@
 
 &tsens {
 	/* FIXME: The device crashes when accessing the SROT region for some reason */
-	status = "disabled";
+	qcom,srot-locked;
 };
