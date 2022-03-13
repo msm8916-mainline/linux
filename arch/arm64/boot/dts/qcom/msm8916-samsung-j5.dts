@@ -47,6 +47,30 @@
 		};
 	};
 
+	i2c-muic {
+		compatible = "i2c-gpio";
+		sda-gpios = <&msmgpio 105 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&msmgpio 106 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&muic_i2c_default>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		muic: extcon@50 {
+			/* NOTE: Actually an SM5703 that implements same interface */
+			compatible = "siliconmitus,sm5502-muic";
+			reg = <0x25>;
+
+			interrupt-parent = <&msmgpio>;
+			interrupts = <12 IRQ_TYPE_EDGE_FALLING>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&muic_int_default>;
+		};
+	};
+
 	i2c-sensors {
 		compatible = "i2c-gpio";
 
@@ -119,11 +143,6 @@
 	linux,code = <KEY_VOLUMEDOWN>;
 };
 
-/* FIXME: Replace with SM5703 MUIC when driver is available */
-&pm8916_usbin {
-	status = "okay";
-};
-
 &pronto {
 	status = "okay";
 };
@@ -148,12 +167,11 @@
 
 &usb {
 	status = "okay";
-	dr_mode = "peripheral";
-	extcon = <&pm8916_usbin>;
+	extcon = <&muic>, <&muic>;
 };
 
 &usb_hs_phy {
-	extcon = <&pm8916_usbin>;
+	extcon = <&muic>;
 	qcom,init-seq = /bits/ 8 <0x1 0x19 0x2 0x0b>;
 };
 
@@ -292,6 +310,22 @@
 			drive-strength = <2>;
 			bias-pull-down;
 		};
+	};
+
+	muic_i2c_default: muic-i2c-default {
+		pins = "gpio105", "gpio106";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	muic_int_default: muic-int-default {
+		pins = "gpio12";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	sensors_i2c_default: sensors-i2c-default {
