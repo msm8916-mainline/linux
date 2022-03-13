@@ -1,22 +1,38 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-/dts-v1/;
-
 #include "msm8916-pm8916.dtsi"
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 
 / {
-	model = "Samsung Galaxy Grand Prime";
-	compatible = "samsung,gprime", "qcom,msm8916";
-	chassis-type = "handset";
-
 	aliases {
 		serial0 = &blsp1_uart2;
 	};
 
 	chosen {
 		stdout-path = "serial0";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&gpio_keys_default>;
+
+		label = "GPIO Buttons";
+
+		volume-up {
+			label = "Volume Up";
+			gpios = <&msmgpio 107 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEUP>;
+		};
+
+		home {
+			label = "Home";
+			gpios = <&msmgpio 109 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_HOMEPAGE>;
+		};
 	};
 };
 
@@ -36,6 +52,15 @@
 };
 
 &blsp1_uart2 {
+	status = "okay";
+};
+
+&pm8916_resin {
+	status = "okay";
+	linux,code = <KEY_VOLUMEDOWN>;
+};
+
+&pronto {
 	status = "okay";
 };
 
@@ -170,6 +195,14 @@
 };
 
 &msmgpio {
+	gpio_keys_default: gpio-keys-default {
+		pins = "gpio107", "gpio109";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
 	muic_int_default: muic-int-default {
 		pins = "gpio12";
 		function = "gpio";
