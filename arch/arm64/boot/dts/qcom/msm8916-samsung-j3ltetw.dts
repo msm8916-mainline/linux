@@ -23,3 +23,12 @@
 &gpio_hall_sensor {
 	status = "disabled";
 };
+
+&i2c_muic {
+	sda-gpios = <&msmgpio 0 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+	scl-gpios = <&msmgpio 1 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+};
+
+&muic_i2c_default {
+	pins = "gpio0", "gpio1";
+};
