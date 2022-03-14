@@ -3,6 +3,7 @@
 /dts-v1/;
 
 #include "msm8916-samsung-gprime-common.dtsi"
+#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 
 / {
 	model = "Samsung Galaxy Grand Prime (CAN)";
@@ -57,6 +58,26 @@
 	};
 };
 
+&blsp_i2c6 {
+	status = "okay";
+
+	nfc@27 {
+		compatible = "samsung,s3fwrn5-i2c";
+		reg = <0x27>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <21 IRQ_TYPE_EDGE_RISING>;
+
+		en-gpios = <&msmgpio 20 GPIO_ACTIVE_HIGH>;
+		wake-gpios = <&msmgpio 49 GPIO_ACTIVE_HIGH>;
+
+		clocks = <&rpmcc RPM_SMD_BB_CLK2_PIN>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&nfc_default &nfc_clk_req>;
+	};
+};
+
 &msmgpio {
 	accel_int_default: accel-int-default {
 		pins = "gpio115";
@@ -64,5 +85,32 @@
 
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+	nfc_default: nfc-default {
+		pins = "gpio20", "gpio49";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+
+		irq {
+			pins = "gpio21";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
+};
+
+&pm8916_gpios {
+	nfc_clk_req: nfc-clk-req {
+		pins = "gpio2";
+		function = "func1";
+
+		input-enable;
+		bias-disable;
+		power-source = <PM8916_GPIO_L2>;
 	};
 };
