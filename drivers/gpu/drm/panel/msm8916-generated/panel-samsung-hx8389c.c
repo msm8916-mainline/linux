@@ -312,7 +312,7 @@ static int hx8389c_probe(struct mipi_dsi_device *dsi)
 	if (!ctx)
 		return -ENOMEM;
 
-	ctx->supplies[0].supply = "vreg";
+	ctx->supplies[0].supply = "vddio";
 	ctx->supplies[1].supply = "vdd";
 	ret = devm_regulator_bulk_get(dev, ARRAY_SIZE(ctx->supplies),
 				      ctx->supplies);
