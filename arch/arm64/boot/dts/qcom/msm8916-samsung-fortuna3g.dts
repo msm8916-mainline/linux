@@ -60,7 +60,7 @@
 		vddio-supply = <&pm8916_l5>;
 
 		interrupt-parent = <&msmgpio>;
-		interrupts = <115 IRQ_TYPE_EDGE_RISING>;
+		interrupts = <115 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "INT1";
 
 		st,drdy-int-pin = <1>;
@@ -72,7 +72,18 @@
 		pinctrl-0 = <&accel_int_default>;
 	};
 
-	/* TODO: Add st,lsm303c-magn */
+	magnetometer@1e {
+		compatible = "st,lsm303c-magn";
+		reg = <0x1e>;
+
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l5>;
+
+		st,drdy-int-pin = <1>;
+		mount-matrix = "0", "1", "0",
+			      "-1", "0", "0",
+			       "0", "0", "1";
+	};
 };
 
 &panel {
