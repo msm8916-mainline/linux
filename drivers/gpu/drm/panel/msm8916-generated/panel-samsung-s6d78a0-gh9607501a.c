@@ -233,29 +233,8 @@ static int s6d78a0_gh9607501a_bl_update_status(struct backlight_device *bl)
 
 	return 0;
 }
-
-// TODO: Check if /sys/class/backlight/.../actual_brightness actually returns
-// correct values. If not, remove this function.
-static int s6d78a0_gh9607501a_bl_get_brightness(struct backlight_device *bl)
-{
-	struct mipi_dsi_device *dsi = bl_get_data(bl);
-	u16 brightness;
-	int ret;
-
-	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
-
-	ret = mipi_dsi_dcs_get_display_brightness(dsi, &brightness);
-	if (ret < 0)
-		return ret;
-
-	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
-
-	return brightness & 0xff;
-}
-
 static const struct backlight_ops s6d78a0_gh9607501a_bl_ops = {
 	.update_status = s6d78a0_gh9607501a_bl_update_status,
-	.get_brightness = s6d78a0_gh9607501a_bl_get_brightness,
 };
 
 static struct backlight_device *
