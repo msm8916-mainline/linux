@@ -53,7 +53,7 @@
 	status = "okay";
 
 	accelerometer@1d {
-		compatible = "st,lis2hh12";
+		compatible = "st,lsm303c-accel";
 		reg = <0x1d>;
 
 		vdd-supply = <&pm8916_l17>;
@@ -71,6 +71,8 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&accel_int_default>;
 	};
+
+	/* TODO: Add st,lsm303c-magn */
 };
 
 &panel {
