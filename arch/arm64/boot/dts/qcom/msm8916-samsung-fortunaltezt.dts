@@ -90,10 +90,6 @@
 	};
 };
 
-&panel {
-	compatible = "samsung,hx8389c";
-};
-
 &msmgpio {
 	accel_int_default: accel-int-default {
 		pins = "gpio115";
