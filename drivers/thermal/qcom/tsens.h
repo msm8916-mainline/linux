@@ -565,6 +565,7 @@ struct tsens_priv {
 	struct regmap			*tm_map;
 	struct regmap			*srot_map;
 	u32				tm_offset;
+	bool				srot_locked;
 
 	/* lock for upper/lower threshold interrupts */
 	spinlock_t			ul_lock;

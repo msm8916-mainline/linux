@@ -835,17 +835,22 @@ int __init init_common(struct tsens_priv *priv)
 		ret = PTR_ERR(priv->rf[TSENS_EN]);
 		goto err_put_device;
 	}
-	/* in VER_0 TSENS need to be explicitly enabled */
-	if (tsens_version(priv) == VER_0)
-		regmap_field_write(priv->rf[TSENS_EN], 1);
 
-	ret = regmap_field_read(priv->rf[TSENS_EN], &enabled);
-	if (ret)
-		goto err_put_device;
-	if (!enabled) {
-		dev_err(dev, "%s: device not enabled\n", __func__);
-		ret = -ENODEV;
-		goto err_put_device;
+	if (!priv->srot_locked) {
+		/* in VER_0 TSENS need to be explicitly enabled */
+		if (tsens_version(priv) == VER_0)
+			regmap_field_write(priv->rf[TSENS_EN], 1);
+
+		ret = regmap_field_read(priv->rf[TSENS_EN], &enabled);
+		if (ret)
+			goto err_put_device;
+		if (!enabled) {
+			dev_err(dev, "%s: device not enabled\n", __func__);
+			ret = -ENODEV;
+			goto err_put_device;
+		}
+	} else {
+		dev_warn(dev, FW_BUG "SROT is locked, assuming TSENS is enabled\n");
 	}
 
 	priv->rf[SENSOR_EN] = devm_regmap_field_alloc(dev, priv->srot_map,
@@ -1155,6 +1160,7 @@ static int tsens_probe(struct platform_device *pdev)
 	}
 	priv->feat = data->feat;
 	priv->fields = data->fields;
+	priv->srot_locked = of_property_read_bool(np, "qcom,srot-locked");
 
 	platform_set_drvdata(pdev, priv);
 
