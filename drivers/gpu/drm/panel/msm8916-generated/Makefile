@@ -15,6 +15,7 @@ obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-ea8061-ams549bu19-id4
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-ea8061v-ams497ee01.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-hx8389c-gh9607501a.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-nt51017-b4p096wx5vp09.o
+obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-s6288a0.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-s6d78a0-gh9607501a.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-s6d7aa0-lsl080al03.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-samsung-s6d7aa0-ltl101at01.o
