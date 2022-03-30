@@ -73,6 +73,7 @@ static int samsung_on(struct samsung *ctx)
 	dsi_dcs_write_seq(dsi, 0xb2, 0x40, 0x08, 0x20, 0x00, 0x08);
 	dsi_dcs_write_seq(dsi, 0xb6, 0x28, 0x0b);
 	dsi_dcs_write_seq(dsi, MIPI_DCS_WRITE_POWER_SAVE, 0x00);
+	dsi_dcs_write_seq(dsi, 0xf7, 0x03);
 	dsi_dcs_write_seq(dsi, 0xfc, 0xa5, 0xa5);
 
 	ret = mipi_dsi_dcs_set_display_on(dsi);
