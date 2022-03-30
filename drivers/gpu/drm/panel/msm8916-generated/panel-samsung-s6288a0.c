@@ -65,6 +65,7 @@ static int samsung_on(struct samsung *ctx)
 				     0x40, 0x08, 0x20, 0x00, 0x08);
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xb6, 0x28, 0x0b);
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, MIPI_DCS_WRITE_POWER_SAVE, 0x00);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xf7, 0x03);
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xfc, 0xa5, 0xa5);
 	mipi_dsi_dcs_set_display_on_multi(&dsi_ctx);
 
