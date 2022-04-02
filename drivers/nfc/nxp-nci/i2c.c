@@ -35,6 +35,7 @@ struct nxp_nci_i2c_phy {
 
 	struct gpio_desc *gpiod_en;
 	struct gpio_desc *gpiod_fw;
+	struct regulator *pvdd;
 
 	int hard_fault; /*
 			 * < 0 if hardware error occurred (e.g. i2c err)
@@ -292,10 +293,21 @@ static int nxp_nci_i2c_probe(struct i2c_client *client,
 		return PTR_ERR(phy->gpiod_fw);
 	}
 
+	phy->pvdd = devm_regulator_get(dev, "pvdd");
+	if (IS_ERR(phy->pvdd)) {
+		nfc_err(dev, "Failed to get regulator pvdd: %d\n", r);
+		return PTR_ERR(phy->pvdd);
+	}
+
 	r = nxp_nci_probe(phy, &client->dev, &i2c_phy_ops,
 			  NXP_NCI_I2C_MAX_PAYLOAD, &phy->ndev);
 	if (r < 0)
 		return r;
+
+	r = regulator_enable(phy->pvdd);
+	if (r < 0)
+		nfc_err(&client->dev,
+			"Failed to enable regulator pvdd: %d\n", r);
 
 	r = request_threaded_irq(client->irq, NULL,
 				 nxp_nci_i2c_irq_thread_fn,
@@ -309,10 +321,16 @@ static int nxp_nci_i2c_probe(struct i2c_client *client,
 
 static int nxp_nci_i2c_remove(struct i2c_client *client)
 {
+	struct device *dev = &client->dev;
 	struct nxp_nci_i2c_phy *phy = i2c_get_clientdata(client);
+	int r;
 
 	nxp_nci_remove(phy->ndev);
 	free_irq(client->irq, phy);
+
+	r = regulator_disable(phy->pvdd);
+	if (r < 0)
+		dev_warn(dev, "Failed to disable regulator pvdd: %d\n", r);
 
 	return 0;
 }
