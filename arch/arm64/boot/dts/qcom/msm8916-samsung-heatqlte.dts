@@ -27,3 +27,7 @@
 	constant-charge-current-max-microamp = <700000>;
 	constant-charge-voltage-max-microvolt = <4350000>;
 };
+
+&panel {
+	compatible = "samsung,s6288a0";
+};
