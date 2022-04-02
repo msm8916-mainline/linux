@@ -991,6 +991,7 @@ dtb-$(CONFIG_ARCH_QCOM) += \
 	qcom-msm8660-surf.dtb \
 	qcom-msm8916-samsung-e7.dtb \
 	qcom-msm8916-samsung-fortunaltezt.dtb \
+	qcom-msm8916-samsung-heatqlte.dtb \
 	qcom-msm8916-samsung-serranove.dtb \
 	qcom-msm8960-cdp.dtb \
 	qcom-msm8974-fairphone-fp2.dtb \
