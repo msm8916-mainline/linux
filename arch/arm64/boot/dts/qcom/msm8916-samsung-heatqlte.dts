@@ -40,6 +40,10 @@
 	status = "okay";
 };
 
+&panel {
+	compatible = "samsung,s6288a0";
+};
+
 &usb {
 	extcon = <&muic_sm5504>, <&muic_sm5504>;
 	status = "okay";
