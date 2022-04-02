@@ -33,3 +33,7 @@
 		};
 	};
 };
+
+&panel {
+	compatible = "samsung,s6288a0";
+};
