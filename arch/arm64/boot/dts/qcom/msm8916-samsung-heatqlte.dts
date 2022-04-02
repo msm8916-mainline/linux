@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-samsung-cprime-common.dtsi"
+
+/*
+ * NOTE: The original firmware from Samsung can only boot ARM32 kernels.
+ * Unfortunately, the firmware is signed and cannot be replaced easily.
+ * There seems to be no way to boot ARM64 kernels on this device at the moment,
+ * even though the hardware would support it.
+ *
+ * However, it is possible to use this device tree by compiling an ARM32 kernel
+ * instead. For clarity and build testing this device tree is maintained next
+ * to the other MSM8916 device trees. However, it is actually used through
+ * arch/arm/boot/dts/qcom-msm8916-samsung-heatqlte.dts
+ */
+
+/ {
+	model = "Samsung Galaxy Ace 4 (SM-G357FZ)";
+	compatible = "samsung,heatqlte", "qcom,msm8916";
+	chassis-type = "handset";
+
+	reserved-memory {
+		mpss_mem: mpss@86800000 {
+			reg = <0x0 0x86800000 0x0 0x5000000>;
+			no-map;
+		};
+
+		gps_mem: gps@8b800000 {
+			reg = <0x0 0x8b800000 0x0 0x200000>;
+			no-map;
+		};
+	};
+};
