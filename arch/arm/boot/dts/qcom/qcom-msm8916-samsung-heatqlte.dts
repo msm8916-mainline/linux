@@ -1,0 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-only
+#include "arm64/qcom/msm8916-samsung-heatqlte.dts"
+#include "qcom-msm8916-smp.dtsi"
+
+&tsens {
+	/* The device crashes when accessing the SROT region for some reason */
+	qcom,srot-locked;
+};
