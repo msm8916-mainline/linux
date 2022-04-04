@@ -306,7 +306,7 @@ struct cyttsp4_sysinfo {
 };
 
 struct cyttsp4_mt_data {
-	struct cyttsp4_mt_platform_data *pdata;
+	struct cyttsp4_platform_data *pdata;
 	struct cyttsp4_sysinfo *si;
 	struct input_dev *input;
 	struct mutex report_lock;
@@ -335,7 +335,6 @@ struct cyttsp4 {
 	bool invalid_touch_app;
 	struct cyttsp4_mt_data md;
 	struct cyttsp4_platform_data *pdata;
-	struct cyttsp4_core_platform_data *cpdata;
 	const struct cyttsp4_bus_ops *bus_ops;
 	u8 *xfer_buf;
 #ifdef VERBOSE_DEBUG
@@ -435,6 +434,8 @@ static inline int cyttsp4_adap_write(struct cyttsp4 *ts, u16 addr, int size,
 {
 	return ts->bus_ops->write(ts->dev, ts->xfer_buf, addr, size, buf);
 }
+
+int cy_hw_power(struct cyttsp4_platform_data *pdata, int on);
 
 extern struct cyttsp4 *cyttsp4_probe(const struct cyttsp4_bus_ops *ops,
 		struct device *dev, u16 irq, size_t xfer_buf_size);

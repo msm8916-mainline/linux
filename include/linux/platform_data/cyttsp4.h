@@ -21,42 +21,16 @@
 
 #define CY_TOUCH_SETTINGS_MAX 32
 
-struct touch_framework {
-	const uint16_t  *abs;
-	uint8_t         size;
-	uint8_t         enable_vkeys;
-} __packed;
-
-struct cyttsp4_mt_platform_data {
-	struct touch_framework *frmwrk;
-	unsigned short flags;
-	char const *inp_dev_name;
-};
-
-struct touch_settings {
-	const uint8_t *data;
-	uint32_t size;
-	uint8_t tag;
-} __packed;
-
-struct cyttsp4_core_platform_data {
-	int irq_gpio;
-	int rst_gpio;
-	int level_irq_udelay;
-	int (*xres)(struct cyttsp4_core_platform_data *pdata,
-		struct device *dev);
-	int (*init)(struct cyttsp4_core_platform_data *pdata,
-		int on, struct device *dev);
-	int (*power)(struct cyttsp4_core_platform_data *pdata,
-		int on, struct device *dev, atomic_t *ignore_irq);
-	int (*irq_stat)(struct cyttsp4_core_platform_data *pdata,
-		struct device *dev);
-	struct touch_settings *sett[CY_TOUCH_SETTINGS_MAX];
-};
-
 struct cyttsp4_platform_data {
-	struct cyttsp4_core_platform_data *core_pdata;
-	struct cyttsp4_mt_platform_data *mt_pdata;
+	int irq_gpio;
+	int avdd_gpio;
+	int vddo_gpio;
+	unsigned short flags;
+	const uint16_t  *abs;
+	uint8_t			size;
+	struct pinctrl *ts_pinctrl;
+	struct pinctrl_state *gpio_state_active;
+	struct pinctrl_state *gpio_state_suspend;
 };
 
 #endif /* _CYTTSP4_H_ */

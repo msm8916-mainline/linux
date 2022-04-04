@@ -24,8 +24,13 @@
 static const struct cyttsp4_bus_ops cyttsp4_i2c_bus_ops = {
 	.bustype	= BUS_I2C,
 	.write		= cyttsp_i2c_write_block_data,
-	.read           = cyttsp_i2c_read_block_data,
+	.read		= cyttsp_i2c_read_block_data,
 };
+
+static struct of_device_id cyttsp4_i2c_of_match[] = {
+	{ .compatible = "cy,cyttsp4_i2c_adapter", }, { }
+};
+MODULE_DEVICE_TABLE(of, cyttsp4_i2c_of_match);
 
 static int cyttsp4_i2c_probe(struct i2c_client *client,
 				      const struct i2c_device_id *id)
@@ -62,6 +67,7 @@ static struct i2c_driver cyttsp4_i2c_driver = {
 	.driver = {
 		.name	= CYTTSP4_I2C_NAME,
 		.pm	= &cyttsp4_pm_ops,
+		.of_match_table = cyttsp4_i2c_of_match,
 	},
 	.probe		= cyttsp4_i2c_probe,
 	.remove		= cyttsp4_i2c_remove,
