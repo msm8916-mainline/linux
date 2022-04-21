@@ -24,6 +24,11 @@ properties:
   firmware-gpios:
     description: Output GPIO pin used to enter firmware download mode
 
+  pvdd-supply:
+    description: |
+      Optional regulator that provides pad supply voltage for some PN547
+      controller
+
   interrupts:
     maxItems: 1
 
