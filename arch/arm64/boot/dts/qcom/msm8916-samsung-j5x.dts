@@ -140,8 +140,6 @@
 		regulator-min-microvolt = <1800000>;
 		regulator-max-microvolt = <1800000>;
 
-		regulator-always-on;
-
 		gpio = <&msmgpio 89 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 
@@ -165,6 +163,8 @@
 
 		pinctrl-names = "default";
 		pinctrl-0 = <&nfc_default>;
+
+		pvdd-supply = <&reg_nfc>;
 	};
 };
 
