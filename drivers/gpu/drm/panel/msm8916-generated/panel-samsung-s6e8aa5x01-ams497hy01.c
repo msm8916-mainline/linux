@@ -66,6 +66,7 @@ static int s6e8aa5x01_ams497hy01_on(struct s6e8aa5x01_ams497hy01 *ctx)
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xb8,
 				     0x38, 0x00, 0x00, 0x60, 0x44, 0x00, 0xa8);
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xf0, 0xa5, 0xa5);
+	mipi_dsi_dcs_set_display_on_multi(&dsi_ctx);
 
 	return dsi_ctx.accum_err;
 }
