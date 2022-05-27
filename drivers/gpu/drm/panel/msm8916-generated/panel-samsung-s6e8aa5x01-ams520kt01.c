@@ -78,6 +78,12 @@ static int s6e8aa5x01_ams520kt01_on(struct s6e8aa5x01_ams520kt01 *ctx)
 	msleep(120);
 	dsi_dcs_write_seq(dsi, 0xf0, 0xa5, 0xa5);
 
+	ret = mipi_dsi_dcs_set_display_on(dsi);
+	if (ret < 0) {
+		dev_err(dev, "Failed to set display on: %d\n", ret);
+		return ret;
+	}
+
 	return 0;
 }
 
