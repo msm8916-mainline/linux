@@ -38,6 +38,22 @@
 	interrupts = <121 IRQ_TYPE_EDGE_FALLING>;
 };
 
+&panel {
+	compatible = "samsung,s6e8aa5x01-ams520kt01";
+	vdd3-supply = <&reg_vdd_lcd_1p8>;
+	vci-supply = <&reg_vdd_lcd_3p0>;
+};
+
+&reg_vdd_lcd_1p8 {
+	gpio = <&tlmm 69 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+};
+
+&reg_vdd_lcd_3p0 {
+	gpio = <&tlmm 115 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+};
+
 &touchscreen {
 	vdd-supply = <&reg_vdd_tsp_a>;
 };
@@ -53,6 +69,14 @@
 
 &accel_int_default {
 	pins = "gpio49";
+};
+
+&lcd_1p8_ldo_en_default {
+	pins = "gpio69";
+};
+
+&lcd_3p0_ldo_en_default {
+	pins = "gpio115";
 };
 
 &muic_int_default {
