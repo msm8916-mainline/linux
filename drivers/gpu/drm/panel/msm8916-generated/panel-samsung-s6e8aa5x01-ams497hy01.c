@@ -70,6 +70,12 @@ static int s6e8aa5x01_ams497hy01_on(struct s6e8aa5x01_ams497hy01 *ctx)
 			       0x38, 0x00, 0x00, 0x60, 0x44, 0x00, 0xa8);
 	mipi_dsi_dcs_write_seq(dsi, 0xf0, 0xa5, 0xa5);
 
+	ret = mipi_dsi_dcs_set_display_on(dsi);
+	if (ret < 0) {
+		dev_err(dev, "Failed to set display on: %d\n", ret);
+		return ret;
+	}
+
 	return 0;
 }
 
