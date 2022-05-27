@@ -34,7 +34,6 @@ dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-gprimeltecan.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-gt510.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-gt58.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-j5.dtb
-dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-j5x.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-on7.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-serranove.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-wingtech-wt86518.dtb
