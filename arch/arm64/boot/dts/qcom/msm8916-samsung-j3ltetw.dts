@@ -29,6 +29,21 @@
 	scl-gpios = <&msmgpio 1 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
 };
 
+&panel {
+	vdd3-supply = <&pm8916_l6>;
+	vci-supply = <&reg_vdd_lcd_3p0>;
+};
+
+&reg_vdd_lcd_3p0 {
+	vin-supply = <&pm8916_l17>;
+	gpio = <&msmgpio 102 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+};
+
+&lcd_3p0_ldo_en_default {
+	pins = "gpio102";
+};
+
 &muic_i2c_default {
 	pins = "gpio0", "gpio1";
 };
