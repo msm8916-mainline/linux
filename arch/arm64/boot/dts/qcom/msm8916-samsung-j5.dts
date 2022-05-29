@@ -33,6 +33,10 @@
 	gpio = <&msmgpio 16 GPIO_ACTIVE_HIGH>;
 };
 
+&wcd_codec {
+	qcom,micbias1-ext-cap;
+};
+
 &lcd_1p8_ldo_en_default {
 	pins = "gpio16";
 };
