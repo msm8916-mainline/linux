@@ -84,6 +84,33 @@
 		};
 	};
 
+	i2c_sensors: i2c-sensors {
+		compatible = "i2c-gpio";
+
+		sda-gpios = <&msmgpio 31 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&msmgpio 32 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		pinctrl-0 = <&sensors_i2c_default>;
+		pinctrl-names = "default";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		accelerometer: accelerometer@1d {
+			compatible = "st,lis2hh12";
+			reg = <0x1d>;
+
+			interrupt-parent = <&msmgpio>;
+			interrupts = <115 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "INT1";
+
+			pinctrl-0 = <&accel_int_default>;
+			pinctrl-names = "default";
+
+			st,drdy-int-pin = <1>;
+		};
+	};
+
 	reg_vdd_lcd_1p8: regulator-vdd-lcd-1p8 {
 		compatible = "regulator-fixed";
 		regulator-name = "vdd_lcd_1p8";
@@ -322,6 +349,13 @@
 };
 
 &msmgpio {
+	accel_int_default: accel-int-default-state {
+		pins = "gpio115";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	gpio_hall_sensor_default: gpio-hall-sensor-default {
 		pins = "gpio52";
 		function = "gpio";
@@ -371,6 +405,13 @@
 
 	muic_int_default: muic-int-default-status {
 		pins = "gpio12";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	sensors_i2c_default: sensors-i2c-default-state {
+		pins = "gpio31", "gpio32";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
