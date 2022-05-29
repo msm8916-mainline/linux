@@ -10,6 +10,17 @@
 	chassis-type = "handset";
 };
 
+&accelerometer {
+	interrupts = <49 IRQ_TYPE_LEVEL_HIGH>;
+
+	vdd-supply = <&pm8916_l6>;
+	vddio-supply = <&pm8916_l6>;
+
+	mount-matrix = "0", "-1", "0",
+		       "1", "0", "0",
+		       "0", "0", "-1";
+};
+
 &muic {
 	interrupts = <121 IRQ_TYPE_EDGE_FALLING>;
 };
@@ -33,6 +44,10 @@
 &reg_vdd_tsp_a {
 	gpio = <&msmgpio 108 GPIO_ACTIVE_HIGH>;
 	status = "okay";
+};
+
+&accel_int_default {
+	pins = "gpio49";
 };
 
 &lcd_1p8_ldo_en_default {
