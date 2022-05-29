@@ -10,6 +10,10 @@
 	chassis-type = "handset";
 };
 
+&blsp_i2c5 {
+	status = "disabled";
+};
+
 &panel {
 	vdd3-supply = <&reg_vdd_lcd_1p8>;
 	vci-supply = <&pm8916_l17>;
