@@ -33,6 +33,15 @@
 	};
 };
 
+&accelerometer {
+	vdd-supply = <&pm8916_l5>;
+	vddio-supply = <&pm8916_l5>;
+
+	mount-matrix = "0", "-1", "0",
+		       "1", "0", "0",
+		       "0", "0", "-1";
+};
+
 &gpio_hall_sensor {
 	status = "disabled";
 };
@@ -40,6 +49,11 @@
 &i2c_muic {
 	sda-gpios = <&tlmm 0 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
 	scl-gpios = <&tlmm 1 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+};
+
+&i2c_sensors {
+	sda-gpios = <&tlmm 6 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+	scl-gpios = <&tlmm 7 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
 };
 
 &panel {
@@ -72,4 +86,8 @@
 
 &muic_i2c_default {
 	pins = "gpio0", "gpio1";
+};
+
+&sensors_i2c_default {
+	pins = "gpio6", "gpio7";
 };
