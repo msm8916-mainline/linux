@@ -18,6 +18,19 @@
 			no-map;
 		};
 	};
+
+	reg_vdd_tsp_a: regulator-vdd-tsp-a {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_tsp_a";
+		regulator-min-microvolt = <3000000>;
+		regulator-max-microvolt = <3000000>;
+
+		gpio = <&tlmm 16 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-0 = <&tsp_ldo_en_default>;
+		pinctrl-names = "default";
+	};
 };
 
 &gpio_hall_sensor {
@@ -38,6 +51,19 @@
 	vin-supply = <&pm8916_l17>;
 	gpio = <&tlmm 102 GPIO_ACTIVE_HIGH>;
 	status = "okay";
+};
+
+&touchscreen {
+	vdd-supply = <&reg_vdd_tsp_a>;
+};
+
+&tlmm {
+	tsp_ldo_en_default: tsp-ldo-en-default-state {
+		pins = "gpio16";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
 };
 
 &lcd_3p0_ldo_en_default {
