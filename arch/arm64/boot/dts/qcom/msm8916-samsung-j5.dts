@@ -14,6 +14,11 @@
 	status = "disabled";
 };
 
+&accelerometer {
+	vdd-supply = <&pm8916_l5>;
+	vddio-supply = <&pm8916_l5>;
+};
+
 &panel {
 	vdd3-supply = <&reg_vdd_lcd_1p8>;
 	vci-supply = <&pm8916_l17>;
