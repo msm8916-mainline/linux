@@ -112,6 +112,41 @@
 
 		status = "disabled";
 	};
+
+	reg_vdd_tsp_a: regulator-vdd-tsp-a {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_tsp_a";
+		regulator-min-microvolt = <3000000>;
+		regulator-max-microvolt = <3000000>;
+
+		enable-active-high;
+
+		pinctrl-0 = <&tsp_ldo_en_default>;
+		pinctrl-names = "default";
+
+		status = "disabled";
+	};
+};
+
+&blsp_i2c5 {
+	status = "okay";
+
+	touchscreen: touchscreen@50 {
+		compatible = "imagis,ist3038c";
+		reg = <0x50>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+
+		touchscreen-size-x = <720>;
+		touchscreen-size-y = <1280>;
+
+		vdd-supply = <&reg_vdd_tsp_a>;
+		vddio-supply = <&pm8916_l6>;
+
+		pinctrl-0 = <&tsp_int_default>;
+		pinctrl-names = "default";
+	};
 };
 
 &blsp1_uart2 {
@@ -336,6 +371,19 @@
 
 	muic_int_default: muic-int-default-status {
 		pins = "gpio12";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	tsp_int_default: tsp-int-default-state {
+		pins = "gpio13";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	tsp_ldo_en_default: tsp-ldo-en-default-state {
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;

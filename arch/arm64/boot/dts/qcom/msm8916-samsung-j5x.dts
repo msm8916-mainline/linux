@@ -30,6 +30,11 @@
 	status = "okay";
 };
 
+&reg_vdd_tsp_a {
+	gpio = <&msmgpio 108 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+};
+
 &lcd_1p8_ldo_en_default {
 	pins = "gpio69";
 };
@@ -40,4 +45,8 @@
 
 &muic_int_default {
 	pins = "gpio121";
+};
+
+&tsp_ldo_en_default {
+	pins = "gpio108";
 };
