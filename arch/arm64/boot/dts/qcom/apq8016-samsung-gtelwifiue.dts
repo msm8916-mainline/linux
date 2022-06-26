@@ -82,6 +82,21 @@
 	};
 };
 
+&blsp_i2c1 {
+	status = "okay";
+
+	muic: extcon@25 {
+		compatible = "siliconmitus,sm5703-muic";
+		reg = <0x25>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <12 IRQ_TYPE_EDGE_FALLING>;
+
+		pinctrl-0 = <&muic_int_default>;
+		pinctrl-names = "default";
+	};
+};
+
 &blsp_i2c2 {
 	status = "okay";
 
@@ -153,10 +168,6 @@
 
 &pm8916_resin {
 	linux,code = <KEY_VOLUMEDOWN>;
-	status = "okay";
-};
-
-&pm8916_usbin {
 	status = "okay";
 };
 
@@ -235,14 +246,12 @@
 };
 
 &usb {
-	dr_mode = "peripheral";
-	extcon = <&pm8916_usbin>;
+	extcon = <&muic>, <&muic>;
 	status = "okay";
 };
 
 &usb_hs_phy {
-	// FIXME: Replace with SM5703 MUIC when driver is available
-	extcon = <&pm8916_usbin>;
+	extcon = <&muic>;
 };
 
 &wcd_codec {
@@ -379,6 +388,13 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-up;
+	};
+
+	muic_int_default: muic-int-default-state {
+		pins = "gpio12";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	reg_lcd_en_default: reg-lcd-en-default-state {
