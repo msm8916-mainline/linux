@@ -3,6 +3,7 @@
 /dts-v1/;
 
 #include "msm8916-pm8916.dtsi"
+#include <dt-bindings/sound/apq8016-lpass.h>
 #include <dt-bindings/gpio/gpio.h>
 
 / {
@@ -159,6 +160,10 @@
 	status = "okay";
 };
 
+&lpass {
+	status = "okay";
+};
+
 &mdss {
 	status = "okay";
 };
@@ -190,6 +195,43 @@
 	cd-gpios = <&msmgpio 38 GPIO_ACTIVE_LOW>;
 
 	status = "okay";
+};
+
+&sound {
+	pinctrl-0 = <&cdc_pdm_lines_act>;
+	pinctrl-1 = <&cdc_pdm_lines_sus>;
+	pinctrl-names = "default", "sleep";
+
+	model = "msm8916";
+	audio-routing =
+		"AMIC1", "MIC BIAS Internal1",
+		"AMIC2", "MIC BIAS Internal2";
+
+	status = "okay";
+
+	dai-link-primary {
+		link-name = "Primary MI2S";
+
+		cpu {
+			sound-dai = <&lpass MI2S_PRIMARY>;
+		};
+
+		codec {
+			sound-dai = <&lpass_codec 0>, <&wcd_codec 0>;
+		};
+	};
+
+	dai-link-tertiary {
+		link-name = "Tertiary MI2S";
+
+		cpu {
+			sound-dai = <&lpass MI2S_TERTIARY>;
+		};
+
+		codec {
+			sound-dai = <&lpass_codec 1>, <&wcd_codec 1>;
+		};
+	};
 };
 
 &usb {
