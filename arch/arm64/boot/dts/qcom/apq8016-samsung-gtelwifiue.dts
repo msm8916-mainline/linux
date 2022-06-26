@@ -139,6 +139,15 @@
 };
 
 &pm8916_codec {
+	jack-gpios = <&tlmm 110 GPIO_ACTIVE_LOW>;
+	qcom,micbias-lvl = <2800>;
+
+	qcom,mbhc-vthreshold-low = <75 150 237 450 500>;
+	qcom,mbhc-vthreshold-high = <75 150 237 450 500>;
+
+	pinctrl-0 = <&jack_default>;
+	pinctrl-names = "default";
+
 	status = "okay";
 };
 
@@ -237,6 +246,13 @@
 &tlmm {
 	accel_int_default: accel-int-default-state {
 		pins = "gpio115";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	jack_default: jack-default-state {
+		pins = "gpio110";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
