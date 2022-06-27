@@ -15,6 +15,48 @@
 #define TM_Sn_STATUS_OFF			0x0030
 #define TM_TRDY_OFF				0x005c
 
+/* eeprom layout data for 8909 */
+#define MSM8909_CAL_SEL_MASK	0x00070000
+#define MSM8909_CAL_SEL_SHIFT	16
+
+#define MSM8909_BASE0_MASK	0x000000ff
+#define MSM8909_BASE1_MASK	0x0000ff00
+#define MSM8909_BASE0_SHIFT	0
+#define MSM8909_BASE1_SHIFT	8
+
+#define MSM8909_S0_P1_MASK	0x0000003f
+#define MSM8909_S1_P1_MASK	0x0003f000
+#define MSM8909_S2_P1_MASK	0x3f000000
+#define MSM8909_S3_P1_MASK	0x000003f0
+#define MSM8909_S4_P1_MASK	0x003f0000
+
+#define MSM8909_S0_P2_MASK	0x00000fc0
+#define MSM8909_S1_P2_MASK	0x00fc0000
+#define MSM8909_S2_P2_MASK_0_1	0xc0000000
+#define MSM8909_S2_P2_MASK_2_5	0x0000000f
+#define MSM8909_S3_P2_MASK	0x0000fc00
+#define MSM8909_S4_P2_MASK	0x0fc00000
+
+#define MSM8909_S0_P1_SHIFT	0
+#define MSM8909_S1_P1_SHIFT	12
+#define MSM8909_S2_P1_SHIFT	24
+#define MSM8909_S3_P1_SHIFT	4
+#define MSM8909_S4_P1_SHIFT	16
+
+#define MSM8909_S0_P2_SHIFT	6
+#define MSM8909_S1_P2_SHIFT	18
+#define MSM8909_S2_P2_SHIFT_0_1	30
+#define MSM8909_S2_P2_SHIFT_2_5	2
+#define MSM8909_S3_P2_SHIFT	10
+#define MSM8909_S4_P2_SHIFT	22
+
+#define MSM8909_D30_WA_S1	10
+#define MSM8909_D30_WA_S3	9
+#define MSM8909_D30_WA_S4	8
+#define MSM8909_D120_WA_S1	6
+#define MSM8909_D120_WA_S3	9
+#define MSM8909_D120_WA_S4	10
+
 /* eeprom layout data for 8916 */
 #define MSM8916_BASE0_MASK	0x0000007f
 #define MSM8916_BASE1_MASK	0xfe000000
@@ -222,6 +264,68 @@
 
 #define MDM9607_CAL_SEL_MASK	0x00700000
 #define MDM9607_CAL_SEL_SHIFT	20
+
+static int calibrate_8909(struct tsens_priv *priv)
+{
+	u32 *qfprom_cdata, *qfprom_csel;
+	int base0, base1, mode, i;
+	u32 p1[5], p2[5];
+
+	qfprom_cdata = (u32 *)qfprom_read(priv->dev, "calib");
+	if (IS_ERR(qfprom_cdata))
+		return PTR_ERR(qfprom_cdata);
+
+	qfprom_csel = (u32 *)qfprom_read(priv->dev, "calib_sel");
+	if (IS_ERR(qfprom_csel)) {
+		kfree(qfprom_cdata);
+		return PTR_ERR(qfprom_csel);
+	}
+
+	mode = (qfprom_csel[0] & MSM8909_CAL_SEL_MASK) >> MSM8909_CAL_SEL_SHIFT;
+	dev_dbg(priv->dev, "calibration mode is %d\n", mode);
+
+	switch (mode) {
+	case TWO_PT_CALIB:
+		base1 = (qfprom_csel[0] & MSM8909_BASE1_MASK) >> MSM8909_BASE1_SHIFT;
+		p2[0] = (qfprom_cdata[0] & MSM8909_S0_P2_MASK) >> MSM8909_S0_P2_SHIFT;
+		p2[1] = (qfprom_cdata[0] & MSM8909_S1_P2_MASK) >> MSM8909_S1_P2_SHIFT;
+		p2[2] = (qfprom_cdata[0] & MSM8909_S2_P2_MASK_0_1) >> MSM8909_S2_P2_SHIFT_0_1;
+		p2[2] |= (qfprom_cdata[1] & MSM8909_S2_P2_MASK_2_5) << MSM8909_S2_P2_SHIFT_2_5;
+		p2[3] = (qfprom_cdata[1] & MSM8909_S3_P2_MASK) >> MSM8909_S3_P2_SHIFT;
+		p2[4] = (qfprom_cdata[1] & MSM8909_S4_P2_MASK) >> MSM8909_S4_P2_SHIFT;
+		for (i = 0; i < priv->num_sensors; i++)
+			p2[i] = ((base1 + p2[i]) << 2);
+		p2[1] -= MSM8909_D120_WA_S1;
+		p2[3] -= MSM8909_D120_WA_S3;
+		p2[4] -= MSM8909_D120_WA_S4;
+		fallthrough;
+	case ONE_PT_CALIB2:
+		base0 = (qfprom_csel[0] & MSM8909_BASE0_MASK) >> MSM8909_BASE0_SHIFT;
+		p1[0] = (qfprom_cdata[0] & MSM8909_S0_P1_MASK) >> MSM8909_S0_P1_SHIFT;
+		p1[1] = (qfprom_cdata[0] & MSM8909_S1_P1_MASK) >> MSM8909_S1_P1_SHIFT;
+		p1[2] = (qfprom_cdata[0] & MSM8909_S2_P1_MASK) >> MSM8909_S2_P1_SHIFT;
+		p1[3] = (qfprom_cdata[1] & MSM8909_S3_P1_MASK) >> MSM8909_S3_P1_SHIFT;
+		p1[4] = (qfprom_cdata[1] & MSM8909_S4_P1_MASK) >> MSM8909_S4_P1_SHIFT;
+		for (i = 0; i < priv->num_sensors; i++)
+			p1[i] = (((base0) + p1[i]) << 2);
+		p1[1] -= MSM8909_D30_WA_S1;
+		p1[3] -= MSM8909_D30_WA_S3;
+		p1[4] -= MSM8909_D30_WA_S4;
+		break;
+	default:
+		for (i = 0; i < priv->num_sensors; i++) {
+			p1[i] = 500;
+			p2[i] = 780;
+		}
+		break;
+	}
+
+	compute_intercept_slope(priv, p1, p2, mode);
+	kfree(qfprom_cdata);
+	kfree(qfprom_csel);
+
+	return 0;
+}
 
 static int calibrate_8916(struct tsens_priv *priv)
 {
@@ -534,7 +638,7 @@ static int calibrate_9607(struct tsens_priv *priv)
 	return 0;
 }
 
-/* v0.1: 8916, 8939, 8974, 9607 */
+/* v0.1: 8909, 8916, 8939, 8974, 9607 */
 
 static struct tsens_features tsens_v0_1_feat = {
 	.ver_major	= VER_0_1,
@@ -581,6 +685,19 @@ static const struct reg_field tsens_v0_1_regfields[MAX_REGFIELDS] = {
 
 	/* TRDY: 1=ready, 0=in progress */
 	[TRDY] = REG_FIELD(TM_TRDY_OFF, 0, 0),
+};
+
+static const struct tsens_ops ops_8909 = {
+	.init		= init_common,
+	.calibrate	= calibrate_8909,
+	.get_temp	= get_temp_common,
+};
+
+struct tsens_plat_data data_8909 = {
+	.num_sensors	= 5,
+	.ops		= &ops_8909,
+	.feat		= &tsens_v0_1_feat,
+	.fields		= tsens_v0_1_regfields,
 };
 
 static const struct tsens_ops ops_8916 = {
