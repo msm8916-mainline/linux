@@ -109,6 +109,22 @@
 
 		/* Used for NFC on some variants */
 		status = "disabled";
+
+		pn547_nfc: nfc@2b {
+			compatible = "nxp,pn547", "nxp,nxp-nci-i2c";
+			reg = <0x2b>;
+
+			interrupt-parent = <&msmgpio>;
+			interrupts = <21 IRQ_TYPE_EDGE_RISING>;
+
+			enable-gpios = <&msmgpio 20 GPIO_ACTIVE_HIGH>;
+			firmware-gpios = <&msmgpio 49 GPIO_ACTIVE_HIGH>;
+
+			pinctrl-0 = <&nfc_default>;
+			pinctrl-names = "default";
+
+			status = "disabled";
+		};
 	};
 };
 
