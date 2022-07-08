@@ -1,0 +1,63 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-samsung-gprime-common.dtsi"
+
+/ {
+	reserved-memory {
+		/* Additional memory used by Samsung firmware modifications */
+		tz-apps@85a00000 {
+			reg = <0x0 0x85a00000 0x0 0x600000>;
+			no-map;
+		};
+	};
+};
+
+&blsp_i2c1 {
+	/* SM5504 MUIC instead of SM5502 */
+	/delete-node/ extcon@25;
+
+	muic: extcon@14 {
+		compatible = "siliconmitus,sm5504-muic";
+		reg = <0x14>;
+		interrupt-parent = <&msmgpio>;
+		interrupts = <12 IRQ_TYPE_EDGE_FALLING>;
+		pinctrl-0 = <&muic_int_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&blsp_i2c5 {
+	status = "disabled";
+	/delete-node/ touchscreen@20;
+};
+
+/* On cprime backlight is controlled with MIPI DCS commands */
+&clk_pwm {
+	status = "disabled";
+};
+
+&clk_pwm_backlight {
+	status = "disabled";
+};
+
+&i2c_nfc {
+	status = "okay";
+};
+
+&panel {
+	/delete-property/ backlight;
+};
+
+&s3fwrn5_nfc {
+	status = "okay";
+};
+
+&st_accel {
+	compatible = "st,lis2hh12";
+	mount-matrix = "1",  "0", "0",
+		       "0", "-1", "0",
+		       "0",  "0", "1";
+	status = "okay";
+};
