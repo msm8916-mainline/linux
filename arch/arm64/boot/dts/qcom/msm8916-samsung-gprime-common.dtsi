@@ -125,6 +125,24 @@
 
 			status = "disabled";
 		};
+
+		s3fwrn5_nfc: nfc@27 {
+			compatible = "samsung,s3fwrn5-i2c";
+			reg = <0x27>;
+
+			interrupt-parent = <&msmgpio>;
+			interrupts = <21 IRQ_TYPE_EDGE_RISING>;
+
+			en-gpios = <&msmgpio 20 GPIO_ACTIVE_HIGH>;
+			wake-gpios = <&msmgpio 49 GPIO_ACTIVE_HIGH>;
+
+			clocks = <&rpmcc RPM_SMD_BB_CLK2_PIN>;
+
+			pinctrl-0 = <&nfc_default>, <&nfc_clk_req>;
+			pinctrl-names = "default";
+
+			status = "disabled";
+		};
 	};
 };
 
