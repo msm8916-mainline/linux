@@ -21,3 +21,7 @@
 		};
 	};
 };
+
+&panel {
+	compatible = "samsung,cprime-panel";
+};
