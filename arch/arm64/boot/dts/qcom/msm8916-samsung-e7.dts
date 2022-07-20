@@ -21,9 +21,52 @@
 	model = "Samsung Galaxy E7";
 	compatible = "samsung,e7", "qcom,msm8916";
 	chassis-type = "handset";
+
+	reg_vdd_tsp: regulator-vdd-tsp {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_tsp";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+
+		gpio = <&msmgpio 60 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-0 = <&tsp_en_1p8_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&blsp_i2c5 {
+	status = "okay";
+
+	touchscreen@49 {
+		compatible = "st,stmfts";
+		reg = <0x49>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+
+		touchscreen-size-x = <720>;
+		touchscreen-size-y = <1280>;
+
+		avdd-supply = <&reg_vdd_tsp_a>;
+		vdd-supply = <&reg_vdd_tsp>;
+
+		pinctrl-0 = <&ts_int_default>;
+		pinctrl-names = "default";
+	};
 };
 
 &pm8916_l17 {
 	regulator-min-microvolt = <3000000>;
 	regulator-max-microvolt = <3000000>;
+};
+
+&msmgpio {
+	tsp_en_1p8_default: tsp-en-1p8-default-state {
+		pins = "gpio60";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
 };
