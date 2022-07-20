@@ -39,6 +39,58 @@
 			pinctrl-0 = <&gpio_leds_default>;
 		};
 	};
+
+	reg_vlcd_vcc: regulator-vlcd-vcc {
+		compatible = "regulator-fixed";
+		regulator-name = "vlcd_vcc";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+
+		gpio = <&msmgpio 16 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_on_default>;
+	};
+
+	reg_vsp: regulator-vsp {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-vsp";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpio = <&msmgpio 97 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_enp_default>;
+	};
+
+	reg_vsn: regulator-vsn {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-vsn";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpio = <&msmgpio 120 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_enn_default>;
+	};
+};
+
+&panel {
+	compatible = "samsung,s6d2aa0x62-lpm053a250a";
+
+	vcc-supply = <&reg_vlcd_vcc>;
+	vsp-supply = <&reg_vsp>;
+	vsn-supply = <&reg_vsn>;
+
+	backlight-gpios = <&msmgpio 98 GPIO_ACTIVE_HIGH>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&lcd_bl_en_default>;
 };
 
 &reg_motor_vdd {
@@ -52,6 +104,38 @@
 &msmgpio {
 	gpio_leds_default: gpio-led-default-state {
 		pins = "gpio60";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	lcd_bl_en_default: lcd-bl-en-default-state {
+		pins = "gpio98";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	lcd_enp_default: lcd-enp-default-state {
+		pins = "gpio97";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	lcd_enn_default: lcd-enn-default-state {
+		pins = "gpio120";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	lcd_on_default: lcd-on-default-state {
+		pins = "gpio16";
 		function = "gpio";
 
 		drive-strength = <2>;
