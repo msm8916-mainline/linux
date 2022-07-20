@@ -35,32 +35,6 @@
 		pinctrl-0 = <&tkey_en_default>;
 	};
 
-	reg_vdd_tsp: regulator-vdd-tsp {
-		compatible = "regulator-fixed";
-		regulator-name = "vdd_tsp";
-		regulator-min-microvolt = <1800000>;
-		regulator-max-microvolt = <1800000>;
-
-		gpio = <&msmgpio 60 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-
-		pinctrl-names = "default";
-		pinctrl-0 = <&tsp_en_1p8_default>;
-	};
-
-	reg_vdd_tsp_a: regulator-vdd-tsp-a {
-		compatible = "regulator-fixed";
-		regulator-name = "vdd_tsp_a";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-
-		gpio = <&msmgpio 73 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-
-		pinctrl-names = "default";
-		pinctrl-0 = <&tsp_en_3p3_default>;
-	};
-
 	reg_vlcd_vdd3: regulator-vlcd-vdd3 {
 		compatible = "regulator-fixed";
 		regulator-name = "vlcd_vdd3";
@@ -94,27 +68,6 @@
 	};
 };
 
-&blsp_i2c5 {
-	status = "okay";
-
-	touchscreen@49 {
-		compatible = "st,stmfts";
-		reg = <0x49>;
-
-		interrupt-parent = <&msmgpio>;
-		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
-
-		touchscreen-size-x = <720>;
-		touchscreen-size-y = <1280>;
-
-		avdd-supply = <&reg_vdd_tsp_a>;
-		vdd-supply = <&reg_vdd_tsp>;
-
-		pinctrl-names = "default";
-		pinctrl-0 = <&tsp_int_default>;
-	};
-};
-
 &panel {
 	compatible = "samsung,e7-panel";
 
@@ -143,22 +96,6 @@
 
 	motor_en_default: motor-en-default {
 		pins = "gpio76";
-		function = "gpio";
-
-		drive-strength = <2>;
-		bias-disable;
-	};
-
-	tsp_en_1p8_default: tsp-en-1p8-default {
-		pins = "gpio60";
-		function = "gpio";
-
-		drive-strength = <2>;
-		bias-disable;
-	};
-
-	tsp_en_3p3_default: tsp-en-3p3-default {
-		pins = "gpio73";
 		function = "gpio";
 
 		drive-strength = <2>;
