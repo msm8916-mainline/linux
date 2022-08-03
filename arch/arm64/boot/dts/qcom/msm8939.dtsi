@@ -1393,7 +1393,7 @@
 			iommu-ctx@4000 {
 				compatible = "qcom,msm-iommu-v1-ns";
 				reg = <0x4000 0x1000>;
-				interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>;
+				interrupts = <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>;
 			};
 
 			/* venus_ns: */
