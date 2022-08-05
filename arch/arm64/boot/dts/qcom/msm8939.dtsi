@@ -1891,7 +1891,7 @@
 		};
 
 		saw0: power-manager@b089000 {
-			compatible = "qcom,msm8916-saw2-v3.0-cpu", "qcom,saw2";
+			compatible = "qcom,msm8939-saw2-v3.0-cpu", "qcom,saw2";
 			reg = <0x0b089000 0x1000>;
 		};
 
@@ -1901,7 +1901,7 @@
 		};
 
 		saw1: power-manager@b099000 {
-			compatible = "qcom,msm8916-saw2-v3.0-cpu", "qcom,saw2";
+			compatible = "qcom,msm8939-saw2-v3.0-cpu", "qcom,saw2";
 			reg = <0x0b099000 0x1000>;
 		};
 
@@ -1911,7 +1911,7 @@
 		};
 
 		saw2: power-manager@b0a9000 {
-			compatible = "qcom,msm8916-saw2-v3.0-cpu", "qcom,saw2";
+			compatible = "qcom,msm8939-saw2-v3.0-cpu", "qcom,saw2";
 			reg = <0x0b0a9000 0x1000>;
 		};
 
@@ -1921,7 +1921,7 @@
 		};
 
 		saw3: power-manager@b0b9000 {
-			compatible = "qcom,msm8916-saw2-v3.0-cpu", "qcom,saw2";
+			compatible = "qcom,msm8939-saw2-v3.0-cpu", "qcom,saw2";
 			reg = <0x0b0b9000 0x1000>;
 		};
 
@@ -1946,7 +1946,7 @@
 		};
 
 		saw4: power-manager@b189000 {
-			compatible = "qcom,msm8916-saw2-v3.0-cpu", "qcom,saw2";
+			compatible = "qcom,msm8939-saw2-v3.0-cpu", "qcom,saw2";
 			reg = <0x0b189000 0x1000>;
 		};
 
@@ -1956,7 +1956,7 @@
 		};
 
 		saw5: power-manager@b199000 {
-			compatible = "qcom,msm8916-saw2-v3.0-cpu", "qcom,saw2";
+			compatible = "qcom,msm8939-saw2-v3.0-cpu", "qcom,saw2";
 			reg = <0x0b199000 0x1000>;
 		};
 
@@ -1966,7 +1966,7 @@
 		};
 
 		saw6: power-manager@b1a9000 {
-			compatible = "qcom,msm8916-saw2-v3.0-cpu", "qcom,saw2";
+			compatible = "qcom,msm8939-saw2-v3.0-cpu", "qcom,saw2";
 			reg = <0x0b1a9000 0x1000>;
 		};
 
@@ -1976,7 +1976,7 @@
 		};
 
 		saw7: power-manager@b1b9000 {
-			compatible = "qcom,msm8916-saw2-v3.0-cpu", "qcom,saw2";
+			compatible = "qcom,msm8939-saw2-v3.0-cpu", "qcom,saw2";
 			reg = <0x0b1b9000 0x1000>;
 		};
 
