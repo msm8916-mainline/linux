@@ -192,7 +192,7 @@
 #define IRQ_E_USBIN_OV_BIT		BIT(2)
 #define IRQ_E_USBIN_UV_BIT		BIT(0)
 
-#define IRQ_F_REG			0x54
+#define IRQ_F_REG			0x55
 #define IRQ_F_OTG_OC_BIT		BIT(6)
 #define IRQ_F_OTG_FAIL_BIT		BIT(4)
 #define IRQ_F_POWER_OK_BIT		BIT(0)
