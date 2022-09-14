@@ -1496,6 +1496,8 @@ patternProperties:
     description: Zarlink Semiconductor
   "^zeitec,.*":
     description: ZEITEC Semiconductor Co., LTD.
+  "^zhihe,.*":
+    description: Placeholder for various 4G USB dongles made by unknown manufactures with similar design
   "^zidoo,.*":
     description: Shenzhen Zidoo Technology Co., Ltd.
   "^zii,.*":
