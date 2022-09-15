@@ -1452,31 +1452,19 @@ static const struct media_device_ops camss_media_ops = {
 
 static int camss_configure_pd(struct camss *camss)
 {
-	struct device *dev = camss->dev;
+	int nbr_pm_domains = 0;
 	int last_pm_domain = 0;
 	int i;
 	int ret;
 
-	camss->genpd_num = of_count_phandle_with_args(dev->of_node,
-						      "power-domains",
-						      "#power-domain-cells");
-	if (camss->genpd_num < 0) {
-		dev_err(dev, "Power domains are not defined for camss\n");
-		return camss->genpd_num;
-	}
+	if (camss->version == CAMSS_8x96 ||
+	    camss->version == CAMSS_660)
+		nbr_pm_domains = PM_DOMAIN_GEN1_COUNT;
+	else if (camss->version == CAMSS_845 ||
+		 camss->version == CAMSS_8250)
+		nbr_pm_domains = PM_DOMAIN_GEN2_COUNT;
 
-	camss->genpd = devm_kmalloc_array(dev, camss->genpd_num,
-					  sizeof(*camss->genpd), GFP_KERNEL);
-	if (!camss->genpd)
-		return -ENOMEM;
-
-	camss->genpd_link = devm_kmalloc_array(dev, camss->genpd_num,
-					       sizeof(*camss->genpd_link),
-					       GFP_KERNEL);
-	if (!camss->genpd_link)
-		return -ENOMEM;
-
-	for (i = 0; i < camss->genpd_num; i++) {
+	for (i = 0; i < nbr_pm_domains; i++) {
 		camss->genpd[i] = dev_pm_domain_attach_by_id(camss->dev, i);
 		if (IS_ERR(camss->genpd[i])) {
 			ret = PTR_ERR(camss->genpd[i]);
@@ -1690,6 +1678,7 @@ err_cleanup:
 
 void camss_delete(struct camss *camss)
 {
+	int nbr_pm_domains = 0;
 	int i;
 
 	v4l2_device_unregister(&camss->v4l2_dev);
@@ -1698,7 +1687,14 @@ void camss_delete(struct camss *camss)
 
 	pm_runtime_disable(camss->dev);
 
-	for (i = 0; i < camss->genpd_num; i++) {
+	if (camss->version == CAMSS_8x96 ||
+	    camss->version == CAMSS_660)
+		nbr_pm_domains = PM_DOMAIN_GEN1_COUNT;
+	else if (camss->version == CAMSS_845 ||
+		 camss->version == CAMSS_8250)
+		nbr_pm_domains = PM_DOMAIN_GEN2_COUNT;
+
+	for (i = 0; i < nbr_pm_domains; i++) {
 		device_link_del(camss->genpd_link[i]);
 		dev_pm_domain_detach(camss->genpd[i], true);
 	}
