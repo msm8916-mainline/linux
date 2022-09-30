@@ -22,6 +22,27 @@
 	};
 };
 
+&blsp_i2c5 {
+	status = "okay";
+
+	touchscreen@50 {
+		compatible = "imagis,ist3038";
+		reg = <0x50>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+
+		touchscreen-size-x = <480>;
+		touchscreen-size-y = <800>;
+
+		vdd-supply = <&reg_vdd_tsp_a>;
+		vddio-supply = <&pm8916_l6>;
+
+		pinctrl-0 = <&tsp_int_default>;
+		pinctrl-names = "default";
+	};
+};
+
 &panel {
 	compatible = "samsung,cprime-panel";
 };
