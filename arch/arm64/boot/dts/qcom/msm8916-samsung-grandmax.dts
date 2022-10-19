@@ -93,6 +93,27 @@
 	pinctrl-0 = <&lcd_bl_en_default>;
 };
 
+&blsp_i2c5 {
+	status = "okay";
+
+	touchscreen@50 {
+		compatible = "imagis,ist3038";
+		reg = <0x50>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+
+		touchscreen-size-x = <720>;
+		touchscreen-size-y = <1280>;
+
+		vdd-supply = <&reg_vdd_tsp_a>;
+		vddio-supply = <&pm8916_l6>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&ts_int_default>;
+	};
+};
+
 &reg_motor_vdd {
 	gpio = <&msmgpio 72 GPIO_ACTIVE_HIGH>;
 };
