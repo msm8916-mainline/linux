@@ -164,6 +164,7 @@ struct msm_dsi_host {
 	struct drm_dsc_config *dsc;
 
 	/* connected device info */
+	struct device_node *device_node;
 	unsigned int channel;
 	unsigned int lanes;
 	enum mipi_dsi_pixel_format format;
@@ -1624,6 +1625,8 @@ static int dsi_host_detach(struct mipi_dsi_host *host,
 
 	dsi_dev_detach(msm_host->pdev);
 
+	msm_host->device_node = NULL;
+
 	DBG("id=%d", msm_host->id);
 
 	return 0;
@@ -1816,7 +1819,7 @@ static int dsi_host_parse_dt(struct msm_dsi_host *msm_host)
 {
 	struct device *dev = &msm_host->pdev->dev;
 	struct device_node *np = dev->of_node;
-	struct device_node *endpoint;
+	struct device_node *endpoint, *device_node;
 	int ret = 0;
 
 	/*
@@ -1839,6 +1842,16 @@ static int dsi_host_parse_dt(struct msm_dsi_host *msm_host)
 		goto err;
 	}
 
+	/* Get panel node from the output port's endpoint data */
+	device_node = of_graph_get_remote_node(np, 1, 0);
+	if (!device_node) {
+		DRM_DEV_DEBUG(dev, "%s: no valid device\n", __func__);
+		ret = -ENODEV;
+		goto err;
+	}
+
+	msm_host->device_node = device_node;
+
 	if (of_property_read_bool(np, "syscon-sfpb")) {
 		msm_host->sfpb = syscon_regmap_lookup_by_phandle(np,
 					"syscon-sfpb");
@@ -1848,6 +1861,8 @@ static int dsi_host_parse_dt(struct msm_dsi_host *msm_host)
 			ret = PTR_ERR(msm_host->sfpb);
 		}
 	}
+
+	of_node_put(device_node);
 
 err:
 	of_node_put(endpoint);
@@ -2521,9 +2536,21 @@ enum drm_mode_status msm_dsi_host_check_dsc(struct mipi_dsi_host *host,
 	return MODE_OK;
 }
 
+struct drm_panel *msm_dsi_host_get_panel(struct mipi_dsi_host *host)
+{
+	return of_drm_find_panel(to_msm_dsi_host(host)->device_node);
+}
+
 unsigned long msm_dsi_host_get_mode_flags(struct mipi_dsi_host *host)
 {
 	return to_msm_dsi_host(host)->mode_flags;
+}
+
+struct drm_bridge *msm_dsi_host_get_bridge(struct mipi_dsi_host *host)
+{
+	struct msm_dsi_host *msm_host = to_msm_dsi_host(host);
+
+	return of_drm_find_bridge(msm_host->device_node);
 }
 
 void msm_dsi_host_snapshot(struct msm_disp_state *disp_state, struct mipi_dsi_host *host)
