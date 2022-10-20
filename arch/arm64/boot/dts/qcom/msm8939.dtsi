@@ -1271,11 +1271,6 @@
 
 				iommus = <&apps_iommu 4>;
 
-				interconnects = <&snoc_mm MASTER_MDP_PORT0 &bimc SLAVE_EBI_CH0>,
-						<&snoc_mm MASTER_MDP_PORT1 &bimc SLAVE_EBI_CH0>,
-						<&pcnoc MASTER_SPDM &snoc SLAVE_IMEM>;
-				interconnect-names = "mdp0-mem", "mdp1-mem", "register-mem";
-
 				ports {
 					#address-cells = <1>;
 					#size-cells = <0>;
