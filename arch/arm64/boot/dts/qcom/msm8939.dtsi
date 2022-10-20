@@ -20,6 +20,11 @@
 	#address-cells = <2>;
 	#size-cells = <2>;
 
+	aliases {
+		mmc0 = &sdhc_1; /* SDC1 eMMC slot */
+		mmc1 = &sdhc_2; /* SDC2 SD card slot */
+	};
+
 	clocks {
 		xo_board: xo-board {
 			compatible = "fixed-clock";
@@ -1147,10 +1152,6 @@
 				      "bus",
 				      "vsync";
 
-			interconnects = <&snoc_mm MASTER_MDP_PORT0 &bimc SLAVE_EBI_CH0>,
-					<&snoc_mm MASTER_MDP_PORT1 &bimc SLAVE_EBI_CH0>;
-			interconnect-names = "mdp0-mem", "mdp1-mem";
-
 			power-domains = <&gcc MDSS_GDSC>;
 
 			#address-cells = <1>;
@@ -1158,7 +1159,7 @@
 			#interrupt-cells = <1>;
 			ranges;
 
-			mdss_mdp: mdp@1a01000 {
+			mdp: mdp@1a01000 {
 				compatible = "qcom,mdp5";
 				reg = <0x01a01000 0x89000>;
 				reg-names = "mdp_phys";
@@ -1201,7 +1202,7 @@
 				};
 			};
 
-			mdss_dsi0: dsi@1a98000 {
+			dsi0: dsi@1a98000 {
 				compatible = "qcom,mdss-dsi-ctrl-msm8916",
 					     "qcom,mdss-dsi-ctrl";
 				reg = <0x01a98000 0x25c>;
@@ -1224,11 +1225,14 @@
 					      "core";
 				assigned-clocks = <&gcc BYTE0_CLK_SRC>,
 						  <&gcc PCLK0_CLK_SRC>;
-				assigned-clock-parents = <&mdss_dsi0_phy 0>,
-							 <&mdss_dsi0_phy 1>;
+				assigned-clock-parents = <&dsi_phy0 0>,
+							 <&dsi_phy0 1>;
 
-				phys = <&mdss_dsi0_phy>;
+				phys = <&dsi_phy0>;
 				status = "disabled";
+
+				#address-cells = <1>;
+				#size-cells = <0>;
 
 				ports {
 					#address-cells = <1>;
@@ -1249,7 +1253,7 @@
 				};
 			};
 
-			mdss_dsi0_phy: dsi-phy@1a98300 {
+			dsi_phy0: dsi-phy@1a98300 {
 				compatible = "qcom,dsi-phy-28nm-lp";
 				reg = <0x01a98300 0xd4>,
 				      <0x01a98500 0x280>,
@@ -1264,12 +1268,10 @@
 
 				#clock-cells = <1>;
 				#phy-cells = <0>;
-
-				qcom,dsi-phy-regulator-ldo-mode;
 				status = "disabled";
 			};
 
-			mdss_dsi1: dsi@1aa0000 {
+			dsi1: dsi@1aa0000 {
 				compatible = "qcom,mdss-dsi-ctrl-msm8916",
 					     "qcom,mdss-dsi-ctrl";
 				reg = <0x01aa0000 0x25c>;
@@ -1292,9 +1294,9 @@
 					      "core";
 				assigned-clocks = <&gcc BYTE1_CLK_SRC>,
 						  <&gcc PCLK1_CLK_SRC>;
-				assigned-clock-parents = <&mdss_dsi1_phy 0>,
-							 <&mdss_dsi1_phy 1>;
-				phys = <&mdss_dsi1_phy>;
+				assigned-clock-parents = <&dsi_phy1 0>,
+							 <&dsi_phy1 1>;
+				phys = <&dsi_phy1>;
 				status = "disabled";
 
 				ports {
@@ -1316,7 +1318,7 @@
 				};
 			};
 
-			mdss_dsi1_phy: dsi-phy@1aa0300 {
+			dsi_phy1: dsi-phy@1aa0300 {
 				compatible = "qcom,dsi-phy-28nm-lp";
 				reg = <0x01aa0300 0xd4>,
 				      <0x01aa0500 0x280>,
@@ -1331,7 +1333,6 @@
 
 				#clock-cells = <1>;
 				#phy-cells = <0>;
-				qcom,dsi-phy-regulator-ldo-mode;
 				status = "disabled";
 			};
 		};
@@ -1471,7 +1472,7 @@
 			status = "disabled";
 		};
 
-		remoteproc_mss: remoteproc@4080000 {
+		mpss: remoteproc@4080000 {
 			compatible = "qcom,msm8916-mss-pil", "qcom,q6v5-pil";
 			reg = <0x04080000 0x100>,
 			      <0x04020000 0x040>;
@@ -2092,8 +2093,8 @@
 			};
 		};
 
-		remoteproc_pronto: remoteproc@a204000 {
-			compatible = "qcom,pronto-v2-pil";
+		pronto: remoteproc@a204000 {
+			compatible = "qcom,pronto-v2-pil", "qcom,pronto";
 			reg = <0x0a204000 0x2000>,
 			      <0x0a202000 0x1000>,
 			      <0x0a21b000 0x3000>;
@@ -2121,7 +2122,7 @@
 			status = "disabled";
 
 			iris {
-				compatible = "qcom,wcn3660";
+				compatible = "qcom,wcn3620";
 
 				clocks = <&rpmcc RPM_SMD_RF_CLK2>;
 				clock-names = "xo";
@@ -2140,7 +2141,7 @@
 					compatible = "qcom,wcnss";
 					qcom,smd-channels = "WCNSS_CTRL";
 
-					qcom,mmio = <&remoteproc_pronto>;
+					qcom,mmio = <&pronto>;
 
 					bt {
 						compatible = "qcom,wcnss-bt";
