@@ -188,6 +188,47 @@
 		#sound-dai-cells = <0>;
 	};
 
+	charger: battery@14 {
+		compatible = "qcom,smb1360";
+		reg = <0x14>;
+
+		interrupts-extended = <&msmgpio 62 IRQ_TYPE_LEVEL_LOW>;
+
+		pinctrl-0 = <&smb_int_default>;
+		pinctrl-names = "default";
+
+		qcom,float-voltage-mv = <4350>;
+		qcom,iterm-ma = <100>;
+		qcom,charging-timeout = <192>;
+		qcom,recharge-thresh-mv = <100>;
+		qcom,chg-inhibit-disabled;
+
+		qcom,battery-profile = <1>; /* downstream forces profile B */
+		qcom,fg-batt-capacity-mah = <2910>;
+		qcom,fg-cc-soc-coeff = <0x81a1>;
+		qcom,fg-cc-to-cv-mv = <4328>;
+		qcom,thermistor-c1-coeff = <0x86c8>;
+		qcom,fg-auto-recharge-soc = <95>; /* 99 in downstream */
+
+		qcom,otp-hard-jeita-config;
+		qcom,otp-hot-bat-decidegc = <550>;
+		qcom,otp-cold-bat-decidegc = <0>;
+
+		qcom,soft-jeita-config;
+		qcom,warm-bat-decidegc = <450>;
+		qcom,cool-bat-decidegc = <100>;
+		qcom,soft-jeita-comp-voltage-mv = <4100>;
+		qcom,soft-jeita-comp-current-ma = <750>;
+
+		qcom,shdn-after-pwroff;
+		qcom,fg-reset-at-pon;
+		qcom,fg-reset-threshold-mv = <200>;
+
+		usb_otg_vbus: usb-otg-vbus {
+			regulator-max-microamp = <1500000>;
+		};
+	};
+
 	speaker_codec_top: audio-codec@34 {
 		compatible = "nxp,tfa9897";
 		reg = <0x34>;
@@ -410,12 +451,13 @@
 };
 
 &usb {
-	extcon = <&usb_id>, <&usb_id>;
+	extcon = <&charger>, <&usb_id>;
+	vbus-supply = <&usb_otg_vbus>;
 	status = "okay";
 };
 
 &usb_hs_phy {
-	extcon = <&usb_id>;
+	extcon = <&charger>;
 };
 
 &wcd_codec {
@@ -618,7 +660,6 @@
 	led_shutdown_default: led-shutdown-default-state {
 		pins = "gpio9";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -649,6 +690,14 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-down;
+	};
+
+	smb_int_default: smb-int-default-state {
+		pins = "gpio62";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
 	};
 
 	speaker_bottom_default: speaker-bottom-default-state {
