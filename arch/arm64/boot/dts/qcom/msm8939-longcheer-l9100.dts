@@ -156,6 +156,58 @@
 	};
 };
 
+&blsp_i2c4 {
+	status = "okay";
+
+	charger: battery@14 {
+		compatible = "qcom,smb1360";
+		reg = <0x14>;
+
+		interrupt-parent = <&msmgpio>;
+		interrupts = <62 IRQ_TYPE_LEVEL_LOW>;
+
+		pinctrl-0 = <&smb_int_default>;
+		pinctrl-names = "default";
+
+		qcom,rsense-10mohm;
+
+		qcom,float-voltage-mv = <4400>;
+		qcom,iterm-ma = <100>;
+		qcom,charging-timeout = <192>; /* 768 in downstream */
+		qcom,recharge-thresh-mv = <50>;
+		qcom,chg-inhibit-disabled;
+
+		qcom,battery-profile = <(-1)>; /* Set by bootloader */
+		qcom,fg-batt-capacity-mah = <3030>;
+		qcom,fg-cc-soc-coeff = <0x8168>;
+		qcom,fg-iterm-ma = <100>;
+		qcom,fg-ibatt-standby-ma = <200>;
+		qcom,fg-cutoff-voltage-mv = <3400>;
+		qcom,fg-cc-to-cv-mv = <4397>;
+		qcom,thermistor-c1-coeff = <0x86C2>;
+		qcom,fg-auto-recharge-soc = <95>; /* 97 in downstream */
+
+		qcom,otp-hard-jeita-config;
+		qcom,otp-hot-bat-decidegc = <550>;
+		qcom,otp-cold-bat-decidegc = <0>;
+
+		qcom,shdn-after-pwroff;
+		qcom,fg-reset-at-pon;
+		qcom,fg-reset-threshold-mv = <50>;
+
+		/*
+		 * Some properties are battery-specific. Battery detection
+		 * happens in the bootloader, so it will fill those appropriately
+		 * and set status = "okay".
+		 */
+		status = "disabled";
+
+		usb_otg_vbus: usb-otg-vbus {
+			regulator-max-microamp = <1500000>;
+		};
+	};
+};
+
 &blsp_i2c5 {
 	status = "okay";
 
@@ -258,12 +310,13 @@
 };
 
 &usb {
-	extcon = <&usb_id>, <&usb_id>;
+	extcon = <&charger>, <&usb_id>;
+	vbus-supply = <&usb_otg_vbus>;
 	status = "okay";
 };
 
 &usb_hs_phy {
-	extcon = <&usb_id>;
+	extcon = <&charger>;
 };
 
 &smd_rpm_regulators {
@@ -429,6 +482,13 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-down;
+	};
+
+	smb_int_default: smb-int-default-state {
+		pins = "gpio62";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
 	};
 
 	ts_int_reset_default: ts-int-reset-default-state {
