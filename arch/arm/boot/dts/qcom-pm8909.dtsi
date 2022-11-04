@@ -39,11 +39,25 @@
 			};
 		};
 
+		pm8909_charger: charger@1000 {
+			compatible = "qcom,pm8916-lbc";
+			reg = <0x1000>, <0x1200>, <0x1300>, <0x1600>;
+			interrupts = <0x0 0x13 1 IRQ_TYPE_EDGE_BOTH>;
+			status = "disabled";
+		};
+
 		pm8909_usbin: extcon@1300 {
 			compatible = "qcom,pm8941-misc";
 			reg = <0x1300>;
 			interrupts = <0x0 0x13 1 IRQ_TYPE_EDGE_BOTH>;
 			interrupt-names = "usb_vbus";
+			status = "disabled";
+		};
+
+		pm8909_bms: vm-bms@4000 {
+			compatible = "qcom,pm8916-bms-vm";
+			reg = <0x4000>;
+			interrupts = <0x0 0x40 4 IRQ_TYPE_EDGE_RISING>;
 			status = "disabled";
 		};
 
