@@ -676,15 +676,15 @@ static int truly_nt35695_unprepare(struct drm_panel *panel)
 }
 
 static const struct drm_display_mode truly_nt35695_mode = {
-	.clock = (1080 + 120 + 20 + 90) * (1920 + 20 + 2 + 8) * 60 / 1000,
+	.clock = (1080 + 120 + 20 + 90) * (1920 + 20 + 1 + 8) * 60 / 1000,
 	.hdisplay = 1080,
 	.hsync_start = 1080 + 120,
 	.hsync_end = 1080 + 120 + 20,
 	.htotal = 1080 + 120 + 20 + 90,
 	.vdisplay = 1920,
 	.vsync_start = 1920 + 20,
-	.vsync_end = 1920 + 20 + 2,
-	.vtotal = 1920 + 20 + 2 + 8,
+	.vsync_end = 1920 + 20 + 1,
+	.vtotal = 1920 + 20 + 1 + 8,
 	.width_mm = 62,
 	.height_mm = 110,
 };
