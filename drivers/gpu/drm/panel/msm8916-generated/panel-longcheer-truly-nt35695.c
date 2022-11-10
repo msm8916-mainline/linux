@@ -573,7 +573,7 @@ static int truly_nt35695_on(struct truly_nt35695 *ctx)
 	dsi_dcs_write_seq(dsi, 0xff, 0x10);
 	usleep_range(1000, 2000);
 	dsi_dcs_write_seq(dsi, 0x3b, 0x03, 0x08, 0x02, 0x04, 0x04);
-	dsi_dcs_write_seq(dsi, 0xbb, 0x10);
+	dsi_dcs_write_seq(dsi, 0xbb, 0x03); /* 0x10 -> 0x03 for video mode */
 	dsi_dcs_write_seq(dsi, 0xfb, 0x01);
 	dsi_dcs_write_seq(dsi, 0x51, 0xff);
 	dsi_dcs_write_seq(dsi, 0x53, 0x2c);
@@ -739,7 +739,7 @@ static int truly_nt35695_probe(struct mipi_dsi_device *dsi)
 
 	dsi->lanes = 4;
 	dsi->format = MIPI_DSI_FMT_RGB888;
-	dsi->mode_flags = MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
+	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
 			  MIPI_DSI_MODE_NO_EOT_PACKET |
 			  MIPI_DSI_CLOCK_NON_CONTINUOUS | MIPI_DSI_MODE_LPM;
 
