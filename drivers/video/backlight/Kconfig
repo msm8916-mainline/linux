@@ -297,6 +297,15 @@ config BACKLIGHT_RT4831
 	  It's commonly used to drive the display WLED. There're four channels
 	  inisde, and each channel can provide up to 30mA current.
 
+config BACKLIGHT_RT8555
+	tristate "Richtek RT8555 Backlight Driver"
+	depends on I2C
+	select REGMAP_I2C
+	help
+	  This enables support for Richtek RT8555 Backlight driver.
+	  It's commonly used to drive the display WLED. There are six channels
+	  inisde, and each channel can provide up to 35mA current.
+
 config BACKLIGHT_SAHARA
 	tristate "Tabletkiosk Sahara Touch-iT Backlight Driver"
 	depends on X86

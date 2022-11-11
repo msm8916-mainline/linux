@@ -27,6 +27,29 @@
 		};
 	};
 
+	i2c-backlight {
+		status = "okay";
+		compatible = "i2c-gpio";
+		sda-gpios = <&msmgpio 24 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&msmgpio 25 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&bl_i2c_default>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		rt8555_backlight: backlight@31 {
+			compatible = "richtek,rt8555-backlight";
+			enable-gpios = <&msmgpio 69 GPIO_ACTIVE_HIGH>;
+			reg = <0x31>;
+
+			change-duty = <0>;
+			current-limit = <0xB6>;
+			driver-headroom = <1>;
+		};
+	};
+
 	gpio-keys {
 		compatible = "gpio-keys";
 
@@ -151,6 +174,7 @@
 		compatible = "samsung,nt51017-b4p096wx5vp09";
 		reg = <0>;
 
+		backlight = <&rt8555_backlight>;
 		lcd-supply = <&reg_lcd>;
 
 		port {
@@ -367,6 +391,22 @@
 &msmgpio {
 	accel_int_default: accel-int-default {
 		pins = "gpio115";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	bl_en_default: bl-en-default {
+		pins = "gpio69";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	bl_i2c_default: bl-i2c-default {
+		pins = "gpio24", "gpio25";
 		function = "gpio";
 
 		drive-strength = <2>;
