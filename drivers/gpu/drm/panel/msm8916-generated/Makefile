@@ -1,4 +1,5 @@
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-alcatel-auo-hx8394d.o
+obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-alcatel-tdt-hx8394a.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-asus-z00l-otm1284a.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-asus-z010d-r69339.o
 obj-$(CONFIG_DRM_PANEL_MSM8916_GENERATED) += panel-huawei-tianma-nt35521.o
