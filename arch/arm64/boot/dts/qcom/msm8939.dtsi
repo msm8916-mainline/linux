@@ -1477,7 +1477,6 @@
 			power-domains = <&rpmpd MSM8939_VDDMDCX>,
 					<&rpmpd MSM8939_VDDMX>;
 			power-domain-names = "cx", "mx";
-			pll-supply = <&pm8916_l7>;
 
 			qcom,smem-states = <&hexagon_smp2p_out 0>;
 			qcom,smem-state-names = "stop";
@@ -2072,7 +2071,6 @@
 			power-domains = <&rpmpd MSM8939_VDDCX>,
 					<&rpmpd MSM8939_VDDMX_AO>;
 			power-domain-names = "cx", "mx";
-			vddpx-supply = <&pm8916_l7>;
 
 			qcom,smem-states = <&wcnss_smp2p_out 0>;
 			qcom,smem-state-names = "stop";
@@ -2087,11 +2085,6 @@
 
 				clocks = <&rpmcc RPM_SMD_RF_CLK2>;
 				clock-names = "xo";
-
-				vddxo-supply = <&pm8916_l7>;
-				vddrfa-supply = <&pm8916_s3>;
-				vddpa-supply = <&pm8916_l9>;
-				vdddig-supply = <&pm8916_l5>;
 			};
 
 			smd-edge {
