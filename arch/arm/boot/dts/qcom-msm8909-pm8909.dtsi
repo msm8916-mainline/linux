@@ -1,0 +1,62 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+#include "qcom-msm8909.dtsi"
+#include "qcom-pm8909.dtsi"
+
+&mpss {
+	pll-supply = <&pm8909_l7>;
+};
+
+&pronto {
+	vddpx-supply = <&pm8909_l7>;
+
+	iris {
+		vddxo-supply = <&pm8909_l7>;
+		vddrfa-supply = <&pm8909_l10>;
+		vddpa-supply = <&pm8909_l9>;
+		vdddig-supply = <&pm8909_l5>;
+	};
+};
+
+&sdhc_1 {
+	vmmc-supply = <&pm8909_l8>;
+	vqmmc-supply = <&pm8909_l5>;
+};
+
+&sdhc_2 {
+	vmmc-supply = <&pm8909_l11>;
+	vqmmc-supply = <&pm8909_l12>;
+};
+
+&usb_hs_phy {
+	v1p8-supply = <&pm8909_l7>;
+	v3p3-supply = <&pm8909_l13>;
+};
+
+&rpm_requests {
+	smd_rpm_regulators: pm8909-regulators {
+		compatible = "qcom,rpm-pm8909-regulators";
+
+		/* pm8909_s1 is managed by rpmpd (MSM8909_VDDCX) */
+		pm8909_s2: s2 {};
+
+		pm8909_l1: l1 {};
+		pm8909_l2: l2 {};
+		/* pm8909_l3 is managed by rpmpd (MSM8909_VDDMX) */
+		pm8909_l4: l4 {};
+		pm8909_l5: l5 {};
+		pm8909_l6: l6 {};
+		pm8909_l7: l7 {};
+		pm8909_l8: l8 {};
+		pm8909_l9: l9 {};
+		pm8909_l10: l10 {};
+		pm8909_l11: l11 {};
+		pm8909_l12: l12 {};
+		pm8909_l13: l13 {};
+		pm8909_l14: l14 {};
+		pm8909_l15: l15 {};
+		/* pm8909_l16 is missing in PM8909 */
+		pm8909_l17: l17 {};
+		pm8909_l18: l18 {};
+	};
+};
