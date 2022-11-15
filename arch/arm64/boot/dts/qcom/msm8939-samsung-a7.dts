@@ -79,6 +79,43 @@
 		};
 	};
 
+	i2c-sensor {
+		compatible = "i2c-gpio";
+		sda-gpios = <&msmgpio 84 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&msmgpio 85 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		pinctrl-0 = <&sensor_i2c_default>;
+		pinctrl-names = "default";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		accelerometer: accelerometer@10 {
+			compatible = "bosch,bmc150_accel";
+			reg = <0x10>;
+			interrupt-parent = <&msmgpio>;
+			interrupts = <115 IRQ_TYPE_EDGE_RISING>;
+
+			vdd-supply = <&pm8916_l17>;
+			vddio-supply = <&pm8916_l5>;
+
+			pinctrl-0 = <&accel_int_default>;
+			pinctrl-names = "default";
+
+			mount-matrix = "-1", "0", "0",
+					"0", "-1", "0",
+					"0", "0", "1";
+		};
+
+		magnetometer@12 {
+			compatible = "bosch,bmc150_magn";
+			reg = <0x12>;
+
+			vdd-supply = <&pm8916_l17>;
+			vddio-supply = <&pm8916_l5>;
+		};
+	};
+
 	i2c-tkey {
 		compatible = "i2c-gpio";
 		sda-gpios = <&msmgpio 16 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
@@ -300,6 +337,13 @@
 };
 
 &msmgpio {
+	accel_int_default: accel-int-default-state {
+		pins = "gpio115";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	gpio_hall_sensor_default: gpio-hall-sensor-default-state {
 		pins = "gpio52";
 		function = "gpio";
@@ -316,6 +360,13 @@
 
 	muic_int_default: muic-int-default-state {
 		pins = "gpio12";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	sensor_i2c_default: sensor-i2c-default-state {
+		pins = "gpio84", "gpio85";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
