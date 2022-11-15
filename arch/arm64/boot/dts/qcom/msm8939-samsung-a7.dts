@@ -195,6 +195,16 @@
 		};
 	};
 
+	pwm_vibrator: pwm-vibrator {
+		compatible = "clk-pwm";
+		#pwm-cells = <2>;
+
+		clocks = <&gcc GCC_GP2_CLK>;
+
+		pinctrl-0 = <&motor_pwm_default>;
+		pinctrl-names = "default";
+	};
+
 	reg_keyled: regulator-keyled {
 		compatible = "regulator-fixed";
 		regulator-name = "keyled";
@@ -220,6 +230,28 @@
 
 		pinctrl-0 = <&tkey_en_default>;
 		pinctrl-names = "default";
+	};
+
+	reg_vibrator: regulator-vibrator {
+		compatible = "regulator-fixed";
+		regulator-name = "motor_en";
+		regulator-min-microvolt = <3000000>;
+		regulator-max-microvolt = <3000000>;
+
+		gpio = <&msmgpio 86 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-0 = <&motor_en_default>;
+		pinctrl-names = "default";
+	};
+
+	vibrator {
+		compatible = "pwm-vibrator";
+
+		pwms = <&pwm_vibrator 0 100000>;
+		pwm-names = "enable";
+
+		vcc-supply = <&reg_vibrator>;
 	};
 };
 
@@ -419,6 +451,18 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-up;
+	};
+
+	motor_en_default: motor-en-default-state {
+		pins = "gpio86";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	motor_pwm_default: motor-pwm-default-state {
+		pins = "gpio50";
+		function = "gcc_gp2_clk_a";
 	};
 
 	muic_int_default: muic-int-default-state {
