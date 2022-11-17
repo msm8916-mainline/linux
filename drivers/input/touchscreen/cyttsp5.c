@@ -190,7 +190,7 @@ struct cyttsp5 {
 	int num_prv_rec;
 	struct regmap *regmap;
 	struct touchscreen_properties prop;
-	struct regulator *vdd;
+	struct regulator_bulk_data supplies[2];
 };
 
 /*
@@ -767,7 +767,7 @@ static void cyttsp5_cleanup(void *data)
 {
 	struct cyttsp5 *ts = data;
 
-	regulator_disable(ts->vdd);
+	regulator_bulk_disable(ARRAY_SIZE(ts->supplies), ts->supplies);
 }
 
 static int cyttsp5_probe(struct device *dev, struct regmap *regmap, int irq,
@@ -790,9 +790,12 @@ static int cyttsp5_probe(struct device *dev, struct regmap *regmap, int irq,
 	init_completion(&ts->cmd_done);
 
 	/* Power up the device */
-	ts->vdd = devm_regulator_get(dev, "vdd");
-	if (IS_ERR(ts->vdd)) {
-		error = PTR_ERR(ts->vdd);
+	ts->supplies[0].supply = "vdd";
+	ts->supplies[1].supply = "vddio";
+	error = devm_regulator_bulk_get(dev, ARRAY_SIZE(ts->supplies),
+				      ts->supplies);
+	if (error < 0) {
+		dev_err(ts->dev, "Failed to get regulators, error %d\n", error);
 		return error;
 	}
 
@@ -800,9 +803,11 @@ static int cyttsp5_probe(struct device *dev, struct regmap *regmap, int irq,
 	if (error)
 		return error;
 
-	error = regulator_enable(ts->vdd);
-	if (error)
+	error = regulator_bulk_enable(ARRAY_SIZE(ts->supplies), ts->supplies);
+	if (error < 0) {
+		dev_err(ts->dev, "Failed to enable regulators, error %d\n", error);
 		return error;
+	}
 
 	ts->input = devm_input_allocate_device(dev);
 	if (!ts->input) {
