@@ -185,7 +185,7 @@ static int s6e3fa2_ams549eh01_unprepare(struct drm_panel *panel)
 }
 
 static const struct drm_display_mode s6e3fa2_ams549eh01_mode = {
-	.clock = (1080 + 160 + 12 + 36) * (1920 + 12 + 2 + 3) * 60 / 1000,
+	.clock = (1080 + 160 + 12 + 36) * (1920 + 12 + 2 + 3) * 50 / 1000,
 	.hdisplay = 1080,
 	.hsync_start = 1080 + 160,
 	.hsync_end = 1080 + 160 + 12,
