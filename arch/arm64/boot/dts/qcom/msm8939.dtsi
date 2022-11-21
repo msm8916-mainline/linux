@@ -299,14 +299,15 @@
 		};
 
 		reserved@86680000 {
-			reg = <0x0 0x86680000 0x0 0x1000>;
+			reg = <0x0 0x86680000 0x0 0x80000>;
 			no-map;
 		};
 
-		rmtfs@86681000 {
+		rmtfs@86700000 {
 			compatible = "qcom,rmtfs-mem";
-			reg = <0x0 0x86681000 0x0 0x15f000>;
+			reg = <0x0 0x86700000 0x0 0xe0000>;
 			no-map;
+
 			qcom,client-id = <1>;
 		};
 
