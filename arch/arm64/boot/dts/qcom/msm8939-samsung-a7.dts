@@ -3,10 +3,12 @@
 /dts-v1/;
 
 #include "msm8939-pm8916.dtsi"
+#include "msm8916-modem.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/sound/apq8016-lpass.h>
 
 / {
 	model = "Samsung Galaxy A7 (2015)";
@@ -25,6 +27,16 @@
 		/* Additional memory used by Samsung firmware modifications */
 		tz-apps@85500000 {
 			reg = <0x0 0x85500000 0x0 0xb00000>;
+			no-map;
+		};
+
+		mpss_mem: mpss@86800000 {
+			reg = <0x0 0x86800000 0x0 0x5800000>;
+			no-map;
+		};
+
+		gps_mem: gps@8c000000 {
+			reg = <0x0 0x8c000000 0x0 0x200000>;
 			no-map;
 		};
 
@@ -338,6 +350,18 @@
 	};
 };
 
+&blsp_i2c2 {
+	status = "okay";
+
+	speaker_codec: audio-codec@34 {
+		compatible = "nxp,tfa9895";
+		reg = <0x34>;
+		vddd-supply = <&pm8916_l5>;
+		sound-name-prefix = "Speaker";
+		#sound-dai-cells = <0>;
+	};
+};
+
 &blsp_i2c5 {
 	status = "okay";
 
@@ -395,6 +419,13 @@
 	status = "okay";
 };
 
+&lpass {
+	dai@3 {
+		reg = <MI2S_QUATERNARY>;
+		qcom,playback-sd-lines = <1>;
+	};
+};
+
 &mdss {
 	status = "okay";
 };
@@ -409,6 +440,13 @@
 
 	iris {
 		compatible = "qcom,wcn3660b";
+	};
+};
+
+&q6afedai {
+	dai@22 {
+		reg = <QUATERNARY_MI2S_RX>;
+		qcom,sd-lines = <1>;
 	};
 };
 
@@ -428,6 +466,28 @@
 	cd-gpios = <&msmgpio 38 GPIO_ACTIVE_LOW>;
 
 	status = "okay";
+};
+
+&sound {
+	model = "samsung-a2015";
+	audio-routing =
+		"AMIC1", "MIC BIAS External1",
+		"AMIC2", "MIC BIAS Internal2",
+		"AMIC3", "MIC BIAS External1";
+
+	pinctrl-0 = <&cdc_pdm_lines_act &ext_sec_tlmm_lines_act>;
+	pinctrl-1 = <&cdc_pdm_lines_sus &ext_sec_tlmm_lines_sus>;
+	pinctrl-names = "default", "sleep";
+
+	status = "okay";
+};
+
+&sound_dai_quaternary {
+	status = "okay";
+
+	codec {
+		sound-dai = <&speaker_codec>;
+	};
 };
 
 &usb {
