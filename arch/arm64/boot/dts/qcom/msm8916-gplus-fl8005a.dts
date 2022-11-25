@@ -261,8 +261,8 @@
 
 &wcd_codec {
 	qcom,micbias-lvl = <2800>;
-	qcom,mbhc-vthreshold-low = <75 150 237 450 500>;
-	qcom,mbhc-vthreshold-high = <75 150 237 450 500>;
+	qcom,mbhc-vthreshold-low = <150 180 237 450 500>;
+	qcom,mbhc-vthreshold-high = <150 180 237 450 500>;
 	qcom,hphl-jack-type-normally-open;
 };
 
