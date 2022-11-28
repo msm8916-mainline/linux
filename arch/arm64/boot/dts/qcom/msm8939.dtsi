@@ -1410,7 +1410,7 @@
 			clocks = <&gcc GCC_SMMU_CFG_CLK>,
 				 <&gcc GCC_GFX_TCU_CLK>,
 				 <&gcc GCC_GFX_TBU_CLK>;
-			clock-names = "iface", "bus", "tlb";
+			clock-names = "iface", "bus", "tbu";
 			ranges = <0 0x1f08000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
