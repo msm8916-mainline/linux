@@ -115,6 +115,35 @@
 	status = "okay";
 };
 
+&dsi0 {
+	pinctrl-0 = <&mdss_default>;
+	pinctrl-1 = <&mdss_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	panel@0 {
+		compatible = "acer,a1-724-hx8394d";
+		reg = <0>;
+
+		power-supply = <&pm8916_l17>;
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&mdss {
+	status = "okay";
+};
+
 &pm8916_resin {
 	linux,code = <KEY_VOLUMEDOWN>;
 	status = "okay";
@@ -280,6 +309,20 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+	mdss_default: mdss-default-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	mdss_sleep: mdss-sleep-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
 	};
 
 	touchscreen_default: touchscreen-default-state {
