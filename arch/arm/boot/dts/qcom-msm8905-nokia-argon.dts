@@ -41,6 +41,25 @@
 		default-brightness-level = <10>;
 	};
 
+	bat: battery {
+		compatible = "simple-battery";
+		voltage-min-design-microvolt = <3400000>;
+		voltage-max-design-microvolt = <4400000>;
+		energy-full-design-microwatt-hours = <5850000>;
+		charge-full-design-microamp-hours = <1500000>;
+
+		ocv-capacity-celsius = <25>;
+		ocv-capacity-table-0 = <4380000 100>, <4292000 95>,
+			<4234000 90>, <4190000 85>, <4158000 80>, <4125000 75>,
+			<4090000 70>, <4040000 65>, <3988000 60>, <3950000 55>,
+			<3925000 50>, <3880000 45>, <3840000 40>, <3800000 35>,
+			<3784000 30>, <3761000 25>, <3743000 20>, <3722000 16>,
+			<3702000 13>, <3690000 11>, <3688000 10>, <3687000 9>,
+			<3685000 8>, <3683000 7>, <3677000 6>, <3656000 5>,
+			<3612000 4>, <3554000 3>, <3462000 2>, <3322000 1>,
+			<3000000 0>;
+	};
+
 	gpio-keys {
 		compatible = "gpio-keys";
 		pinctrl-0 = <&gpio_key_active &lid_switch_active>;
@@ -175,6 +194,21 @@
 	status = "okay";
 };
 
+&pm8909_bms {
+	monitored-battery = <&bat>;
+	power-supplies = <&pm8909_charger>;
+	status = "okay";
+};
+
+&pm8909_charger {
+	qcom,vdd-safe = <4350000>;
+	qcom,ibat-safe = <360000>;
+
+	monitored-battery = <&bat>;
+
+	status = "okay";
+};
+
 &pm8909_pwm {
 	pinctrl-0 = <&pwm_out>;
 	pinctrl-names = "default";
@@ -183,10 +217,6 @@
 
 &pm8909_resin {
 	linux,code = <KEY_DOWN>;
-	status = "okay";
-};
-
-&pm8909_usbin {
 	status = "okay";
 };
 
@@ -204,12 +234,12 @@
 };
 
 &usb {
-	extcon = <&pm8909_usbin>;
+	extcon = <&pm8909_charger>;
 	status = "okay";
 };
 
 &usb_hs_phy {
-	extcon = <&pm8909_usbin>;
+	extcon = <&pm8909_charger>;
 };
 
 &wcnss {
