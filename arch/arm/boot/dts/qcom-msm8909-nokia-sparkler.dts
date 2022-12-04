@@ -1,0 +1,49 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/dts-v1/;
+#include "qcom-msm8909-nokia-leo-common.dtsi"
+#include <dt-bindings/input/input.h>
+
+/ {
+	model = "Nokia 8000 4G";
+	compatible = "nokia,sparkler", "qcom,msm8909";
+	chassis-type = "handset";
+};
+
+&matrix_keypad {
+	linux,keymap = <
+		MATRIX_KEY(0, 0, KEY_PICKUP_PHONE)
+		MATRIX_KEY(0, 1, KEY_1)
+		MATRIX_KEY(0, 2, KEY_4)
+		MATRIX_KEY(0, 3, KEY_7)
+		MATRIX_KEY(0, 4, KEY_NUMERIC_STAR)
+		MATRIX_KEY(0, 5, KEY_MENU)
+
+		MATRIX_KEY(1, 0, BTN_LEFT)
+		MATRIX_KEY(1, 1, KEY_2)
+		MATRIX_KEY(1, 2, KEY_5)
+		MATRIX_KEY(1, 3, KEY_8)
+		MATRIX_KEY(1, 4, KEY_0)
+		MATRIX_KEY(1, 5, KEY_BACKSPACE)
+
+		MATRIX_KEY(2, 0, KEY_LEFT)
+		MATRIX_KEY(2, 1, KEY_3)
+		MATRIX_KEY(2, 2, KEY_6)
+		MATRIX_KEY(2, 3, KEY_9)
+		MATRIX_KEY(2, 4, KEY_NUMERIC_POUND)
+		MATRIX_KEY(2, 5, KEY_HANGUP_PHONE)
+
+		MATRIX_KEY(3, 0, KEY_ENTER)
+		MATRIX_KEY(3, 1, BTN_RIGHT)
+		MATRIX_KEY(3, 2, KEY_RIGHT)
+		MATRIX_KEY(3, 3, KEY_UP)
+		MATRIX_KEY(3, 4, KEY_DOWN)
+	>;
+	status = "okay";
+};
+
+&panel {
+	compatible = "nokia,sparkler-gc9307-hlt-28-panel", "panel-mipi-dbi-spi";
+	width-mm = <42>;
+	height-mm = <56>;
+	status = "okay";
+};
