@@ -1,0 +1,320 @@
+// SPDX-License-Identifier: GPL-2.0-only
+#include "qcom-msm8909-pm8909.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+#include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
+
+/ {
+	aliases {
+		serial0 = &blsp_uart1;
+	};
+
+	chosen {
+		stdout-path = "serial0";
+	};
+
+	reserved-memory {
+		/delete-node/ rmtfs@87c00000;
+		/delete-node/ mpss@88000000;
+		/delete-node/ wcnss@8d500000;
+		reserved@84a00000 {
+			reg = <0x84a00000 0x400000>;
+			no-map;
+		};
+		mpss_mem: mpss@88000000 {
+			reg = <0x88000000 0x05000000>;
+			no-map;
+		};
+		wcnss_mem: wcnss@8d000000 {
+			reg = <0x8d000000 0x700000>;
+			no-map;
+		};
+		/* On downstream, this address is set by the bootloader */
+		rmtfs@9e900000 {
+			compatible = "qcom,rmtfs-mem";
+			reg = <0x9e900000 0x300000>;
+			no-map;
+
+			qcom,client-id = <1>;
+		};
+	};
+
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pm8909_pwm 0 100000>;
+
+		brightness-levels = <0 4 8 16 32 64 128 255>;
+		num-interpolated-steps = <2>;
+		default-brightness-level = <10>;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&gpio_key_active>;
+		pinctrl-names = "default";
+
+		key-star {
+			wakeup-source;
+			gpios = <&tlmm 90 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_NUMERIC_STAR>;
+			debounce-interval = <15>;
+			linux,can-disable;
+		};
+	};
+
+	matrix_keypad: keypad {
+		status = "disabled";
+		compatible = "gpio-matrix-keypad";
+
+		col-scan-delay-us = <7>;
+		debounce-delay-ms = <10>;
+		gpio-activelow;
+		pinctrl-0 = <&matrix_keypad_row_default &matrix_keypad_col_default>;
+		pinctrl-names = "default";
+
+		row-gpios = <&tlmm 97 GPIO_ACTIVE_LOW
+			&tlmm 96 GPIO_ACTIVE_LOW
+			&tlmm 95 GPIO_ACTIVE_LOW
+			&tlmm 94 GPIO_ACTIVE_LOW>;
+
+		col-gpios = <&tlmm 0 GPIO_ACTIVE_LOW
+			&tlmm 3 GPIO_ACTIVE_LOW
+			&tlmm 7 GPIO_ACTIVE_LOW
+			&tlmm 99 GPIO_ACTIVE_LOW
+			&tlmm 6 GPIO_ACTIVE_LOW
+			&tlmm 1 GPIO_ACTIVE_LOW>;
+
+		/* Specify linux,keypad in device dts */
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		pinctrl-0 = <&keypad_backlight_default>;
+		pinctrl-names = "default";
+
+		led-0 {
+			function = LED_FUNCTION_KBD_BACKLIGHT;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pm8909_gpios 1 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&blsp_spi5 {
+	status = "okay";
+
+	panel: display@0 {
+		/* Specify panel compatible and physical size in device dts */
+		compatible = "panel-mipi-dbi-spi";
+		reg = <0>;
+		backlight = <&backlight>;
+		reset-gpios = <&tlmm 25 GPIO_ACTIVE_HIGH>;
+		dc-gpios = <&tlmm 110 GPIO_ACTIVE_HIGH>;
+		spi-max-frequency = <50000000>;
+		power-supply = <&pm8909_l17>;
+		io-supply = <&pm8909_l6>;
+
+		pinctrl-0 = <&panel_gpios_default>;
+		pinctrl-names = "default";
+
+		status = "disabled";
+
+		panel-timing {
+			hactive = <240>;
+			vactive = <320>;
+			hback-porch = <0>;
+			vback-porch = <0>;
+			hfront-porch = <0>;
+			vfront-porch = <0>;
+			hsync-len = <0>;
+			vsync-len = <0>;
+			clock-frequency = <(240 * 320 * 30)>; /* 30 fps */
+		};
+	};
+};
+
+&blsp_uart1 {
+	status = "okay";
+};
+
+&mpss {
+	status = "okay";
+};
+
+&sdhc_1 {
+	status = "okay";
+};
+
+&sdhc_2 {
+	non-removable;
+	status = "okay";
+};
+
+&pm8909_pwm {
+	pinctrl-0 = <&pwm_out>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pm8909_resin {
+	linux,code = <KEY_NUMERIC_POUND>;
+	status = "okay";
+};
+
+&pm8909_usbin {
+	status = "okay";
+};
+
+&usb {
+	extcon = <&pm8909_usbin>;
+	status = "okay";
+};
+
+&usb_hs_phy {
+	extcon = <&pm8909_usbin>;
+};
+
+&wcnss {
+	status = "okay";
+};
+
+&smd_rpm_regulators {
+	s2 {
+		regulator-min-microvolt = <1850000>;
+		regulator-max-microvolt = <1850000>;
+	};
+
+	l1 {
+		regulator-min-microvolt = <1000000>;
+		regulator-max-microvolt = <1000000>;
+	};
+
+	l2 {
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1200000>;
+	};
+
+	l4 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	l5 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	l6 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	l7 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	l8 {
+		regulator-min-microvolt = <2850000>;
+		regulator-max-microvolt = <2900000>;
+	};
+
+	l9 {
+		regulator-min-microvolt = <3000000>;
+		regulator-max-microvolt = <3300000>;
+	};
+
+	l10 {
+		regulator-min-microvolt = <1225000>;
+		regulator-max-microvolt = <1300000>;
+	};
+
+	l11 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <2950000>;
+		regulator-allow-set-load;
+		regulator-system-load = <200000>;
+	};
+
+	l12 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <2950000>;
+	};
+
+	l13 {
+		regulator-min-microvolt = <3075000>;
+		regulator-max-microvolt = <3075000>;
+	};
+
+	l14 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3000000>;
+	};
+
+	l15 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3000000>;
+	};
+
+	l17 {
+		regulator-min-microvolt = <2850000>;
+		regulator-max-microvolt = <2850000>;
+	};
+
+	l18 {
+		regulator-min-microvolt = <2700000>;
+		regulator-max-microvolt = <2700000>;
+	};
+};
+
+&pm8909_gpios {
+	keypad_backlight_default: keypad-backlight-default-state {
+		pins = "gpio1";
+		function = PMIC_GPIO_FUNC_NORMAL;
+		power-source = <PM8916_GPIO_L2>;
+		output-low;
+	};
+};
+
+&pm8909_mpps {
+	pwm_out: mpp2-state {
+		pins = "mpp2";
+		function = "digital";
+		power-source = <PM8916_MPP_VPH>;
+		output-low;
+		qcom,dtest = <1>;
+	};
+};
+
+&tlmm {
+	gpio_key_active: gpio-key-active-state {
+		pins = "gpio90";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	matrix_keypad_row_default: matrix-keypad-row-default-state {
+		pins = "gpio94", "gpio95", "gpio96", "gpio97";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	matrix_keypad_col_default: matrix-keypad-col-default-state {
+		pins = "gpio0", "gpio3", "gpio7", "gpio99", "gpio6", "gpio1";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	panel_gpios_default: panel-gpios-default-state {
+		pins = "gpio24", "gpio25", "gpio110";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
+	};
+};
