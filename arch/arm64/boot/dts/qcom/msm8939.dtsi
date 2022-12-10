@@ -185,12 +185,12 @@
 	};
 
 	/*
-	 * MSM8939 has a big.LITTLE hetrogeneous computing architecture,
+	 * MSM8939 has a big.LITTLE heterogeneous computing architecture,
 	 * consisting of two clusters of four ARM Cortex-A53s each. The
 	 * LITTLE cluster runs at 1.0-1.2GHz, and the big cluster runs
 	 * at 1.5-1.7GHz.
 	 *
-	 * The enable method used here is spin-table which pre-supposes use
+	 * The enable method used here is spin-table which presupposes use
 	 * of a 2nd stage boot shim such as lk2nd to have installed a
 	 * spin-table, the downstream non-psci/non-spin-table method that
 	 * default msm8916/msm8936/msm8939 will not be supported upstream.
