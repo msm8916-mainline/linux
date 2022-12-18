@@ -215,8 +215,10 @@
 			};
 		};
 
-		/* big (performance) cluster */
-		/* Boot CPU is cluster 1 core 0 */
+		/*
+		 * big (performance) cluster
+		 * Boot CPU is cluster 1 core 0
+		 */
 		cluster1 {
 			core0 {
 				cpu = <&cpu0>;
