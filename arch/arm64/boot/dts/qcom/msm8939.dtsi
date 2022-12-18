@@ -249,31 +249,6 @@
 		};
 	};
 
-	hexagon-smp2p {
-		compatible = "qcom,smp2p";
-		qcom,smem = <435>, <428>;
-
-		interrupts = <GIC_SPI 27 IRQ_TYPE_EDGE_RISING>;
-
-		mboxes = <&apcs1_mbox 14>;
-
-		qcom,local-pid = <0>;
-		qcom,remote-pid = <1>;
-
-		hexagon_smp2p_out: master-kernel {
-			qcom,entry-name = "master-kernel";
-
-			#qcom,smem-state-cells = <1>;
-		};
-
-		hexagon_smp2p_in: slave-kernel {
-			qcom,entry-name = "slave-kernel";
-
-			interrupt-controller;
-			#interrupt-cells = <2>;
-		};
-	};
-
 	memory@80000000 {
 		device_type = "memory";
 		/* We expect the bootloader to fill in the reg */
@@ -356,6 +331,56 @@
 		qcom,rpm-msg-ram = <&rpm_msg_ram>;
 
 		hwlocks = <&tcsr_mutex 3>;
+	};
+
+	smp2p-hexagon {
+		compatible = "qcom,smp2p";
+		qcom,smem = <435>, <428>;
+
+		interrupts = <GIC_SPI 27 IRQ_TYPE_EDGE_RISING>;
+
+		mboxes = <&apcs1_mbox 14>;
+
+		qcom,local-pid = <0>;
+		qcom,remote-pid = <1>;
+
+		hexagon_smp2p_out: master-kernel {
+			qcom,entry-name = "master-kernel";
+
+			#qcom,smem-state-cells = <1>;
+		};
+
+		hexagon_smp2p_in: slave-kernel {
+			qcom,entry-name = "slave-kernel";
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+	};
+
+	smp2p-wcnss {
+		compatible = "qcom,smp2p";
+		qcom,smem = <451>, <431>;
+
+		interrupts = <GIC_SPI 143 IRQ_TYPE_EDGE_RISING>;
+
+		mboxes = <&apcs1_mbox 18>;
+
+		qcom,local-pid = <0>;
+		qcom,remote-pid = <4>;
+
+		wcnss_smp2p_out: master-kernel {
+			qcom,entry-name = "master-kernel";
+
+			#qcom,smem-state-cells = <1>;
+		};
+
+		wcnss_smp2p_in: slave-kernel {
+			qcom,entry-name = "slave-kernel";
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
 	};
 
 	smsm {
@@ -2449,30 +2474,5 @@
 
 	vreg_dummy: regulator-dummy {
 		#power-domain-cells = <0>;
-	};
-
-	wcnss-smp2p {
-		compatible = "qcom,smp2p";
-		qcom,smem = <451>, <431>;
-
-		interrupts = <GIC_SPI 143 IRQ_TYPE_EDGE_RISING>;
-
-		mboxes = <&apcs1_mbox 18>;
-
-		qcom,local-pid = <0>;
-		qcom,remote-pid = <4>;
-
-		wcnss_smp2p_out: master-kernel {
-			qcom,entry-name = "master-kernel";
-
-			#qcom,smem-state-cells = <1>;
-		};
-
-		wcnss_smp2p_in: slave-kernel {
-			qcom,entry-name = "slave-kernel";
-
-			interrupt-controller;
-			#interrupt-cells = <2>;
-		};
 	};
 };
