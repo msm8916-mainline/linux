@@ -391,11 +391,10 @@
 	};
 
 	soc: soc@0 {
-
 		compatible = "simple-bus";
+		ranges = <0 0 0 0xffffffff>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0 0 0 0xffffffff>;
 
 		rng@22000 {
 			compatible = "qcom,prng";
