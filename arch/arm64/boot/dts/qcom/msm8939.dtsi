@@ -1751,91 +1751,6 @@
 			status = "disabled";
 		};
 
-		blsp_i2c2: i2c@78b6000 {
-			compatible = "qcom,i2c-qup-v2.2.1";
-			reg = <0x078b6000 0x500>;
-			interrupts = <GIC_SPI 96 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&gcc GCC_BLSP1_QUP2_I2C_APPS_CLK>,
-				 <&gcc GCC_BLSP1_AHB_CLK>;
-			clock-names =  "core", "iface";
-			dmas = <&blsp_dma 6>, <&blsp_dma 7>;
-			dma-names = "tx", "rx";
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&i2c2_default>;
-			pinctrl-1 = <&i2c2_sleep>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		blsp_i2c3: i2c@78b7000 {
-			compatible = "qcom,i2c-qup-v2.2.1";
-			reg = <0x078b7000 0x500>;
-			interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&gcc GCC_BLSP1_QUP3_I2C_APPS_CLK>,
-				 <&gcc GCC_BLSP1_AHB_CLK>;
-			clock-names =  "core", "iface";
-			dmas = <&blsp_dma 8>, <&blsp_dma 9>;
-			dma-names = "tx", "rx";
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&i2c3_default>;
-			pinctrl-1 = <&i2c3_sleep>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		blsp_i2c4: i2c@78b8000 {
-			compatible = "qcom,i2c-qup-v2.2.1";
-			reg = <0x078b8000 0x500>;
-			interrupts = <GIC_SPI 98 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&gcc GCC_BLSP1_QUP4_I2C_APPS_CLK>,
-				 <&gcc GCC_BLSP1_AHB_CLK>;
-			clock-names =  "core", "iface";
-			dmas = <&blsp_dma 10>, <&blsp_dma 11>;
-			dma-names = "tx", "rx";
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&i2c4_default>;
-			pinctrl-1 = <&i2c4_sleep>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		blsp_i2c5: i2c@78b9000 {
-			compatible = "qcom,i2c-qup-v2.2.1";
-			reg = <0x078b9000 0x500>;
-			interrupts = <GIC_SPI 99 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&gcc GCC_BLSP1_QUP5_I2C_APPS_CLK>,
-				 <&gcc GCC_BLSP1_AHB_CLK>;
-			clock-names =  "core", "iface";
-			dmas = <&blsp_dma 12>, <&blsp_dma 13>;
-			dma-names = "tx", "rx";
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&i2c5_default>;
-			pinctrl-1 = <&i2c5_sleep>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		blsp_i2c6: i2c@78ba000 {
-			compatible = "qcom,i2c-qup-v2.2.1";
-			reg = <0x078ba000 0x500>;
-			interrupts = <GIC_SPI 100 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&gcc GCC_BLSP1_QUP6_I2C_APPS_CLK>,
-				 <&gcc GCC_BLSP1_AHB_CLK>;
-			clock-names =  "core", "iface";
-			dmas = <&blsp_dma 14>, <&blsp_dma 15>;
-			dma-names = "tx", "rx";
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&i2c6_default>;
-			pinctrl-1 = <&i2c6_sleep>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
 		blsp_spi1: spi@78b5000 {
 			compatible = "qcom,spi-qup-v2.2.1";
 			reg = <0x078b5000 0x500>;
@@ -1848,6 +1763,23 @@
 			pinctrl-names = "default", "sleep";
 			pinctrl-0 = <&spi1_default>;
 			pinctrl-1 = <&spi1_sleep>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		blsp_i2c2: i2c@78b6000 {
+			compatible = "qcom,i2c-qup-v2.2.1";
+			reg = <0x078b6000 0x500>;
+			interrupts = <GIC_SPI 96 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&gcc GCC_BLSP1_QUP2_I2C_APPS_CLK>,
+				 <&gcc GCC_BLSP1_AHB_CLK>;
+			clock-names = "core", "iface";
+			dmas = <&blsp_dma 6>, <&blsp_dma 7>;
+			dma-names = "tx", "rx";
+			pinctrl-names = "default", "sleep";
+			pinctrl-0 = <&i2c2_default>;
+			pinctrl-1 = <&i2c2_sleep>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -1870,6 +1802,23 @@
 			status = "disabled";
 		};
 
+		blsp_i2c3: i2c@78b7000 {
+			compatible = "qcom,i2c-qup-v2.2.1";
+			reg = <0x078b7000 0x500>;
+			interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&gcc GCC_BLSP1_QUP3_I2C_APPS_CLK>,
+				 <&gcc GCC_BLSP1_AHB_CLK>;
+			clock-names = "core", "iface";
+			dmas = <&blsp_dma 8>, <&blsp_dma 9>;
+			dma-names = "tx", "rx";
+			pinctrl-names = "default", "sleep";
+			pinctrl-0 = <&i2c3_default>;
+			pinctrl-1 = <&i2c3_sleep>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		blsp_spi3: spi@78b7000 {
 			compatible = "qcom,spi-qup-v2.2.1";
 			reg = <0x078b7000 0x500>;
@@ -1882,6 +1831,23 @@
 			pinctrl-names = "default", "sleep";
 			pinctrl-0 = <&spi3_default>;
 			pinctrl-1 = <&spi3_sleep>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		blsp_i2c4: i2c@78b8000 {
+			compatible = "qcom,i2c-qup-v2.2.1";
+			reg = <0x078b8000 0x500>;
+			interrupts = <GIC_SPI 98 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&gcc GCC_BLSP1_QUP4_I2C_APPS_CLK>,
+				 <&gcc GCC_BLSP1_AHB_CLK>;
+			clock-names = "core", "iface";
+			dmas = <&blsp_dma 10>, <&blsp_dma 11>;
+			dma-names = "tx", "rx";
+			pinctrl-names = "default", "sleep";
+			pinctrl-0 = <&i2c4_default>;
+			pinctrl-1 = <&i2c4_sleep>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -1904,6 +1870,23 @@
 			status = "disabled";
 		};
 
+		blsp_i2c5: i2c@78b9000 {
+			compatible = "qcom,i2c-qup-v2.2.1";
+			reg = <0x078b9000 0x500>;
+			interrupts = <GIC_SPI 99 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&gcc GCC_BLSP1_QUP5_I2C_APPS_CLK>,
+				 <&gcc GCC_BLSP1_AHB_CLK>;
+			clock-names = "core", "iface";
+			dmas = <&blsp_dma 12>, <&blsp_dma 13>;
+			dma-names = "tx", "rx";
+			pinctrl-names = "default", "sleep";
+			pinctrl-0 = <&i2c5_default>;
+			pinctrl-1 = <&i2c5_sleep>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		blsp_spi5: spi@78b9000 {
 			compatible = "qcom,spi-qup-v2.2.1";
 			reg = <0x078b9000 0x500>;
@@ -1916,6 +1899,23 @@
 			pinctrl-names = "default", "sleep";
 			pinctrl-0 = <&spi5_default>;
 			pinctrl-1 = <&spi5_sleep>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		blsp_i2c6: i2c@78ba000 {
+			compatible = "qcom,i2c-qup-v2.2.1";
+			reg = <0x078ba000 0x500>;
+			interrupts = <GIC_SPI 100 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&gcc GCC_BLSP1_QUP6_I2C_APPS_CLK>,
+				 <&gcc GCC_BLSP1_AHB_CLK>;
+			clock-names = "core", "iface";
+			dmas = <&blsp_dma 14>, <&blsp_dma 15>;
+			dma-names = "tx", "rx";
+			pinctrl-names = "default", "sleep";
+			pinctrl-0 = <&i2c6_default>;
+			pinctrl-1 = <&i2c6_sleep>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
