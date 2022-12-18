@@ -1227,6 +1227,7 @@
 		};
 
 		mdss: mdss@1a00000 {
+			status = "disabled";
 			compatible = "qcom,mdss";
 			reg = <0x01a00000 0x1000>,
 			      <0x01ac8000 0x3000>;
@@ -1325,7 +1326,6 @@
 					      "pixel",
 					      "core";
 				phys = <&dsi_phy0>;
-				status = "disabled";
 
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -1364,7 +1364,6 @@
 
 				#clock-cells = <1>;
 				#phy-cells = <0>;
-				status = "disabled";
 			};
 
 			dsi1: dsi@1aa0000 {
