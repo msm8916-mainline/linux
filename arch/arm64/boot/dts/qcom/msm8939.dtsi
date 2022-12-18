@@ -1976,6 +1976,72 @@
 			};
 		};
 
+		pronto: remoteproc@a204000 {
+			compatible = "qcom,pronto-v2-pil", "qcom,pronto";
+			reg = <0x0a204000 0x2000>, <0x0a202000 0x1000>, <0x0a21b000 0x3000>;
+			reg-names = "ccu", "dxe", "pmu";
+
+			memory-region = <&wcnss_mem>;
+
+			interrupts-extended = <&intc GIC_SPI 149 IRQ_TYPE_EDGE_RISING>,
+					      <&wcnss_smp2p_in 0 IRQ_TYPE_EDGE_RISING>,
+					      <&wcnss_smp2p_in 1 IRQ_TYPE_EDGE_RISING>,
+					      <&wcnss_smp2p_in 2 IRQ_TYPE_EDGE_RISING>,
+					      <&wcnss_smp2p_in 3 IRQ_TYPE_EDGE_RISING>;
+			interrupt-names = "wdog", "fatal", "ready", "handover", "stop-ack";
+
+			power-domains = <&rpmpd MSM8939_VDDCX>,
+					<&rpmpd MSM8939_VDDMX_AO>;
+			power-domain-names = "cx", "mx";
+
+			qcom,smem-states = <&wcnss_smp2p_out 0>;
+			qcom,smem-state-names = "stop";
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&wcnss_pin_a>;
+
+			status = "disabled";
+
+			iris {
+				compatible = "qcom,wcn3620";
+
+				clocks = <&rpmcc RPM_SMD_RF_CLK2>;
+				clock-names = "xo";
+			};
+
+			smd-edge {
+				interrupts = <GIC_SPI 142 IRQ_TYPE_EDGE_RISING>;
+
+				qcom,ipc = <&apcs1_mbox 8 17>;
+				qcom,smd-edge = <6>;
+				qcom,remote-pid = <4>;
+
+				label = "pronto";
+
+				wcnss_ctrl: wcnss {
+					compatible = "qcom,wcnss";
+					qcom,smd-channels = "WCNSS_CTRL";
+
+					qcom,mmio = <&pronto>;
+
+					bluetooth {
+						compatible = "qcom,wcnss-bt";
+					};
+
+					wifi {
+						compatible = "qcom,wcnss-wlan";
+
+						interrupts = <GIC_SPI 145 IRQ_TYPE_LEVEL_HIGH>,
+							     <GIC_SPI 146 IRQ_TYPE_LEVEL_HIGH>;
+						interrupt-names = "tx", "rx";
+
+						qcom,smem-states = <&apps_smsm 10>, <&apps_smsm 9>;
+						qcom,smem-state-names = "tx-enable", "tx-rings-empty";
+					};
+				};
+			};
+		};
+
 		intc: interrupt-controller@b000000 {
 			compatible = "qcom,msm-qgic2";
 			reg = <0x0b000000 0x1000>, <0x0b002000 0x2000>,
@@ -2168,76 +2234,6 @@
 				interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL_HIGH>;
 				reg = <0x0b128000 0x1000>;
 				status = "disabled";
-			};
-		};
-
-		pronto: remoteproc@a204000 {
-			compatible = "qcom,pronto-v2-pil", "qcom,pronto";
-			reg = <0x0a204000 0x2000>,
-			      <0x0a202000 0x1000>,
-			      <0x0a21b000 0x3000>;
-			reg-names = "ccu", "dxe", "pmu";
-
-			interrupts-extended = <&intc 0 149 IRQ_TYPE_EDGE_RISING>,
-					      <&wcnss_smp2p_in 0 IRQ_TYPE_EDGE_RISING>,
-					      <&wcnss_smp2p_in 1 IRQ_TYPE_EDGE_RISING>,
-					      <&wcnss_smp2p_in 2 IRQ_TYPE_EDGE_RISING>,
-					      <&wcnss_smp2p_in 3 IRQ_TYPE_EDGE_RISING>;
-			interrupt-names = "wdog", "fatal", "ready", "handover", "stop-ack";
-
-			memory-region = <&wcnss_mem>;
-
-			power-domains = <&rpmpd MSM8939_VDDCX>,
-					<&rpmpd MSM8939_VDDMX_AO>;
-			power-domain-names = "cx", "mx";
-
-			qcom,smem-states = <&wcnss_smp2p_out 0>;
-			qcom,smem-state-names = "stop";
-
-			pinctrl-names = "default";
-			pinctrl-0 = <&wcnss_pin_a>;
-
-			status = "disabled";
-
-			iris {
-				compatible = "qcom,wcn3620";
-
-				clocks = <&rpmcc RPM_SMD_RF_CLK2>;
-				clock-names = "xo";
-			};
-
-			smd-edge {
-				interrupts = <GIC_SPI 142 1>;
-
-				qcom,ipc = <&apcs1_mbox 8 17>;
-				qcom,smd-edge = <6>;
-				qcom,remote-pid = <4>;
-
-				label = "pronto";
-
-				wcnss {
-					compatible = "qcom,wcnss";
-					qcom,smd-channels = "WCNSS_CTRL";
-
-					qcom,mmio = <&pronto>;
-
-					bluetooth {
-						compatible = "qcom,wcnss-bt";
-					};
-
-					wifi {
-						compatible = "qcom,wcnss-wlan";
-
-						interrupts = <GIC_SPI 145 IRQ_TYPE_LEVEL_HIGH>,
-							     <GIC_SPI 146 IRQ_TYPE_LEVEL_HIGH>;
-						interrupt-names = "tx", "rx";
-
-						qcom,smem-states = <&apps_smsm 10>,
-								   <&apps_smsm 9>;
-						qcom,smem-state-names = "tx-enable",
-									"tx-rings-empty";
-					};
-				};
 			};
 		};
 	};
