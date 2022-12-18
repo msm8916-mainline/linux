@@ -1156,8 +1156,7 @@
 			      <0x01ac8000 0x3000>;
 			reg-names = "mdss_phys", "vbif_phys";
 
-			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-controller;
+			power-domains = <&gcc MDSS_GDSC>;
 
 			clocks = <&gcc GCC_MDSS_AHB_CLK>,
 				 <&gcc GCC_MDSS_AXI_CLK>,
@@ -1166,11 +1165,13 @@
 				      "bus",
 				      "vsync";
 
-			power-domains = <&gcc MDSS_GDSC>;
+			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-			#interrupt-cells = <1>;
 			ranges;
 
 			mdp: mdp@1a01000 {
@@ -1230,6 +1231,11 @@
 				interrupt-parent = <&mdss>;
 				interrupts = <4>;
 
+				assigned-clocks = <&gcc BYTE0_CLK_SRC>,
+						  <&gcc PCLK0_CLK_SRC>;
+				assigned-clock-parents = <&dsi_phy0 0>,
+							 <&dsi_phy0 1>;
+
 				clocks = <&gcc GCC_MDSS_MDP_CLK>,
 					 <&gcc GCC_MDSS_AHB_CLK>,
 					 <&gcc GCC_MDSS_AXI_CLK>,
@@ -1242,11 +1248,6 @@
 					      "byte",
 					      "pixel",
 					      "core";
-				assigned-clocks = <&gcc BYTE0_CLK_SRC>,
-						  <&gcc PCLK0_CLK_SRC>;
-				assigned-clock-parents = <&dsi_phy0 0>,
-							 <&dsi_phy0 1>;
-
 				phys = <&dsi_phy0>;
 				status = "disabled";
 
@@ -1299,6 +1300,11 @@
 				interrupt-parent = <&mdss>;
 				interrupts = <5>;
 
+				assigned-clocks = <&gcc BYTE1_CLK_SRC>,
+						  <&gcc PCLK1_CLK_SRC>;
+				assigned-clock-parents = <&dsi_phy1 0>,
+							 <&dsi_phy1 1>;
+
 				clocks = <&gcc GCC_MDSS_MDP_CLK>,
 					 <&gcc GCC_MDSS_AHB_CLK>,
 					 <&gcc GCC_MDSS_AXI_CLK>,
@@ -1311,10 +1317,6 @@
 					      "byte",
 					      "pixel",
 					      "core";
-				assigned-clocks = <&gcc BYTE1_CLK_SRC>,
-						  <&gcc PCLK1_CLK_SRC>;
-				assigned-clock-parents = <&dsi_phy1 0>,
-							 <&dsi_phy1 1>;
 				phys = <&dsi_phy1>;
 				status = "disabled";
 
@@ -1492,15 +1494,15 @@
 			interrupt-names = "wdog", "fatal", "ready",
 					  "handover", "stop-ack";
 
+			power-domains = <&rpmpd MSM8939_VDDMDCX>,
+					<&rpmpd MSM8939_VDDMX>;
+			power-domain-names = "cx", "mx";
+
 			clocks = <&gcc GCC_MSS_CFG_AHB_CLK>,
 				 <&gcc GCC_MSS_Q6_BIMC_AXI_CLK>,
 				 <&gcc GCC_BOOT_ROM_AHB_CLK>,
 				 <&xo_board>;
 			clock-names = "iface", "bus", "mem", "xo";
-
-			power-domains = <&rpmpd MSM8939_VDDMDCX>,
-					<&rpmpd MSM8939_VDDMX>;
-			power-domain-names = "cx", "mx";
 
 			qcom,smem-states = <&hexagon_smp2p_out 0>;
 			qcom,smem-state-names = "stop";
@@ -1543,23 +1545,32 @@
 			compatible = "qcom,apq8016-lpass-cpu";
 			reg = <0x07708000 0x10000>;
 			reg-names = "lpass-lpaif";
-			interrupts = <GIC_SPI 160 IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-names = "lpass-irq-lpaif";
+
+			/*
+			 * Note: Unlike the name would suggest, the SEC_I2S_CLK
+			 * is actually only used by Tertiary MI2S while
+			 * Primary/Secondary MI2S both use the PRI_I2S_CLK.
+			 */
 			clocks = <&gcc GCC_ULTAUDIO_AHBFABRIC_IXFABRIC_CLK>,
+				 <&gcc GCC_ULTAUDIO_PCNOC_MPORT_CLK>,
+				 <&gcc GCC_ULTAUDIO_PCNOC_SWAY_CLK>,
 				 <&gcc GCC_ULTAUDIO_LPAIF_PRI_I2S_CLK>,
 				 <&gcc GCC_ULTAUDIO_LPAIF_PRI_I2S_CLK>,
 				 <&gcc GCC_ULTAUDIO_LPAIF_SEC_I2S_CLK>,
-				 <&gcc GCC_ULTAUDIO_LPAIF_AUX_I2S_CLK>,
-				 <&gcc GCC_ULTAUDIO_PCNOC_MPORT_CLK>,
-				 <&gcc GCC_ULTAUDIO_PCNOC_SWAY_CLK>;
+				 <&gcc GCC_ULTAUDIO_LPAIF_AUX_I2S_CLK>;
+
 			clock-names = "ahbix-clk",
+				      "pcnoc-mport-clk",
+				      "pcnoc-sway-clk",
 				      "mi2s-bit-clk0",
 				      "mi2s-bit-clk1",
 				      "mi2s-bit-clk2",
-				      "mi2s-bit-clk3",
-				      "pcnoc-mport-clk",
-				      "pcnoc-sway-clk";
+				      "mi2s-bit-clk3";
 			#sound-dai-cells = <1>;
+
+			interrupts = <GIC_SPI 160 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "lpass-irq-lpaif";
+
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -1883,8 +1894,10 @@
 					resets = <&gcc GCC_USB2A_PHY_BCR>, <&usb 0>;
 					reset-names = "phy", "por";
 					#phy-cells = <0>;
-					qcom,init-seq = /bits/ 8 <0x0 0x44
-						0x1 0x6b 0x2 0x24 0x3 0x13>;
+					qcom,init-seq = /bits/ 8 <0x0 0x44>,
+								 <0x1 0x6b>,
+								 <0x2 0x24>,
+								 <0x3 0x13>;
 				};
 			};
 		};
