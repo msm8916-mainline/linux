@@ -3,6 +3,8 @@
 /dts-v1/;
 
 #include "msm8939-pm8916.dtsi"
+#include "msm8916-modem.dtsi"
+
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
@@ -20,6 +22,13 @@
 
 	chosen {
 		stdout-path = "serial0";
+	};
+
+	reserved-memory {
+		gps_mem: gps@8cc00000 {
+			reg = <0x0 0x8cc00000 0x0 0x200000>;
+			no-map;
+		};
 	};
 
 	gpio-hall-sensor {
