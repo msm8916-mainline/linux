@@ -238,7 +238,7 @@
 
 	firmware {
 		scm: scm {
-			compatible = "qcom,scm-msm8916";
+			compatible = "qcom,scm-msm8916", "qcom,scm";
 			clocks = <&gcc GCC_CRYPTO_CLK>,
 				 <&gcc GCC_CRYPTO_AXI_CLK>,
 				 <&gcc GCC_CRYPTO_AHB_CLK>;
