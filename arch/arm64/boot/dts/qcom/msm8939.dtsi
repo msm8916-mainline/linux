@@ -1498,7 +1498,7 @@
 
 		gpu_iommu: iommu@1f08000 {
 			compatible = "qcom,msm8916-iommu", "qcom,msm-iommu-v1";
-			ranges = <0 0x1f08000 0x10000>;
+			ranges = <0 0x01f08000 0x10000>;
 			clocks = <&gcc GCC_SMMU_CFG_CLK>,
 				 <&gcc GCC_GFX_TCU_CLK>,
 				 <&gcc GCC_GFX_TBU_CLK>;
