@@ -23,6 +23,8 @@
 		mmc1 = &sdhc_2; /* SDC2 SD card slot */
 	};
 
+	chosen { };
+
 	clocks {
 		xo_board: xo-board {
 			compatible = "fixed-clock";
