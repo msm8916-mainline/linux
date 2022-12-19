@@ -13,8 +13,6 @@
 #include <dt-bindings/thermal/thermal.h>
 
 / {
-	qcom,msm-id = <239 0>, <239 0x30000>, <241 0x30000>, <263 0x30000>;
-
 	interrupt-parent = <&intc>;
 
 	#address-cells = <2>;
