@@ -1605,8 +1605,7 @@
 
 		sound: sound@7702000 {
 			compatible = "qcom,apq8016-sbc-sndcard";
-			reg = <0x07702000 0x4>,
-			      <0x07702004 0x4>;
+			reg = <0x07702000 0x4>, <0x07702004 0x4>;
 			reg-names = "mic-iomux", "spkr-iomux";
 			status = "disabled";
 		};
