@@ -53,8 +53,8 @@
 };
 
 &pm8916_resin {
-	status = "okay";
 	linux,code = <KEY_VOLUMEDOWN>;
+	status = "okay";
 };
 
 /* FIXME: Replace with SM5703 MUIC when driver is available */
@@ -67,27 +67,27 @@
 };
 
 &sdhc_1 {
-	status = "okay";
-
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
 	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
+
+	status = "okay";
 };
 
 &sdhc_2 {
-	status = "okay";
-
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
 	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
 
 	cd-gpios = <&msmgpio 38 GPIO_ACTIVE_LOW>;
+
+	status = "okay";
 };
 
 &usb {
-	status = "okay";
 	dr_mode = "peripheral";
 	extcon = <&pm8916_usbin>;
+	status = "okay";
 };
 
 &usb_hs_phy {

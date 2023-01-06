@@ -219,8 +219,8 @@
 };
 
 &pm8916_resin {
-	status = "okay";
 	linux,code = <KEY_VOLUMEDOWN>;
+	status = "okay";
 };
 
 &pm8916_vib {
@@ -232,16 +232,14 @@
 };
 
 &sdhc_1 {
-	status = "okay";
-
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
 	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
+
+	status = "okay";
 };
 
 &sdhc_2 {
-	status = "okay";
-
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdhc2_cd_default>;
 	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdhc2_cd_default>;
@@ -260,11 +258,11 @@
 	 * SD card slot and forgot to re-route to gpio38.
 	 */
 	cd-gpios = <&msmgpio 56 GPIO_ACTIVE_LOW>;
+
+	status = "okay";
 };
 
 &sound {
-	status = "okay";
-
 	model = "msm8916";
 	audio-routing =
 		"AMIC1", "MIC BIAS External1",
@@ -274,6 +272,8 @@
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&cdc_pdm_lines_act>;
 	pinctrl-1 = <&cdc_pdm_lines_sus>;
+
+	status = "okay";
 
 	primary-dai-link {
 		link-name = "WCD";
@@ -297,8 +297,8 @@
 };
 
 &usb {
-	status = "okay";
 	extcon = <&usb_id>, <&usb_id>;
+	status = "okay";
 };
 
 &usb_hs_phy {
