@@ -9,6 +9,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/mfd/arizona.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
 
@@ -73,6 +74,26 @@
 		};
 	};
 
+/*	regulator-spk {
+		compatible = "regulator-fixed";
+		regulator-name = "spk_vreg";
+		startup-delay-us = <0>;
+		enable-active-high;
+		regulator-boot-on;
+		regulator-always-on;
+		gpio = <&tlmm 101 GPIO_ACTIVE_HIGH>;
+	};*/
+
+	regulator-wm8998-ldo {
+		compatible = "regulator-fixed";
+		regulator-name = "wm8998_ldo";
+
+		enable-active-high;
+		regulator-boot-on;
+		regulator-always-on;
+		gpio = <&tlmm 114 GPIO_ACTIVE_HIGH>;
+	};
+
 	reg_ts_vdd: regulator-vdd-ts {
 		compatible = "regulator-fixed";
 		regulator-name = "regulator-vdd-ts";
@@ -120,6 +141,77 @@
 		pinctrl-names = "default";
 	};
 
+};
+
+&blsp_i2c1 {
+	status = "okay";
+
+	speaker_codec: audio-codec@1a {
+		compatible = "wlf,wm8998";
+		reg = <0x1a>;
+
+		reset-gpios = <&tlmm 120 GPIO_ACTIVE_HIGH>;
+		wlf,ldoena-gpios = <&tlmm 28 GPIO_ACTIVE_HIGH>;
+
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&wlf_int_active &speaker_codec_default &speaker_codec_reset_default>;
+		pinctrl-1 = <&wlf_int_suspend &speaker_codec_sleep &speaker_codec_reset_sleep>;
+
+        // TODO add pinctl for 114?
+        // TODO add pinctl for 101?
+
+		gpio-controller;
+		#gpio-cells = <2>;
+
+		sound-name-prefix = "Speaker";
+		#sound-dai-cells = <1>;
+
+		AVDD-supply = <&pm8916_l6>;
+		DBVDD1-supply = <&pm8916_l6>;
+		DBVDD2-supply = <&pm8916_l6>;
+		DBVDD3-supply = <&pm8916_l6>;
+		CPVDD-supply = <&pm8916_l6>;
+		SPKVDDL-supply = <&pm8916_l6>;
+		SPKVDDR-supply = <&pm8916_l6>;
+
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <69 IRQ_TYPE_LEVEL_LOW>;
+
+		clocks = <&rpmcc RPM_SMD_BB_CLK2>;
+		clock-names = "mclk2";
+
+		wlf,gpio-defaults = <
+			ARIZONA_GP_DEFAULT
+			ARIZONA_GP_DEFAULT
+			ARIZONA_GP_DEFAULT
+			ARIZONA_GP_DEFAULT
+			ARIZONA_GP_DEFAULT
+		>;
+
+		wlf,inmode = <0 0 0>;
+		wlf,micd-detect-debounce = <500>;
+		wlf,micd-rate = <ARIZONA_MICD_TIME_8MS>;
+		wlf,micd-configs = <0 ARIZONA_DMIC_MICBIAS2 1>;
+		wlf,micd-bias-start-time = <ARIZONA_MICD_TIME_16MS>;
+
+		// TODO:
+//		wlf,infinite_micd = <0x01>;
+//		wlf,micbias1 = <0xaf0 0x01 0x00 0x01 0x00>;
+//		wlf,micbias2 = <0xaf0 0x01 0x00 0x01 0x00>;
+//		wlf,micbias3 = <0xaf0 0x01 0x00 0x01 0x00>;
+//		wlf,ldo-enable = <0x77 28 0x00>;
+//		wlf,ena-ldo = <0x77 114 0x00>;
+//		wlf,clk-gpio = <0x77 116 0x00>;
+//		wlf,ldospk = <0x77 0x00 0x00>;	// gpio101? downstream spk_vreg
+//		wlf,init-mic-delay = <0x1f4>;
+
+		micvdd {
+			regulator-min-microvolt = <3000000>;
+			regulator-max-microvolt = <3000000>;
+		};
+	};
 };
 
 &blsp_i2c2 {
@@ -399,7 +491,40 @@
 };
 
 &sound {
-	status = "disabled"; /* TODO */
+	pinctrl-names = "default", "sleep";
+/*	pinctrl-0 = <&ext_mclk_tlmm_lines_act &ext_sec_tlmm_lines_act>;*/
+/*	pinctrl-1 = <&ext_mclk_tlmm_lines_sus &ext_sec_tlmm_lines_sus>;*/
+	pinctrl-0 = <&pri_mi2s_mclk_default &sec_mi2s_default>;
+	pinctrl-1 = <&pri_mi2s_mclk_sleep &sec_mi2s_sleep>;
+
+	model = "bq-piccolo";
+	widgets =
+		"Speaker", "Speaker",
+		"Headphone", "Headphones";
+	pin-switches = "Speaker";
+	audio-routing =
+		"Speaker IN1AL", "Speaker MICBIAS1",
+		"Speaker IN1AR", "Speaker MICBIAS1",
+		"Speaker IN2A", "Speaker MICBIAS2";
+
+	status = "okay";
+
+	/delete-node/ backend1-dai-link;
+};
+
+&sound_link_backend0 {
+	/* Primary MI2S is not used, replace with Quaternary MI2S */
+	link-name = "Quaternary MI2S";
+
+	cpu {
+		sound-dai = <&q6afedai QUATERNARY_MI2S_RX>;
+	};
+	platform {
+		sound-dai = <&q6routing>;
+	};
+	codec {
+		sound-dai = <&speaker_codec 0>;
+	};
 };
 
 &usb {
@@ -422,6 +547,17 @@
 
 &wcnss_mem {
 	status = "okay";
+};
+
+&lpass {
+	status = "okay";
+};
+
+&pm8916_codec {
+	qcom,micbias-lvl = <2800>;
+	qcom,mbhc-vthreshold-low = <25 50 75 112 137>;
+	qcom,mbhc-vthreshold-high = <25 50 75 112 137>;
+	//qcom,hphl-jack-type-normally-open;
 };
 
 &tlmm {
@@ -535,5 +671,78 @@
 		function = "gpio";
 		drive-strength = <2>;
 		output-high;
+	};
+
+	speaker_codec_reset_default: speaker-codec-reset-default-state {
+		pins = "gpio120";
+		function = "ldo_update";
+
+		drive-strength = <6>;
+		bias-pull-up;
+	};
+
+	speaker_codec_reset_sleep: speaker-codec-reset-sleep-state {
+		pins = "gpio120";
+		function = "ldo_update";
+
+		drive-strength = <2>;
+		bias-pull-down;
+	};
+
+	speaker_codec_default: speaker-codec-default-state {    // ldo_enable
+		pins = "gpio28";
+		function = "gpio";
+		drive-strength = <6>;
+		bias-pull-up;
+	};
+
+	speaker_codec_sleep: speaker-codec-sleep-state {    // ldo_enable
+		pins = "gpio28";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
+	};
+/*
+	speaker_enaldo_default: speaker-ena-ldo-default-state {    // ena_ldo
+		pins = "gpio114";
+		function = "gpio";
+		drive-strength = <6>;
+		bias-pull-up;
+	};
+
+	speaker_enaldo_sleep: speaker-ena-ldo-sleep-state {    // ena_ldo
+		pins = "gpio114";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
+	};*/
+
+/*	wlf_ldospk_pin {
+		pins = "gpio101";
+		label = "wlf_speaker_ldo";
+
+		wlf_ldospk_active {
+			drive-strength = <6>;
+			bias-pull-up;
+		};
+
+		wlf_ldospk_suspend {
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};*/
+
+	wlf_int_pin {
+		/* wolfson codec */
+		wlf_int_active: wlf-int-active {
+			pins = "gpio69";
+			drive-strength = <6>;
+			bias-pull-up;
+		};
+		wlf_int_suspend: wlf-int-suspend {
+			pins = "gpio69";
+			drive-strength = <2>;
+			bias-pull-down;
+		};
 	};
 };
