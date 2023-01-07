@@ -182,6 +182,8 @@ properties:
               - samsung,j5
               - samsung,serranove
               - wingtech,wt88047
+              - zhihe,uf896
+              - zhihe,ufi001c
           - const: qcom,msm8916
 
       - items:
