@@ -30,6 +30,12 @@
 	};
 };
 
+&battery {
+	charge-term-current-microamp = <200000>;
+	constant-charge-current-max-microamp = <1000000>;
+	constant-charge-voltage-max-microvolt = <4350000>;
+};
+
 /* On fortunaltezt backlight is controlled with MIPI DCS commands */
 &clk_pwm {
 	status = "disabled";
