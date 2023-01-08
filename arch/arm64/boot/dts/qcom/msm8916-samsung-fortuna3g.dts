@@ -18,6 +18,12 @@
 	};
 };
 
+&battery {
+	charge-term-current-microamp = <200000>;
+	constant-charge-current-max-microamp = <1000000>;
+	constant-charge-voltage-max-microvolt = <4350000>;
+};
+
 &mpss_mem {
 	reg = <0x0 0x86800000 0x0 0x5000000>;
 };
