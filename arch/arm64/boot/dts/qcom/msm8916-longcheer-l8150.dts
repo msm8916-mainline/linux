@@ -370,7 +370,6 @@
 	accel_int_default: accel-int-default-state {
 		pins = "gpio116";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -378,7 +377,6 @@
 	camera_flash_default: camera-flash-default-state {
 		pins = "gpio31", "gpio32";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -386,7 +384,6 @@
 	ctp_pwr_en_default: ctp-pwr-en-default-state {
 		pins = "gpio17";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -394,7 +391,6 @@
 	gpio_keys_default: gpio-keys-default-state {
 		pins = "gpio107";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-pull-up;
 	};
@@ -402,7 +398,6 @@
 	gyro_int_default: gyro-int-default-state {
 		pins = "gpio22", "gpio23";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -410,7 +405,6 @@
 	light_int_default: light-int-default-state {
 		pins = "gpio115";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -418,7 +412,6 @@
 	magn_int_default: magn-int-default-state {
 		pins = "gpio113";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -426,7 +419,6 @@
 	tp_int_default: tp-int-default-state {
 		pins = "gpio13";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};

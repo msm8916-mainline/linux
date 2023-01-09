@@ -298,7 +298,6 @@
 	accel_int_default: accel-int-default-state {
 		pins = "gpio31";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -306,7 +305,6 @@
 	gpio_keys_default: gpio-keys-default-state {
 		pins = "gpio107";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-pull-up;
 	};
@@ -314,7 +312,6 @@
 	gpio_leds_default: gpio-leds-default-state {
 		pins = "gpio32";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -322,7 +319,6 @@
 	gyro_int_default: gyro-int-default-state {
 		pins = "gpio97", "gpio98";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -336,7 +332,6 @@
 	led_enable_default: led-enable-default-state {
 		pins = "gpio102";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 		output-high;
@@ -345,7 +340,6 @@
 	led_shutdown_default: led-shutdown-default-state {
 		pins = "gpio89";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -353,7 +347,6 @@
 	mag_reset_default: mag-reset-default-state {
 		pins = "gpio8";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -361,7 +354,6 @@
 	proximity_int_default: proximity-int-default-state {
 		pins = "gpio12";
 		function = "gpio";
-
 		drive-strength = <6>;
 		bias-pull-up;
 	};
@@ -369,7 +361,6 @@
 	ts_int_reset_default: ts-int-reset-default-state {
 		pins = "gpio13", "gpio100";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -377,7 +368,6 @@
 	usb_id_default: usb-id-default-state {
 		pins = "gpio69";
 		function = "gpio";
-
 		drive-strength = <8>;
 		bias-pull-up;
 	};

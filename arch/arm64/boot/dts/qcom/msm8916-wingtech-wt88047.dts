@@ -291,7 +291,6 @@
 	camera_flash_default: camera-flash-default-state {
 		pins = "gpio31", "gpio32";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -299,7 +298,6 @@
 	gpio_keys_default: gpio-keys-default-state {
 		pins = "gpio107";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-pull-up;
 	};
@@ -307,7 +305,6 @@
 	imu_default: imu-default-state {
 		pins = "gpio115";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -316,14 +313,13 @@
 		touchscreen-pins {
 			pins = "gpio13";
 			function = "gpio";
-
 			drive-strength = <2>;
 			bias-pull-up;
 		};
+
 		reset-pins {
 			pins = "gpio12";
 			function = "gpio";
-
 			drive-strength = <2>;
 			bias-disable;
 		};
@@ -332,7 +328,6 @@
 	usb_id_default: usb-id-default-state {
 		pins = "gpio110";
 		function = "gpio";
-
 		drive-strength = <8>;
 		bias-pull-up;
 	};

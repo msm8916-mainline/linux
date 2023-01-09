@@ -427,7 +427,6 @@
 	fg_alert_default: fg-alert-default-state {
 		pins = "gpio121";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -435,7 +434,6 @@
 	gpio_keys_default: gpio-keys-default-state {
 		pins = "gpio107", "gpio109";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-pull-up;
 	};
@@ -443,7 +441,6 @@
 	gpio_hall_sensor_default: gpio-hall-sensor-default-state {
 		pins = "gpio52";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -451,7 +448,6 @@
 	imu_irq_default: imu-irq-default-state {
 		pins = "gpio115";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -459,7 +455,6 @@
 	muic_i2c_default: muic-i2c-default-state {
 		pins = "gpio105", "gpio106";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -467,7 +462,6 @@
 	muic_irq_default: muic-irq-default-state {
 		pins = "gpio12";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -476,14 +470,13 @@
 		nfc-pins {
 			pins = "gpio20", "gpio49";
 			function = "gpio";
-
 			drive-strength = <2>;
 			bias-disable;
 		};
+
 		irq-pins {
 			pins = "gpio21";
 			function = "gpio";
-
 			drive-strength = <2>;
 			bias-pull-down;
 		};
@@ -492,7 +485,6 @@
 	nfc_i2c_default: nfc-i2c-default-state {
 		pins = "gpio0", "gpio1";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -500,7 +492,6 @@
 	tkey_default: tkey-default-state {
 		pins = "gpio98";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -508,7 +499,6 @@
 	tkey_en_default: tkey-en-default-state {
 		pins = "gpio86";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -516,7 +506,6 @@
 	tkey_i2c_default: tkey-i2c-default-state {
 		pins = "gpio16", "gpio17";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -524,7 +513,6 @@
 	tkey_led_en_default: tkey-led-en-default-state {
 		pins = "gpio60";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -532,7 +520,6 @@
 	tsp_en_default: tsp-en-default-state {
 		pins = "gpio73";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -540,7 +527,6 @@
 	tsp_irq_default: tsp-irq-default-state {
 		pins = "gpio13";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};

@@ -267,7 +267,6 @@
 	gpio_keys_default: gpio-keys-default-state {
 		pins = "gpio107", "gpio117";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-pull-up;
 	};
@@ -275,7 +274,6 @@
 	imu_default: imu-default-state {
 		pins = "gpio36";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -283,7 +281,6 @@
 	mag_reset_default: mag-reset-default-state {
 		pins = "gpio112";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -291,7 +288,6 @@
 	sd_vmmc_en_default: sd-vmmc-en-default-state {
 		pins = "gpio87";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -300,7 +296,6 @@
 		touch-pins {
 			pins = "gpio13";
 			function = "gpio";
-
 			drive-strength = <2>;
 			bias-pull-up;
 		};
@@ -308,7 +303,6 @@
 		reset-pins {
 			pins = "gpio12";
 			function = "gpio";
-
 			drive-strength = <2>;
 			bias-disable;
 		};
@@ -317,7 +311,6 @@
 	usb_id_default: usb-id-default-state {
 		pins = "gpio110";
 		function = "gpio";
-
 		drive-strength = <8>;
 		bias-pull-up;
 	};

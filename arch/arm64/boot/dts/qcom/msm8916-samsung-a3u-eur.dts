@@ -116,7 +116,6 @@
 	panel_vdd3_default: panel-vdd3-default-state {
 		pins = "gpio9";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -124,7 +123,6 @@
 	tkey_en_default: tkey-en-default-state {
 		pins = "gpio86";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -132,7 +130,6 @@
 	tkey_led_en_default: tkey-led-en-default-state {
 		pins = "gpio60";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
 	};

@@ -202,7 +202,6 @@
 	gpio_keys_default: gpio-keys-default-state {
 		pins = "gpio107", "gpio109";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-pull-up;
 	};
