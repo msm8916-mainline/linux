@@ -76,8 +76,8 @@
 	usb_id: usb-id {
 		compatible = "linux,extcon-usb-gpio";
 		id-gpio = <&msmgpio 121 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
 		pinctrl-0 = <&usb_id_default>;
+		pinctrl-names = "default";
 	};
 
 	hdmi-out {
@@ -95,8 +95,8 @@
 		compatible = "gpio-keys";
 		autorepeat;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&msm_key_volp_n_default>;
+		pinctrl-names = "default";
 
 		button {
 			label = "Volume Up";
@@ -106,10 +106,10 @@
 	};
 
 	leds {
-		pinctrl-names = "default";
 		pinctrl-0 = <&msmgpio_leds>,
 			    <&pm8916_gpios_leds>,
 			    <&pm8916_mpps_leds>;
+		pinctrl-names = "default";
 
 		compatible = "gpio-leds";
 
@@ -201,9 +201,9 @@
 		v1p2-supply = <&pm8916_l6>;
 		v3p3-supply = <&pm8916_l17>;
 
-		pinctrl-names = "default","sleep";
 		pinctrl-0 = <&adv7533_int_active &adv7533_switch_active>;
 		pinctrl-1 = <&adv7533_int_suspend &adv7533_switch_suspend>;
+		pinctrl-names = "default","sleep";
 		#sound-dai-cells = <1>;
 
 		status = "okay";
@@ -283,8 +283,8 @@
 
 		enable-gpios = <&msmgpio 34 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&msmgpio 35 GPIO_ACTIVE_LOW>;
-		pinctrl-names = "default";
 		pinctrl-0 = <&camera_rear_default>;
+		pinctrl-names = "default";
 
 		clocks = <&gcc GCC_CAMSS_MCLK0_CLK>;
 		clock-names = "xclk";
@@ -337,17 +337,17 @@
 };
 
 &sdhc_1 {
-	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
 	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
+	pinctrl-names = "default", "sleep";
 
 	status = "okay";
 };
 
 &sdhc_2 {
-	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
 	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
+	pinctrl-names = "default", "sleep";
 
 	cd-gpios = <&msmgpio 38 GPIO_ACTIVE_LOW>;
 
@@ -399,9 +399,9 @@
 &usb {
 	extcon = <&usb_id>, <&usb_id>;
 
-	pinctrl-names = "default", "device";
 	pinctrl-0 = <&usb_sw_sel_pm &usb_hub_reset_pm>;
 	pinctrl-1 = <&usb_sw_sel_pm_device &usb_hub_reset_pm_device>;
+	pinctrl-names = "default", "device";
 
 	status = "okay";
 };
@@ -833,8 +833,8 @@
 		"BT_LED_CTRL",
 		"GPIO-F"; /* LS_EXP_GPIO_F, LSEC pin 28 */
 
-	pinctrl-names = "default";
 	pinctrl-0 = <&ls_exp_gpio_f>;
+	pinctrl-names = "default";
 
 	ls_exp_gpio_f: pm8916-mpp4-state {
 		pins = "mpp4";

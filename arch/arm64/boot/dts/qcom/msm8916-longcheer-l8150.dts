@@ -34,8 +34,8 @@
 	gpio-keys {
 		compatible = "gpio-keys";
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&gpio_keys_default>;
+		pinctrl-names = "default";
 
 		label = "GPIO Buttons";
 
@@ -56,8 +56,8 @@
 		gpio = <&msmgpio 17 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&ctp_pwr_en_default>;
+		pinctrl-names = "default";
 	};
 
 	flash-led-controller {
@@ -65,8 +65,8 @@
 		flash-gpios = <&msmgpio 31 GPIO_ACTIVE_HIGH>;
 		enable-gpios = <&msmgpio 32 GPIO_ACTIVE_HIGH>;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&camera_flash_default>;
+		pinctrl-names = "default";
 
 		flash_led: led {
 			function = LED_FUNCTION_FLASH;
@@ -126,8 +126,8 @@
 		 * interrupts = <116 IRQ_TYPE_EDGE_RISING>;
 		 */
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&accel_int_default>;
+		pinctrl-names = "default";
 
 		vdd-supply = <&pm8916_l17>;
 		vddio-supply = <&pm8916_l6>;
@@ -144,8 +144,8 @@
 		interrupt-parent = <&msmgpio>;
 		interrupts = <113 IRQ_TYPE_EDGE_RISING>;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&magn_int_default>;
+		pinctrl-names = "default";
 
 		vdd-supply = <&pm8916_l17>;
 		vddio-supply = <&pm8916_l6>;
@@ -159,8 +159,8 @@
 		interrupt-parent = <&msmgpio>;
 		interrupts = <115 IRQ_TYPE_EDGE_FALLING>;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&light_int_default>;
+		pinctrl-names = "default";
 
 		vdd-supply = <&pm8916_l17>;
 		vio-supply = <&pm8916_l6>;
@@ -174,8 +174,8 @@
 		interrupts = <23 IRQ_TYPE_EDGE_RISING>,
 			     <22 IRQ_TYPE_EDGE_RISING>;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&gyro_int_default>;
+		pinctrl-names = "default";
 
 		vdd-supply = <&pm8916_l17>;
 		vddio-supply = <&pm8916_l6>;
@@ -197,8 +197,8 @@
 		vdd-supply = <&reg_ctp>;
 		vio-supply = <&pm8916_l6>;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&tp_int_default>;
+		pinctrl-names = "default";
 
 		syna,startup-delay-ms = <10>;
 
@@ -236,17 +236,17 @@
 };
 
 &sdhc_1 {
-	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
 	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
+	pinctrl-names = "default", "sleep";
 
 	status = "okay";
 };
 
 &sdhc_2 {
-	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on>;
 	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off>;
+	pinctrl-names = "default", "sleep";
 
 	non-removable;
 

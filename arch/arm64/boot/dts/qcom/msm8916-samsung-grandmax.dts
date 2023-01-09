@@ -35,8 +35,8 @@
 
 			gpios = <&msmgpio 60 GPIO_ACTIVE_HIGH>;
 
-			pinctrl-names = "default";
 			pinctrl-0 = <&gpio_leds_default>;
+			pinctrl-names = "default";
 		};
 	};
 };

@@ -36,8 +36,8 @@
 	gpio-keys {
 		compatible = "gpio-keys";
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&gpio_keys_default>;
+		pinctrl-names = "default";
 
 		label = "GPIO Buttons";
 
@@ -51,8 +51,8 @@
 	leds {
 		compatible = "gpio-leds";
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&gpio_leds_default>;
+		pinctrl-names = "default";
 
 		led-0 {
 			gpios = <&msmgpio 8 GPIO_ACTIVE_HIGH>;
@@ -79,8 +79,8 @@
 	usb_id: usb-id {
 		compatible = "linux,extcon-usb-gpio";
 		id-gpio = <&msmgpio 117 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
 		pinctrl-0 = <&usb_id_default>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -96,8 +96,8 @@
 
 		reset-gpios = <&msmgpio 36 GPIO_ACTIVE_LOW>;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&mag_reset_default>;
+		pinctrl-names = "default";
 	};
 
 	accelerometer@1e {
@@ -110,8 +110,8 @@
 		vdd-supply = <&pm8916_l17>;
 		vddio-supply = <&pm8916_l6>;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&accel_irq_default>;
+		pinctrl-names = "default";
 
 		mount-matrix = "-1", "0", "0",
 				"0", "1", "0",
@@ -131,16 +131,16 @@
 		led-max-microamp = <100000>;
 		amstaos,proximity-diodes = <1>;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&prox_irq_default>;
+		pinctrl-names = "default";
 	};
 
 	regulator@3e {
 		compatible = "ti,tps65132";
 		reg = <0x3e>;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&reg_lcd_en_default>;
+		pinctrl-names = "default";
 
 		reg_lcd_pos: outp {
 			regulator-name = "outp";
@@ -175,8 +175,8 @@
 		vdd-supply = <&pm8916_l17>;
 		vio-supply = <&pm8916_l16>;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&ts_irq_default>;
+		pinctrl-names = "default";
 
 		syna,startup-delay-ms = <100>;
 
@@ -205,8 +205,8 @@
 		enable-gpios = <&msmgpio 20 GPIO_ACTIVE_HIGH>;
 		firmware-gpios = <&msmgpio 2 GPIO_ACTIVE_HIGH>;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&nfc_default>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -232,17 +232,17 @@
 };
 
 &sdhc_1 {
-	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
 	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
+	pinctrl-names = "default", "sleep";
 
 	status = "okay";
 };
 
 &sdhc_2 {
-	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdhc2_cd_default>;
 	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdhc2_cd_default>;
+	pinctrl-names = "default", "sleep";
 
 	/*
 	 * The Huawei device tree sets cd-gpios = <&msmgpio 38 GPIO_ACTIVE_HIGH>.
@@ -269,9 +269,9 @@
 		"AMIC2", "MIC BIAS External2",
 		"AMIC3", "MIC BIAS External1";
 
-	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&cdc_pdm_lines_act>;
 	pinctrl-1 = <&cdc_pdm_lines_sus>;
+	pinctrl-names = "default", "sleep";
 
 	status = "okay";
 

@@ -18,8 +18,8 @@
 		gpio = <&msmgpio 9 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&panel_vdd3_default>;
+		pinctrl-names = "default";
 	};
 
 	reg_touch_key: regulator-touch-key {
@@ -31,8 +31,8 @@
 		gpio = <&msmgpio 86 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&tkey_en_default>;
+		pinctrl-names = "default";
 	};
 
 	reg_key_led: regulator-key-led {
@@ -44,8 +44,8 @@
 		gpio = <&msmgpio 60 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&tkey_led_en_default>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -76,8 +76,8 @@
 		vcca-supply = <&reg_vdd_tsp_a>;
 		vdd-supply = <&pm8916_l6>;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&ts_int_default>;
+		pinctrl-names = "default";
 	};
 };
 

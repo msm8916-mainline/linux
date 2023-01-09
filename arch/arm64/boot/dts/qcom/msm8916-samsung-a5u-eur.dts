@@ -18,8 +18,8 @@
 		gpio = <&msmgpio 97 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&tkey_en_default>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -45,8 +45,8 @@
 		avdd-supply = <&reg_vdd_tsp_a>;
 		vdd-supply = <&pm8916_l6>;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&ts_int_default>;
+		pinctrl-names = "default";
 	};
 };
 

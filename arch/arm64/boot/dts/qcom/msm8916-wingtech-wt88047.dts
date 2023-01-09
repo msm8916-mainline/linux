@@ -28,8 +28,8 @@
 		enable-gpios = <&msmgpio 31 GPIO_ACTIVE_HIGH>;
 		flash-gpios = <&msmgpio 32 GPIO_ACTIVE_HIGH>;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&camera_flash_default>;
+		pinctrl-names = "default";
 
 		flash_led: led {
 			function = LED_FUNCTION_FLASH;
@@ -40,8 +40,8 @@
 	gpio-keys {
 		compatible = "gpio-keys";
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&gpio_keys_default>;
+		pinctrl-names = "default";
 
 		label = "GPIO Buttons";
 
@@ -55,8 +55,8 @@
 	usb_id: usb-id {
 		compatible = "linux,extcon-usb-gpio";
 		id-gpio = <&msmgpio 110 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
 		pinctrl-0 = <&usb_id_default>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -73,8 +73,8 @@
 		vdd-supply = <&pm8916_l17>;
 		vddio-supply = <&pm8916_l6>;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&imu_default>;
+		pinctrl-names = "default";
 
 		mount-matrix = "1",  "0", "0",
 			       "0", "-1", "0",
@@ -101,8 +101,8 @@
 		touchscreen-size-x = <720>;
 		touchscreen-size-y = <1280>;
 
-		pinctrl-names = "default";
 		pinctrl-0 = <&touchscreen_default>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -158,17 +158,17 @@
 };
 
 &sdhc_1 {
-	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
 	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
+	pinctrl-names = "default", "sleep";
 
 	status = "okay";
 };
 
 &sdhc_2 {
-	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on>;
 	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off>;
+	pinctrl-names = "default", "sleep";
 
 	non-removable;
 
