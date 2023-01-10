@@ -336,7 +336,7 @@
 };
 
 &pm8909_gpios {
-	keypad_backlight_defalt: keypad-backlight-default-state {
+	keypad_backlight_default: keypad-backlight-default-state {
 		pins = "gpio1";
 		function = PMIC_GPIO_FUNC_NORMAL;
 		output-low;
