@@ -24,7 +24,7 @@
 	};
 
 	reserved-memory {
-		mpss_mem: mpss@86800000 {
+                mpss_mem: mpss@86800000 {
 			reg = <0x0 0x86800000 0x0 0x5000000>;
 			no-map;
 		};
