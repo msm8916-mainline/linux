@@ -1,7 +1,7 @@
 ---
 kind: pipeline
 type: docker
-name: aarch64
+name: arm64
 
 platform:
   os: linux
@@ -10,31 +10,35 @@ platform:
 clone:
   depth: 1
 
+environment:
+  ARCH: arm64
+
 steps:
   - name: build (gcc)
     image: alpine:3.17
-    commands: [./.drone.sh gcc-aarch64-none-elf]
-    environment:
-      ARCH: arm64
-      CROSS_COMPILE: aarch64-none-elf-
+    commands:
+      - . .ci-prepare.sh gcc
+      - ./.ci-build.sh
+      - apk add git && git clean -dxfq
 
   - name: build (clang)
     image: alpine:3.17
-    commands: [./.drone.sh clang lld llvm]
-    environment:
-      ARCH: arm64
-      LLVM: 1
+    commands:
+      - . .ci-prepare.sh clang
+      - ./.ci-build.sh
 
   - name: check
     image: alpine:3.17
-    commands: [./.drone.sh]
+    commands:
+      - apk add git perl
+      - ./.ci-check.sh origin/$DRONE_TARGET_BRANCH
     when:
       event: pull_request
 
 ---
 kind: pipeline
 type: docker
-name: armv7
+name: arm
 
 platform:
   os: linux
@@ -43,23 +47,27 @@ platform:
 clone:
   depth: 1
 
+environment:
+  ARCH: arm
+
 steps:
   - name: build (gcc)
     image: alpine:3.17
-    commands: [./.drone.sh gcc-arm-none-eabi]
-    environment:
-      ARCH: arm
-      CROSS_COMPILE: arm-none-eabi-
+    commands:
+      - . .ci-prepare.sh gcc
+      - ./.ci-build.sh
+      - apk add git && git clean -dxfq
 
   - name: build (clang)
     image: alpine:3.17
-    commands: [./.drone.sh clang lld llvm]
-    environment:
-      ARCH: arm
-      LLVM: 1
+    commands:
+      - . .ci-prepare.sh clang
+      - ./.ci-build.sh
 
   - name: check
     image: alpine:3.17
-    commands: [./.drone.sh]
+    commands:
+      - apk add git perl
+      - ./.ci-check.sh origin/$DRONE_TARGET_BRANCH
     when:
       event: pull_request
