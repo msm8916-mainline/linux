@@ -61,8 +61,6 @@
 		pinctrl-0 = <&gpio_keys_default>;
 		pinctrl-names = "default";
 
-		label = "GPIO Buttons";
-
 		button-volume-up {
 			label = "Volume Up";
 			gpios = <&msmgpio 107 GPIO_ACTIVE_LOW>;
