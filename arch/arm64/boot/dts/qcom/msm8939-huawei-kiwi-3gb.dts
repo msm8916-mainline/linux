@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8939-huawei-kiwi-common.dtsi"
+
+/ {
+    model = "Huawei Honor 5X (3GB Version)";
+    compatible = "huawei,kiwi", "qcom,msm8939";
+    chassis-type = "handset";
+    qcom,board-id = <8001 0>, <8001 4>, <8067 0>, <8067 4>,
+                    <8086 0>, <8086 4>, <8115 0>, <8115 4>;
+    memory@c0000000 {
+		device_type = "memory";
+		reg = <0x0 0xc0000000 0x0 0x0>;//set 3GB
+	};
+};

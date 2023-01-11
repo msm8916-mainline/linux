@@ -253,12 +253,6 @@
 		};
 	};
 
-	memory@80000000 {
-		device_type = "memory";
-		/* We expect the bootloader to fill in the reg */
-		reg = <0x0 0x80000000 0x0 0x0>;
-	};
-
 	memshare: memshare {
 		compatible = "qcom,memshare";
 		qcom,legacy-client = <&memshare_gps>;

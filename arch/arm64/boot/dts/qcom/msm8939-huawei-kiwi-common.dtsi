@@ -8,10 +8,6 @@
 #include <dt-bindings/sound/apq8016-lpass.h>
 
 / {
-	model = "Huawei Honor 5X";
-	compatible = "huawei,kiwi", "qcom,msm8939";
-	chassis-type = "handset";
-
 	aliases {
 		serial0 = &blsp1_uart2;
 	};
