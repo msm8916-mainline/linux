@@ -25,13 +25,13 @@
 
 		label = "GPIO Buttons";
 
-		volume-up-button {
+		button-volume-up {
 			label = "Volume Up";
 			gpios = <&msmgpio 107 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_VOLUMEUP>;
 		};
 
-		home-button {
+		button-home {
 			label = "Home";
 			gpios = <&msmgpio 109 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_HOMEPAGE>;
