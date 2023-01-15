@@ -1,0 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+&opp_table {
+	/delete-node/ opp-550000000;
+};
