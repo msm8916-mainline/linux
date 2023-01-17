@@ -21,8 +21,8 @@
 	};
 
 	reserved-memory {
-		/delete-node/ venus@8c300000;
-		/delete-node/ mba@8cb00000;
+		/delete-node/ venus@8e500000;
+		/delete-node/ mba@8ea00000;
 
 		reserved@84a00000 {
 			reg = <0x0 0x84a00000 0x0 0x1600000>;

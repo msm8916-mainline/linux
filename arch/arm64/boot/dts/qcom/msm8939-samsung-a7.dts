@@ -39,18 +39,6 @@
 			reg = <0x0 0x8c000000 0x0 0x200000>;
 			no-map;
 		};
-
-		/delete-node/ wcnss@8bd00000;
-		wcnss_mem: wcnss@8df00000 {
-			reg = <0x0 0x8df00000 0x0 0x600000>;
-			no-map;
-		};
-
-		/delete-node/ venus@8c300000;
-		venus_mem: venus@8c400000 {
-			reg = <0x0 0x8c400000 0x0 0x600000>;
-			no-map;
-		};
 	};
 
 	gpio-hall-sensor {
