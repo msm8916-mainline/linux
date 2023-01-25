@@ -4,6 +4,7 @@
  */
 #include <linux/input.h>
 #include <linux/input/mt.h>
+#include <linux/of.h>
 #include <linux/rmi.h>
 #include "rmi_driver.h"
 #include "rmi_2d_sensor.h"
@@ -39,6 +40,7 @@ struct f12_data {
 	/* F12 Data1 describes sensed objects */
 	const struct rmi_register_desc_item *data1;
 	u16 data1_offset;
+	u8 data1_bytes_per_obj;
 
 	/* F12 Data5 describes finger ACM */
 	const struct rmi_register_desc_item *data5;
@@ -143,12 +145,12 @@ static int rmi_f12_read_sensor_tuning(struct f12_data *f12)
 
 static void rmi_f12_process_objects(struct f12_data *f12, u8 *data1, int size)
 {
-	int i;
+	int i, j;
 	struct rmi_2d_sensor *sensor = &f12->sensor;
 	int objects = f12->data1->num_subpackets;
 
-	if ((f12->data1->num_subpackets * F12_DATA1_BYTES_PER_OBJ) > size)
-		objects = size / F12_DATA1_BYTES_PER_OBJ;
+	if ((f12->data1->num_subpackets * f12->data1_bytes_per_obj) > size)
+		objects = size / f12->data1_bytes_per_obj;
 
 	for (i = 0; i < objects; i++) {
 		struct rmi_2d_sensor_abs_object *obj = &sensor->objs[i];
@@ -175,13 +177,17 @@ static void rmi_f12_process_objects(struct f12_data *f12, u8 *data1, int size)
 
 		obj->x = (data1[2] << 8) | data1[1];
 		obj->y = (data1[4] << 8) | data1[3];
-		obj->z = data1[5];
-		obj->wx = data1[6];
-		obj->wy = data1[7];
+		j = 5;
+		if ((f12->data1_bytes_per_obj & 1) == 0) /* 6 or 8 */
+			obj->z = data1[j++];
+		if (f12->data1_bytes_per_obj > 6) {
+			obj->wx = data1[j++];
+			obj->wy = data1[j++];
+		}
 
 		rmi_2d_sensor_abs_process(sensor, obj, i);
 
-		data1 += F12_DATA1_BYTES_PER_OBJ;
+		data1 += f12->data1_bytes_per_obj;
 	}
 
 	if (sensor->kernel_tracking)
@@ -536,6 +542,18 @@ static int rmi_f12_probe(struct rmi_function *fn)
 	ret = rmi_2d_sensor_configure_input(fn, sensor);
 	if (ret)
 		return ret;
+
+	f12->data1_bytes_per_obj = F12_DATA1_BYTES_PER_OBJ;
+	if (of_property_read_bool(fn->dev.of_node, "syna,no-pressure")) {
+		f12->data1_bytes_per_obj -= 1;
+		__clear_bit(ABS_MT_PRESSURE, sensor->input->absbit);
+	}
+	if (of_property_read_bool(fn->dev.of_node, "syna,no-width")) {
+		f12->data1_bytes_per_obj -= 2;
+		__clear_bit(ABS_MT_TOUCH_MAJOR, sensor->input->absbit);
+		__clear_bit(ABS_MT_TOUCH_MINOR, sensor->input->absbit);
+		__clear_bit(ABS_MT_ORIENTATION, sensor->input->absbit);
+	}
 
 	return 0;
 }
