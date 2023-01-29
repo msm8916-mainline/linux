@@ -1,0 +1,47 @@
+ROHM BD65B60 device tree bindings
+
+BD65B60 is a white LED driver IC that integrates PWM
+step-up DC/DC converter with boost-capability of up to
+maximum 28.5V and current driver with drive capability of up
+to 25mA(Typ.) maximum setting. Precise brightness can be
+controlled at wide ranges through the external PWM pulse
+input.
+
+Ranges below noted as [a, b] are closed ranges between a and b, i.e. a
+and b are included in the range.
+
+Please also see common.txt in the same directory.
+
+
+Required properties
+===================
+
+compatible	: Must be "rohm,bd65b60".
+reg		: The I2C address of the device. Typically 0x64.
+linux,name  : Sysfs name.
+
+Optional properties
+===========================================
+
+linux,default-trigger : Trigger
+rohm,no-reset  : Don't trigger software reset during initalisation.
+rohm,default-on   : Set LED to on state by default.
+rohm,led1-used : LED1 is being used.
+rohm,led2-used : LED2 is being used.
+rohm,init-level   : Default brightness [0, 255].
+rohm,ovp-val   : Over Voltage Protection Detect Voltage (can be: 0x0, 0x8 or 0x10)
+
+Example
+=======
+
+	wled: bd65b60@64 {
+		compatible = "rohm,bd65b60";
+		reg = <0x64>;
+		linux,name = "wled:backlight";
+		linux,default-trigger = "bkl-trigger";
+		rohm,no-reset;
+		rohm,led1-used;
+		pinctrl-names = "default";
+		pinctrl-0 = <&backlight_reset_default>;
+	};
+
