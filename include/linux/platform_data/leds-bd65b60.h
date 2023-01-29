@@ -1,17 +1,13 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
-* Simple driver for ROHM Semiconductor BD65B60GWL Backlight driver chip
-* Copyright (C) 2014 ROHM Semiconductor.com
-* Copyright (C) 2014 MMI
-*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License version 2 as
-* published by the Free Software Foundation.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
+ * Simple driver for ROHM Semiconductor BD65B60GWL Backlight driver chip
+ * Copyright (C) 2014 ROHM Semiconductor.com
+ * Copyright (C) 2014 MMI
+ * Copyright (C) 2023 Bogdan Ionescu <bogdan.ionescu.work@gmail.com>
 */
+
+#ifndef __BD65B60_H__
+#define __BD65B60_H__
 
 enum bd65b60_ovp {
 	BD65B60_25V_OVP = 0x00,
@@ -32,14 +28,15 @@ enum bd65b60_pwm_ctrl {
 };
 
 /*
- *@init_level   : led a init brightness. 4~255
- *@led_sel	: led rail enable/disable
- *@ovp_val	: LED OVP Settings
- *@pwm_period   : pwm period
- *@pwm_ctrl     : pwm enable/disable
+ *@init_level  : led a init brightness. 4~255
+ *@no_reset : disable reset on init enable/disable
+ *@led_sel  : led rail enable/disable
+ *@ovp_val  : LED OVP Settings
+ *@name  : device name
+ *@trigger  : trigger
+ *@default_on  : default state on enable/disable
  */
 struct bd65b60_platform_data {
-	/* led config.  */
 	int init_level;
 	bool no_reset;
 	enum bd65b60_ledsel led_sel;
@@ -48,3 +45,5 @@ struct bd65b60_platform_data {
 	const char *trigger;
 	bool default_on;
 };
+
+#endif

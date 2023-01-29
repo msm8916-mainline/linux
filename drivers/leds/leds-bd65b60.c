@@ -1,16 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
-* Simple driver for ROHM Semiconductor BD65B60GWL Backlight driver chip
-* Copyright (C) 2014 ROHM Semiconductor.com
-* Copyright (C) 2014 MMI
-*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License version 2 as
-* published by the Free Software Foundation.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
+ * Simple driver for ROHM Semiconductor BD65B60GWL Backlight driver chip
+ * Copyright (C) 2014 ROHM Semiconductor.com
+ * Copyright (C) 2014 MMI
+ * Copyright (C) 2023 Bogdan Ionescu <bogdan.ionescu.work@gmail.com>
 */
 
 #include <linux/module.h>
@@ -88,6 +81,7 @@ static int bd65b60_update(struct bd65b60_chip *pchip, unsigned int reg,
 			  unsigned int mask, unsigned int data)
 {
 	int rc;
+
 	rc = regmap_update_bits(pchip->regmap, reg, mask, data);
 	if (rc < 0)
 		dev_err(pchip->dev, "i2c failed to update reg %#x", reg);
@@ -132,8 +126,9 @@ static void bd65b60_brightness_set(struct work_struct *work)
 	if (level != old_level && old_level == 0) {
 		dev_info(pchip->dev, "backlight on");
 		bd65b60_write(pchip, REG_PON, 0x01);
-	} else if (level == 0 && old_level != 0)
+	} else if (level == 0 && old_level != 0) {
 		dev_info(pchip->dev, "backlight off");
+	}
 	old_level = level;
 
 	bd65b60_write(pchip, REG_ILED, level);
@@ -208,7 +203,7 @@ static const struct of_device_id of_bd65b60_leds_match[] = {
 	{
 		.compatible = "rohm,bd65b60",
 	},
-	{},
+	{ /* sentinel */ },
 };
 
 #else
@@ -245,7 +240,7 @@ static int bd65b60_probe(struct i2c_client *client,
 		pdata = devm_kzalloc(&client->dev,
 				     sizeof(struct bd65b60_platform_data),
 				     GFP_KERNEL);
-		if (pdata == NULL)
+		if (!pdata)
 			return -ENOMEM;
 
 		rc = bd65b60_dt_init(client, pdata);
@@ -303,15 +298,8 @@ static void bd65b60_remove(struct i2c_client *client)
 
 static const struct i2c_device_id bd65b60_id[] = { { BD65B60_NAME, 0 }, {} };
 
-static const struct of_device_id bd65b60_match_table[] = {
-	{
-		.compatible = "rohm,bd65b60",
-	},
-	{ /* sentinel */ },
-};
-
 MODULE_DEVICE_TABLE(i2c, bd65b60_id);
-MODULE_DEVICE_TABLE(of, bd65b60_match_table);
+MODULE_DEVICE_TABLE(of, of_bd65b60_leds_match);
 
 static struct i2c_driver bd65b60_i2c_driver = {
 	.driver = {
@@ -327,4 +315,4 @@ static struct i2c_driver bd65b60_i2c_driver = {
 module_i2c_driver(bd65b60_i2c_driver);
 
 MODULE_DESCRIPTION("ROHM Semiconductor Backlight driver for bd65b60");
-MODULE_LICENSE("GPL v2");
+MODULE_LICENSE("GPL");
