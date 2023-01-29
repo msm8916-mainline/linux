@@ -239,8 +239,8 @@
 	status = "okay";
 
 	panel@0 {
-		//compatible = "huawei,kiwi-panel";
-		compatible = "huawei,kiwi-auo-otm1901a";
+		compatible = "huawei,kiwi-panel";
+		//compatible = "huawei,kiwi-auo-otm1901a";
 		reg = <0>;
 
 		vsp-supply = <&reg_lcd_pos>;
