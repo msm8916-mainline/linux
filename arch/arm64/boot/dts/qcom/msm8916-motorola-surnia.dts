@@ -57,6 +57,28 @@
 		pinctrl-1 = <&usb_id_sleep>;
 		pinctrl-names = "default", "sleep";
 	};
+
+	backlight: panel-backlight {
+		compatible = "led-backlight";
+		leds = <&wled>;
+		default-brightness-level = <192>;
+	   };
+};
+
+&blsp_i2c1 {
+	status = "okay";
+
+	wled: bd65b60@64 {
+		compatible = "rohm,bd65b60";
+		reg = <0x64>;
+		linux,name = "wled:backlight";
+		linux,default-trigger = "bkl-trigger";
+		rohm,no-reset;
+		rohm,led1-used;
+		pinctrl-names = "default";
+		pinctrl-0 = <&backlight_reset_default>;
+	};
+
 };
 
 &blsp_i2c2 {
@@ -124,7 +146,7 @@
 	panel@0 {
 		compatible = "motorola,surnia-panel";
 		reg = <0>;
-
+		backlight = <&backlight>;
 		power-supply = <&pm8916_l17>;
 		reset-gpios = <&msmgpio 78 GPIO_ACTIVE_LOW>;
 
@@ -320,6 +342,14 @@
 		bias-pull-up;
 	};
 
+	backlight_reset_default: backlight-reset-default-state {
+		pins = "gpio36";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
+		output-high;
+	};
+
 	gpio_keys_default: gpio-keys-default-state {
 		pins = "gpio107";
 		function = "gpio";
@@ -339,6 +369,13 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-down;
+	};
+
+	ts_reset_default: ts-reset-default-state {
+		pins = "gpio20";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	ts_int_default: ts-int-default-state {
