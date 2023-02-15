@@ -234,6 +234,9 @@
 
 		pinctrl-0 = <&ts_int_reset_default>;
 		pinctrl-names = "default";
+
+		/* Keys listed from right to left */
+		linux,keycodes = <KEY_APPSELECT KEY_HOMEPAGE KEY_BACK>;
 	};
 };
 
