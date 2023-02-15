@@ -4,7 +4,7 @@
 
 #include "msm8916-pm8916.dtsi"
 #include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input.h>                                               
+#include <dt-bindings/input/input.h>
 #include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
 
 / {
@@ -44,7 +44,7 @@
 			debounce-interval = <15>;
 		};
 	};
-	
+
 	usb_id: usb-id {
 		compatible = "linux,extcon-usb-gpio";
 		id-gpios = <&msmgpio 110 GPIO_ACTIVE_HIGH>;
@@ -289,12 +289,12 @@
 		bias-pull-up;
 	};
 
-	gpio_keys_default: gpio-keys-default-state {                                   
-		pins = "gpio107";                                                          
-		function = "gpio";                                                         
-		drive-strength = <2>;                                                      
+	gpio_keys_default: gpio-keys-default-state {
+		pins = "gpio107";
+		function = "gpio";
+		drive-strength = <2>;
 		bias-pull-up;
-    };
+	};
 
 	touchscreen_default: touchscreen-default-state {
 		touchscreen-pins {
