@@ -84,7 +84,6 @@ obj-$(CONFIG_CHARGER_MP2629)	+= mp2629_charger.o
 obj-$(CONFIG_CHARGER_MT6360)	+= mt6360_charger.o
 obj-$(CONFIG_CHARGER_MT6370)	+= mt6370-charger.o
 obj-$(CONFIG_CHARGER_QCOM_SMBB)	+= qcom_smbb.o
-smb135x-y			:= smb135x-driver.o
 smb1360-y			:= smb1360-driver.o
 smb1360-$(CONFIG_SMB1360_DEBUG)	+= smb1360-dump.o
 obj-$(CONFIG_SMB1360)		+= smb1360.o
