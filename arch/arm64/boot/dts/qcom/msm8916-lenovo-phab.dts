@@ -94,6 +94,7 @@
 };
 
 &blsp_i2c4 {
+	status = "okay";
 	charger: charger@57 {
         compatible = "summit,smb358";
         reg = <0x36>;
@@ -102,7 +103,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&smb_int_default>;
         summit,enable-usb-charging;
-        //summit,enable-mains-charging;
+        summit,enable-mains-charging;
     	//monitored-battery = <&battery>;
         usb_vbus: usb-vbus {
             regulator-name = "usb_vbus";
@@ -176,16 +177,16 @@
 	status = "okay";
 };
 
-/* &pm8916_chg {
+/*&pm8916_chg {
         compatible = "summit,smb358";
 		qcom,use-external-charger;
         qcom,bms-controlled-charging;
-        status = "ok";
+        status = "okay";
 };*/
 
 &pm8916_bms {
 	monitored-battery = <&battery>;
-	power-supplies = <&charger>;
+	//power-supplies = <&charger>;
 	status = "okay";
 };
 
