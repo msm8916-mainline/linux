@@ -474,7 +474,7 @@ static int smb1360_read_voltage(struct smb1360 *smb, u8 reg,
 	if (ret)
 		return ret;
 
-	*voltage = div_u64(le16_to_cpu(val) * 5000, S16_MAX);
+	*voltage = div_u64(le16_to_cpu(val) * 5000000ULL, S16_MAX);
 	return 0;
 }
 
