@@ -47,6 +47,7 @@
 			next-level-cache = <&L2_0>;
 			enable-method = "qcom,msm8909-smp";
 			clocks = <&apcs>;
+			operating-points-v2 = <&cpu_opp_table>;
 			#cooling-cells = <2>;
 			cpu-idle-states = <&CPU_SLEEP_0>;
 			qcom,acc = <&cpu0_acc>;
@@ -60,6 +61,7 @@
 			next-level-cache = <&L2_0>;
 			enable-method = "qcom,msm8909-smp";
 			clocks = <&apcs>;
+			operating-points-v2 = <&cpu_opp_table>;
 			#cooling-cells = <2>;
 			cpu-idle-states = <&CPU_SLEEP_0>;
 			qcom,acc = <&cpu1_acc>;
@@ -73,6 +75,7 @@
 			next-level-cache = <&L2_0>;
 			enable-method = "qcom,msm8909-smp";
 			clocks = <&apcs>;
+			operating-points-v2 = <&cpu_opp_table>;
 			#cooling-cells = <2>;
 			cpu-idle-states = <&CPU_SLEEP_0>;
 			qcom,acc = <&cpu2_acc>;
@@ -86,6 +89,7 @@
 			next-level-cache = <&L2_0>;
 			enable-method = "qcom,msm8909-smp";
 			clocks = <&apcs>;
+			operating-points-v2 = <&cpu_opp_table>;
 			#cooling-cells = <2>;
 			cpu-idle-states = <&CPU_SLEEP_0>;
 			qcom,acc = <&cpu3_acc>;
@@ -106,6 +110,31 @@
 				min-residency-us = <1260>;
 				local-timer-stop;
 			};
+		};
+	};
+
+	cpu_opp_table: opp-table-cpu {
+		compatible = "operating-points-v2";
+		opp-shared;
+
+		opp-199999951 {
+			opp-hz = /bits/ 64 <199999951>;
+		};
+
+		opp-399999902 {
+			opp-hz = /bits/ 64 <399999902>;
+		};
+
+		opp-533333202 {
+			opp-hz = /bits/ 64 <533333202>;
+		};
+
+		opp-799999804 {
+			opp-hz = /bits/ 64 <799999804>;
+		};
+
+		opp-998400000 {
+			opp-hz = /bits/ 64 <998400000>;
 		};
 	};
 
