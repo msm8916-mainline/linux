@@ -23,16 +23,12 @@
 		stdout-path = "serial0";
 	};
 
-	reserved-memory {
-		mpss_mem: mpss@86800000 {
-			reg = <0x0 0x86800000 0x0 0x5500000>;
-			no-map;
-		};
-
-		gps_mem: gps@8bd00000 {
-			reg = <0x0 0x8bd00000 0x0 0x200000>;
-			no-map;
-		};
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pm8916_pwm 0 100000>;
+		brightness-levels = <0 255>;
+		num-interpolated-steps = <255>;
+		default-brightness-level = <128>;
 	};
 
 	battery: battery {
@@ -53,14 +49,6 @@
 			<3200000 0>;
 	};
 
-	backlight: backlight {
-		compatible = "pwm-backlight";
-		pwms = <&pm8916_pwm 0 100000>;
-		brightness-levels = <0 255>;
-		num-interpolated-steps = <255>;
-		default-brightness-level = <128>;
-	};
-
 	gpio-keys {
 		compatible = "gpio-keys";
 		pinctrl-0 = <&gpio_keys_default>;
@@ -72,6 +60,18 @@
 			gpios = <&msmgpio 107 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_VOLUMEUP>;
 			debounce-interval = <15>;
+		};
+	};
+
+	reserved-memory {
+		mpss_mem: mpss@86800000 {
+			reg = <0x0 0x86800000 0x0 0x5500000>;
+			no-map;
+		};
+
+		gps_mem: gps@8bd00000 {
+			reg = <0x0 0x8bd00000 0x0 0x200000>;
+			no-map;
 		};
 	};
 
@@ -90,7 +90,6 @@
 		compatible = "ti,tas2552";
 		reg = <0x40>;
 		#sound-dai-cells = <0>;
-
 		enable-gpio = <&msmgpio 98 GPIO_ACTIVE_HIGH>;
 	};
 };
@@ -101,11 +100,11 @@
 	accelerometer: accelerometer@68 {
 		compatible = "invensense,mpu6050";
 		reg = <0x68>;
+		interrupt-parent = <&msmgpio>;
+		interrupts = <115 IRQ_TYPE_EDGE_FALLING>;
 		pinctrl-0 = <&mpu_default>;
 		pinctrl-1 = <&mpu_sleep>;
 		pinctrl-names = "default", "sleep";
-		interrupt-parent = <&msmgpio>;
-		interrupts = <115 IRQ_TYPE_EDGE_FALLING>;
 		vdd-supply = <&pm8916_l17>;
 	};
 };
@@ -123,6 +122,7 @@
 		summit,enable-usb-charging;
 		summit,enable-mains-charging;
 		//monitored-battery = <&battery>;
+
 		usb_vbus: usb-vbus {
 			regulator-name = "usb_vbus";
 			regulator-min-microvolt = <5000000>;
@@ -143,13 +143,13 @@
 		reg = <0x38>;
 		interrupt-parent = <&msmgpio>;
 		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+		pinctrl-0 = <&touchscreen_default>;
+		pinctrl-names = "default";
 		vcc-supply = <&pm8916_l17>;
 		iovcc-supply = <&pm8916_l6>;
 		reset-gpios = <&msmgpio 12 GPIO_ACTIVE_LOW>;
 		touchscreen-size-x = <720>;
 		touchscreen-size-y = <1280>;
-		pinctrl-0 = <&touchscreen_default>;
-		pinctrl-names = "default";
 	};
 };
 
@@ -199,14 +199,20 @@
 };
 
 &pm8916_bms {
-	status = "okay";
 	monitored-battery = <&battery>;
 	//power-supplies = <&charger>;
+	status = "okay";
+};
+
+&pm8916_pwm {
+	pinctrl-0 = <&pwm_out>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pm8916_resin {
-	status = "okay";
 	linux,code = <KEY_VOLUMEDOWN>;
+	status = "okay";
 };
 
 &pm8916_vib {
@@ -221,12 +227,6 @@
 	};
 };
 
-&pm8916_pwm {
-	status = "okay";
-	pinctrl-0 = <&pwm_out>;
-	pinctrl-names = "default";
-};
-
 &q6afedai {
 	dai@22 {
 		reg = <QUATERNARY_MI2S_RX>;
@@ -235,23 +235,25 @@
 };
 
 &sdhc_1 {
-	status = "okay";
 	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
 	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &sdhc_2 {
-	status = "okay";
 	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
 	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
 	pinctrl-names = "default", "sleep";
 	cd-gpios = <&msmgpio 38 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 &sound {
-	status = "okay";
 	model = "msm8916";
+	pinctrl-0 = <&cdc_pdm_lines_act &ext_sec_tlmm_lines_act>;
+	pinctrl-1 = <&cdc_pdm_lines_sus &ext_sec_tlmm_lines_sus>;
+	pinctrl-names = "default", "sleep";
 	qcom,audio-routing =
 		"RX_BIAS", "MCLK",
 		"SPK_RX_BIAS", "MCLK",
@@ -266,10 +268,7 @@
 		"MIC BIAS Internal1", "Digital Mic1",
 		"DMIC2", "MIC BIAS Internal1",
 		"MIC BIAS Internal1", "Digital Mic2";
-
-	pinctrl-0 = <&cdc_pdm_lines_act &ext_sec_tlmm_lines_act>;
-	pinctrl-1 = <&cdc_pdm_lines_sus &ext_sec_tlmm_lines_sus>;
-	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &sound_dai_quaternary {
@@ -281,9 +280,9 @@
 };
 
 &usb {
-	status = "okay";
 	extcon = <&charger>, <&usb_id>;
 	vbus-supply = <&usb_vbus>;
+	status = "okay";
 };
 
 &usb_hs_phy {
@@ -394,7 +393,7 @@
 };
 
 &msmgpio {
-	usb_id_default: usb-id-default {
+	usb_id_default: usb-id-default-state {
 		pins = "gpio110";
 		function = "gpio";
 		drive-strength = <8>;
@@ -432,30 +431,28 @@
 		};
 	};
 
-	mdss {
-		mdss_default: mdss-default {
-			pins = "gpio25";
-			function = "gpio";
-			drive-strength = <8>;
-			bias-disable;
-		};
-
-		mdss_sleep: mdss-sleep {
-			pins = "gpio25";
-			function = "gpio";
-			drive-strength = <2>;
-			bias-pull-down;
-		};
+	mdss_default: mdss-default-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
 	};
 
-	mpu_default: mpu-default {
+	mdss_sleep: mdss-sleep-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
+	};
+
+	mpu_default: mpu-default-state {
 		pins = "gpio115";
 		function = "gpio";
 		drive-strength = <6>;
 		bias-pull-up;
 	};
 
-	mpu_sleep: mpu-sleep {
+	mpu_sleep: mpu-sleep-state {
 		pins = "gpio115";
 		function = "gpio";
 		drive-strength = <2>;
