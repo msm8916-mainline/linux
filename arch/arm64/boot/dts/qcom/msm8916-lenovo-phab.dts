@@ -66,6 +66,7 @@
 		pinctrl-0 = <&gpio_keys_default>;
 		pinctrl-names = "default";
 		label = "GPIO Buttons";
+
 		volume-up {
 			label = "Volume Up";
 			gpios = <&msmgpio 107 GPIO_ACTIVE_LOW>;
@@ -84,6 +85,7 @@
 
 &blsp_i2c1 {
 	status = "okay";
+
 	tas2552: tas2552@40 {
 		compatible = "ti,tas2552";
 		reg = <0x40>;
@@ -95,6 +97,7 @@
 
 &blsp_i2c2 {
 	status = "okay";
+
 	accelerometer: accelerometer@68 {
 		compatible = "invensense,mpu6050";
 		reg = <0x68>;
@@ -109,29 +112,31 @@
 
 &blsp_i2c4 {
 	status = "okay";
+
 	charger: charger@57 {
-        compatible = "summit,smb358";
-        reg = <0x36>;
+		compatible = "summit,smb358";
+		reg = <0x36>;
 		interrupt-parent = <&msmgpio>;
 		interrupts = <62 IRQ_TYPE_LEVEL_LOW>;
 		pinctrl-0 = <&smb_int_default>;
 		pinctrl-names = "default";
-        summit,enable-usb-charging;
-        summit,enable-mains-charging;
-    	//monitored-battery = <&battery>;
-        usb_vbus: usb-vbus {
-            regulator-name = "usb_vbus";
-            regulator-min-microvolt = <5000000>;
-            regulator-max-microvolt = <5000000>;
-            regulator-min-microamp = <750000>;
-            regulator-max-microamp = <750000>;
-            summit,needs-inok-toggle;
-        };
-    };
+		summit,enable-usb-charging;
+		summit,enable-mains-charging;
+		//monitored-battery = <&battery>;
+		usb_vbus: usb-vbus {
+			regulator-name = "usb_vbus";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			regulator-min-microamp = <750000>;
+			regulator-max-microamp = <750000>;
+			summit,needs-inok-toggle;
+		};
+	};
 };
 
 &blsp_i2c5 {
 	status = "okay";
+
 	touchscreen@38 {
 		/* actually FT5336 */
 		compatible = "edt,edt-ft5306";
@@ -156,11 +161,13 @@
 	pinctrl-0 = <&mdss_default>;
 	pinctrl-1 = <&mdss_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	panel@0 {
 		compatible = "lenovo,phab-panel";
 		reg = <0>;
 		backlight = <&backlight>;
 		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+
 		port {
 			panel_in: endpoint {
 				remote-endpoint = <&dsi0_out>;
@@ -191,22 +198,15 @@
 	status = "okay";
 };
 
-/*&pm8916_chg {
-        compatible = "summit,smb358";
-		qcom,use-external-charger;
-        qcom,bms-controlled-charging;
-        status = "okay";
-};*/
-
 &pm8916_bms {
+	status = "okay";
 	monitored-battery = <&battery>;
 	//power-supplies = <&charger>;
-	status = "okay";
 };
 
 &pm8916_resin {
-	linux,code = <KEY_VOLUMEDOWN>;
 	status = "okay";
+	linux,code = <KEY_VOLUMEDOWN>;
 };
 
 &pm8916_vib {
@@ -215,25 +215,16 @@
 
 &pronto {
 	status = "okay";
+
 	iris {
 		compatible = "qcom,wcn3660b";
 	};
 };
 
-&pm8916_mpps {
-	pwm_out: mpp4 {
-		pins = "mpp4";
-		function = "digital";
-		output-low;
-		qcom,dtest = <1>;
-		power-source = <PM8916_MPP_VPH>;
-	};
-};
-
 &pm8916_pwm {
+	status = "okay";
 	pinctrl-0 = <&pwm_out>;
 	pinctrl-names = "default";
-	status = "okay";
 };
 
 &q6afedai {
@@ -244,22 +235,23 @@
 };
 
 &sdhc_1 {
+	status = "okay";
 	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
 	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
 	pinctrl-names = "default", "sleep";
-	status = "okay";
 };
 
 &sdhc_2 {
+	status = "okay";
 	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
 	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
 	pinctrl-names = "default", "sleep";
 	cd-gpios = <&msmgpio 38 GPIO_ACTIVE_LOW>;
-	status = "okay";
 };
 
 &sound {
-	model = "lenovo-phab";
+	status = "okay";
+	model = "msm8916";
 	qcom,audio-routing =
 		"RX_BIAS", "MCLK",
 		"SPK_RX_BIAS", "MCLK",
@@ -278,20 +270,20 @@
 	pinctrl-0 = <&cdc_pdm_lines_act &ext_sec_tlmm_lines_act>;
 	pinctrl-1 = <&cdc_pdm_lines_sus &ext_sec_tlmm_lines_sus>;
 	pinctrl-names = "default", "sleep";
-	status = "okay";
 };
 
 &sound_dai_quaternary {
 	status = "okay";
+
 	codec {
 		sound-dai = <&tas2552>;
 	};
 };
 
 &usb {
+	status = "okay";
 	extcon = <&charger>, <&usb_id>;
 	vbus-supply = <&usb_vbus>;
-	status = "okay";
 };
 
 &usb_hs_phy {
@@ -425,18 +417,18 @@
 	};
 
 	touchscreen_default: touchscreen-default-state {
-		touchscreen-pins {
-			pins = "gpio13";
-			function = "gpio";
-			drive-strength = <2>;
-			bias-pull-up;
-		};
-
 		reset-pins {
 			pins = "gpio12";
 			function = "gpio";
 			drive-strength = <2>;
 			bias-disable;
+		};
+
+		touchscreen-pins {
+			pins = "gpio13";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
 		};
 	};
 
@@ -467,5 +459,15 @@
 		pins = "gpio115";
 		function = "gpio";
 		drive-strength = <2>;
+	};
+};
+
+&pm8916_mpps {
+	pwm_out: mpp4-state {
+		pins = "mpp4";
+		function = "digital";
+		output-low;
+		qcom,dtest = <1>;
+		power-source = <PM8916_MPP_VPH>;
 	};
 };
