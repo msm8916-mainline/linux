@@ -1,0 +1,465 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-pm8916.dtsi"
+#include "msm8916-modem.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
+#include <dt-bindings/sound/apq8016-lpass.h>
+
+/ {
+	model = "Lenovo PHAB";
+	compatible = "lenovo,phab", "qcom,msm8916";
+	chassis-type = "tablet";
+
+	aliases {
+		serial0 = &blsp1_uart2;
+	};
+
+	chosen {
+		stdout-path = "serial0";
+	};
+
+	reserved-memory {
+		mpss_mem: mpss@86800000 {
+			reg = <0x0 0x86800000 0x0 0x5500000>;
+			no-map;
+		};
+
+		gps_mem: gps@8bd00000 {
+			reg = <0x0 0x8bd00000 0x0 0x200000>;
+			no-map;
+		};
+	};
+
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pm8916_pwm 0 100000>;
+		brightness-levels = <0 255>;
+		num-interpolated-steps = <255>;
+		default-brightness-level = <128>;
+	};
+
+	battery: battery {
+		compatible = "simple-battery";
+		voltage-min-design-microvolt = <3200000>;
+		voltage-max-design-microvolt = <4350000>;
+		ocv-capacity-celsius = <25>;
+		ocv-capacity-table-0 = <4336000 100>, <4267000 95>,
+			<4210000 90>, <4155000 85>, <4104000 80>, <4059000 75>,
+			<3996000 70>, <3960000 65>, <3924000 60>, <3838000 55>,
+			<3797000 50>, <3783000 45>, <3772000 40>, <3760000 35>,
+			<3742000 30>, <3721000 25>, <3700000 20>, <3686000 16>,
+			<3684000 13>, <3681000 11>, <3677000 10>, <3672000 9>,
+			<3662000 8>, <3653000 7>, <3644000 6>, <3610000 5>,
+			<3556000 4>, <3486000 3>, <3392000 2>, <3296000 1>,
+			<3200000 0>;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&gpio_keys_default>;
+		pinctrl-names = "default";
+		label = "GPIO Buttons";
+
+		button-volume-up {
+			label = "Volume Up";
+			gpios = <&msmgpio 107 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEUP>;
+			debounce-interval = <15>;
+		};
+	};
+
+	usb_id: usb-id {
+		compatible = "linux,extcon-usb-gpio";
+		id-gpios = <&msmgpio 110 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&usb_id_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&blsp_i2c1 {
+	status = "okay";
+
+	tas2552: tas2552@40 {
+		compatible = "ti,tas2552";
+		reg = <0x40>;
+		#sound-dai-cells = <0>;
+		enable-gpio = <&msmgpio 98 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&blsp_i2c2 {
+	status = "okay";
+
+	accelerometer: accelerometer@68 {
+		compatible = "invensense,mpu6050";
+		reg = <0x68>;
+		interrupt-parent = <&msmgpio>;
+		interrupts = <115 IRQ_TYPE_EDGE_FALLING>;
+		pinctrl-0 = <&mpu_default>;
+		pinctrl-1 = <&mpu_sleep>;
+		pinctrl-names = "default", "sleep";
+		vdd-supply = <&pm8916_l17>;
+	};
+};
+
+&blsp_i2c4 {
+	status = "okay";
+
+	charger: charger@57 {
+		compatible = "summit,smb358";
+		reg = <0x36>;
+		interrupt-parent = <&msmgpio>;
+		interrupts = <62 IRQ_TYPE_LEVEL_LOW>;
+		pinctrl-0 = <&smb_int_default>;
+		pinctrl-names = "default";
+		summit,enable-usb-charging;
+		summit,enable-mains-charging;
+
+		usb_vbus: usb-vbus {
+			regulator-name = "usb_vbus";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			regulator-min-microamp = <750000>;
+			regulator-max-microamp = <750000>;
+			summit,needs-inok-toggle;
+		};
+	};
+};
+
+&blsp_i2c5 {
+	status = "okay";
+
+	touchscreen@38 {
+		/* actually FT5336 */
+		compatible = "edt,edt-ft5306";
+		reg = <0x38>;
+		interrupt-parent = <&msmgpio>;
+		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+		pinctrl-0 = <&touchscreen_default>;
+		pinctrl-names = "default";
+		vcc-supply = <&pm8916_l17>;
+		iovcc-supply = <&pm8916_l6>;
+		reset-gpios = <&msmgpio 12 GPIO_ACTIVE_LOW>;
+		touchscreen-size-x = <720>;
+		touchscreen-size-y = <1280>;
+	};
+};
+
+&blsp1_uart2 {
+	status = "okay";
+};
+
+&dsi0 {
+	pinctrl-0 = <&mdss_default>;
+	pinctrl-1 = <&mdss_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	panel@0 {
+		compatible = "lenovo,phab-jdi_1080p";
+		reg = <0>;
+		backlight = <&backlight>;
+		reset-gpios = <&msmgpio 25 GPIO_ACTIVE_LOW>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_out {
+	data-lanes = <0 1 2 3>;
+	qcom,platform-enable-gpio = <&msmgpio 109 GPIO_ACTIVE_HIGH>;
+	remote-endpoint = <&panel_in>;
+};
+
+&dsi_phy0 {
+	qcom,dsi-phy-regulator-ldo-mode;
+};
+
+&lpass {
+	dai@3 {
+		reg = <MI2S_QUATERNARY>;
+		qcom,playback-sd-lines = <1>;
+	};
+};
+
+&mdss {
+	status = "okay";
+};
+
+&pm8916_bms {
+	monitored-battery = <&battery>;
+	//power-supplies = <&charger>;
+	status = "okay";
+};
+
+&pm8916_pwm {
+	pinctrl-0 = <&pwm_out>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pm8916_resin {
+	linux,code = <KEY_VOLUMEDOWN>;
+	status = "okay";
+};
+
+&pm8916_vib {
+	status = "okay";
+};
+
+&pronto {
+	status = "okay";
+
+	iris {
+		compatible = "qcom,wcn3660b";
+	};
+};
+
+&q6afedai {
+	dai@22 {
+		reg = <QUATERNARY_MI2S_RX>;
+		qcom,sd-lines = <1>;
+	};
+};
+
+&sdhc_1 {
+	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
+	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+};
+
+&sdhc_2 {
+	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
+	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
+	pinctrl-names = "default", "sleep";
+	cd-gpios = <&msmgpio 38 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&sound {
+	pinctrl-0 = <&cdc_pdm_lines_act &ext_sec_tlmm_lines_act>;
+	pinctrl-1 = <&cdc_pdm_lines_sus &ext_sec_tlmm_lines_sus>;
+	pinctrl-names = "default", "sleep";
+	qcom,audio-routing =
+		"RX_BIAS", "MCLK",
+		"SPK_RX_BIAS", "MCLK",
+		"INT_LDO_H", "MCLK",
+		"MIC BIAS External", "Handset Mic",
+		"MIC BIAS Internal2", "Headset Mic",
+		"MIC BIAS External", "Secondary Mic",
+		"AMIC1", "MIC BIAS External",
+		"AMIC2", "MIC BIAS Internal2",
+		"AMIC3", "MIC BIAS External",
+		"DMIC1", "MIC BIAS Internal1",
+		"MIC BIAS Internal1", "Digital Mic1",
+		"DMIC2", "MIC BIAS Internal1",
+		"MIC BIAS Internal1", "Digital Mic2";
+	status = "okay";
+};
+
+&sound_dai_quaternary {
+	status = "okay";
+
+	codec {
+		sound-dai = <&tas2552>;
+	};
+};
+
+&usb {
+	extcon = <&charger>, <&usb_id>;
+	vbus-supply = <&usb_vbus>;
+	status = "okay";
+};
+
+&usb_hs_phy {
+	extcon = <&charger>;
+};
+
+&smd_rpm_regulators {
+	vdd_l1_l2_l3-supply = <&pm8916_s3>;
+	vdd_l4_l5_l6-supply = <&pm8916_s4>;
+	vdd_l7-supply = <&pm8916_s4>;
+
+	s3 {
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1300000>;
+	};
+
+	s4 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <2100000>;
+	};
+
+	l1 {
+		regulator-min-microvolt = <1225000>;
+		regulator-max-microvolt = <1225000>;
+	};
+
+	l2 {
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1200000>;
+	};
+
+	l4 {
+		regulator-min-microvolt = <2050000>;
+		regulator-max-microvolt = <2050000>;
+	};
+
+	l5 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	l6 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	l7 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	l8 {
+		regulator-min-microvolt = <2850000>;
+		regulator-max-microvolt = <2900000>;
+	};
+
+	l9 {
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+	};
+
+	l10 {
+		regulator-min-microvolt = <2700000>;
+		regulator-max-microvolt = <2800000>;
+	};
+
+	l11 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <2950000>;
+		regulator-allow-set-load;
+		regulator-system-load = <200000>;
+	};
+
+	l12 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <2950000>;
+	};
+
+	l13 {
+		regulator-min-microvolt = <3075000>;
+		regulator-max-microvolt = <3075000>;
+	};
+
+	l14 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3300000>;
+	};
+
+	l15 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3300000>;
+	};
+
+	l16 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3300000>;
+	};
+
+	l17 {
+		regulator-min-microvolt = <2850000>;
+		regulator-max-microvolt = <2850000>;
+	};
+
+	l18 {
+		regulator-min-microvolt = <2700000>;
+		regulator-max-microvolt = <2700000>;
+	};
+};
+
+&msmgpio {
+	gpio_keys_default: gpio-keys-default-state {
+		pins = "gpio107";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	mdss_default: mdss-default-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	mdss_sleep: mdss-sleep-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
+	};
+
+	mpu_default: mpu-default-state {
+		pins = "gpio115";
+		function = "gpio";
+		drive-strength = <6>;
+		bias-pull-up;
+	};
+
+	mpu_sleep: mpu-sleep-state {
+		pins = "gpio115";
+		function = "gpio";
+		drive-strength = <2>;
+	};
+
+	smb_int_default: smb-int-default-state {
+		pins = "gpio62";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	touchscreen_default: touchscreen-default-state {
+		reset-pins {
+			pins = "gpio12";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-disable;
+		};
+
+		touchscreen-pins {
+			pins = "gpio13";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	usb_id_default: usb-id-default-state {
+		pins = "gpio110";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+};
+
+&pm8916_mpps {
+	pwm_out: mpp4-state {
+		pins = "mpp4";
+		function = "digital";
+		output-low;
+		qcom,dtest = <1>;
+		power-source = <PM8916_MPP_VPH>;
+	};
+};

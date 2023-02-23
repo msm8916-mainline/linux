@@ -7,6 +7,7 @@ obj-$(CONFIG_DRM_PANEL_HUAWEI_BOE_OTM8019A) += panel-huawei-boe-otm8019a.o
 obj-$(CONFIG_DRM_PANEL_HUAWEI_KIWI_CMI_NT35532) += panel-huawei-kiwi-cmi-nt35532.o
 obj-$(CONFIG_DRM_PANEL_HUAWEI_KIWI_TIANMA_NT35596) += panel-huawei-kiwi-tianma-nt35596.o
 obj-$(CONFIG_DRM_PANEL_HUAWEI_TIANMA_NT35521) += panel-huawei-tianma-nt35521.o
+obj-$(CONFIG_DRM_PANEL_LENOVO_PHAB_JDI_1080P) += panel-lenovo-phab-jdi_1080p.o
 obj-$(CONFIG_DRM_PANEL_LONGCHEER_BOOYI_OTM1287) += panel-longcheer-booyi-otm1287.o
 obj-$(CONFIG_DRM_PANEL_LONGCHEER_DIJING_ILI9881C) += panel-longcheer-dijing-ili9881c.o
 obj-$(CONFIG_DRM_PANEL_LONGCHEER_TRULY_NT35695) += panel-longcheer-truly-nt35695.o
