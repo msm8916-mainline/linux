@@ -176,7 +176,6 @@
 &dsi0_out {
 	data-lanes = <0 1 2 3>;
 	qcom,platform-enable-gpio = <&msmgpio 109 GPIO_ACTIVE_HIGH>;
-	qcom,platform-reset-gpio = <&msmgpio 25 GPIO_ACTIVE_HIGH>;
 	remote-endpoint = <&panel_in>;
 };
 
@@ -247,7 +246,6 @@
 };
 
 &sound {
-	model = "msm8916";
 	pinctrl-0 = <&cdc_pdm_lines_act &ext_sec_tlmm_lines_act>;
 	pinctrl-1 = <&cdc_pdm_lines_sus &ext_sec_tlmm_lines_sus>;
 	pinctrl-names = "default", "sleep";
@@ -390,42 +388,11 @@
 };
 
 &msmgpio {
-	usb_id_default: usb-id-default-state {
-		pins = "gpio110";
-		function = "gpio";
-		drive-strength = <8>;
-		bias-pull-up;
-	};
-
 	gpio_keys_default: gpio-keys-default-state {
 		pins = "gpio107";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-up;
-	};
-
-	smb_int_default: smb-int-default-state {
-		pins = "gpio62";
-		function = "gpio";
-
-		drive-strength = <2>;
-		bias-pull-up;
-	};
-
-	touchscreen_default: touchscreen-default-state {
-		reset-pins {
-			pins = "gpio12";
-			function = "gpio";
-			drive-strength = <2>;
-			bias-disable;
-		};
-
-		touchscreen-pins {
-			pins = "gpio13";
-			function = "gpio";
-			drive-strength = <2>;
-			bias-pull-up;
-		};
 	};
 
 	mdss_default: mdss-default-state {
@@ -453,6 +420,37 @@
 		pins = "gpio115";
 		function = "gpio";
 		drive-strength = <2>;
+	};
+
+	smb_int_default: smb-int-default-state {
+		pins = "gpio62";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	touchscreen_default: touchscreen-default-state {
+		reset-pins {
+			pins = "gpio12";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-disable;
+		};
+
+		touchscreen-pins {
+			pins = "gpio13";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	usb_id_default: usb-id-default-state {
+		pins = "gpio110";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
 	};
 };
 
