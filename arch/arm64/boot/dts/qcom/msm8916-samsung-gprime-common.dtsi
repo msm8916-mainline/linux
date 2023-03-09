@@ -330,6 +330,7 @@
 };
 
 &sound {
+	model = "msm8916-1mic";
 	audio-routing =
 		"AMIC1", "MIC BIAS External1",
 		"AMIC2", "MIC BIAS Internal2",
