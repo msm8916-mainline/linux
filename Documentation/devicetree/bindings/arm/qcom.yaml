@@ -206,6 +206,7 @@ properties:
               - samsung,j5
               - samsung,serranove
               - wingtech,wt88047
+              - yiming,uz801-v3
           - const: qcom,msm8916
 
       - items:
