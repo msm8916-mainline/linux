@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/leds/rohm,bd65b60.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: ROHM BD65B60 LED driver
+
+maintainers:
+  - Bogdan Ionescu <bogdan.ionescu.work+kernel@gmail.com>
+
+description: |
+  BD65B60 is a white LED driver IC that integrates PWM
+  step-up DC/DC converter with boost-capability of up to
+  maximum 28.5V and current driver with drive capability of up
+  to 25mA(Typ.) maximum setting. Precise brightness can be
+  controlled at wide ranges through the external PWM pulse
+  input.
+
+properties:
+  compatible:
+    const: rohm,bd65b60
+
+  reg:
+    maxItems: 1
+
+  led-sources:
+    description: Select with outputs are enabled.
+    $ref: /schemas/types.yaml#/definitions/uint32-array
+    minItems: 1
+    maxItems: 2
+    items:
+      minimum: 1
+      maximum: 2
+
+  rohm,ovp-microvolt:
+    description:
+      Select Over-Voltage-Portection level in microvolts.
+      The only valid values are 25000000uV, 30000000uV and 35000000uV.
+    default: 35000000
+
+
+required:
+  - compatible
+  - reg
+  - led-sources
+
+additionalProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/leds/common.h>
+
+    i2c {
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      backlight@64 {
+        compatible = "rohm,bd65b60";
+        reg = <0x64>;
+
+        led-sources = <1>;
+        function = LED_FUNCTION_BACKLIGHT;
+        color = <LED_COLOR_ID_WHITE>;
+
+        rohm,ovp-microvolt = <30000000>;
+      };
+    };
+
+...

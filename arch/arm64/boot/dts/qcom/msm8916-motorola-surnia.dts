@@ -8,6 +8,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Motorola Moto E 2015 LTE (surnia)";
@@ -56,6 +57,31 @@
 		pinctrl-0 = <&usb_id_default>;
 		pinctrl-1 = <&usb_id_sleep>;
 		pinctrl-names = "default", "sleep";
+	};
+
+	backlight: backlight {
+		compatible = "led-backlight";
+		leds = <&backlight_led>;
+		default-brightness-level = <192>;
+	};
+};
+
+&blsp_i2c1 {
+	status = "okay";
+
+	backlight_led: led-controller@64 {
+		compatible = "rohm,bd65b60";
+		reg = <0x64>;
+
+		led-sources = <1>;
+		function = LED_FUNCTION_BACKLIGHT;
+		color = <LED_COLOR_ID_WHITE>;
+
+		default-state = "keep";
+		linux,default-trigger = "backlight";
+
+		pinctrl-0 = <&backlight_reset_default>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -124,7 +150,7 @@
 	panel@0 {
 		compatible = "motorola,surnia-panel";
 		reg = <0>;
-
+		backlight = <&backlight>;
 		power-supply = <&pm8916_l17>;
 		reset-gpios = <&msmgpio 78 GPIO_ACTIVE_LOW>;
 
@@ -318,6 +344,14 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-up;
+	};
+
+	backlight_reset_default: backlight-reset-default-state {
+		pins = "gpio36";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
+		output-high;
 	};
 
 	gpio_keys_default: gpio-keys-default-state {
