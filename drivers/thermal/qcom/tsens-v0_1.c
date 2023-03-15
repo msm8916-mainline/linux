@@ -243,6 +243,23 @@ static int calibrate_8974(struct tsens_priv *priv)
 	return 0;
 }
 
+static int __init init_8909(struct tsens_priv *priv)
+{
+	int i;
+
+	for (i = 0; i < priv->num_sensors; ++i)
+		priv->sensor[i].slope = 3000;
+
+	priv->sensor[1].p1_calib_offset = -10;
+	priv->sensor[1].p2_calib_offset = -6;
+	priv->sensor[3].p1_calib_offset = -9;
+	priv->sensor[3].p2_calib_offset = -9;
+	priv->sensor[4].p1_calib_offset = -8;
+	priv->sensor[4].p2_calib_offset = -10;
+
+	return init_common(priv);
+}
+
 static int __init init_8939(struct tsens_priv *priv) {
 	priv->sensor[0].slope = 2911;
 	priv->sensor[1].slope = 2789;
@@ -279,7 +296,7 @@ static int __init init_9607(struct tsens_priv *priv)
 	return init_common(priv);
 }
 
-/* v0.1: 8916, 8939, 8974, 9607 */
+/* v0.1: 8909, 8916, 8939, 8974, 9607 */
 
 static struct tsens_features tsens_v0_1_feat = {
 	.ver_major	= VER_0_1,
@@ -326,6 +343,19 @@ static const struct reg_field tsens_v0_1_regfields[MAX_REGFIELDS] = {
 
 	/* TRDY: 1=ready, 0=in progress */
 	[TRDY] = REG_FIELD(TM_TRDY_OFF, 0, 0),
+};
+
+static const struct tsens_ops ops_8909 = {
+	.init		= init_8909,
+	.calibrate	= tsens_calibrate_common,
+	.get_temp	= get_temp_common,
+};
+
+struct tsens_plat_data data_8909 = {
+	.num_sensors	= 5,
+	.ops		= &ops_8909,
+	.feat		= &tsens_v0_1_feat,
+	.fields	= tsens_v0_1_regfields,
 };
 
 static const struct tsens_ops ops_8916 = {
