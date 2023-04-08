@@ -19,7 +19,6 @@ struct himax8389c_yashi_550 {
 	struct mipi_dsi_device *dsi;
 	struct regulator *supply;
 	struct gpio_desc *reset_gpio;
-	struct gpio_desc *backlight_gpio;
 	bool prepared;
 };
 
@@ -261,11 +260,8 @@ static const struct drm_panel_funcs himax8389c_yashi_550_panel_funcs = {
 static int himax8389c_yashi_550_bl_update_status(struct backlight_device *bl)
 {
 	struct mipi_dsi_device *dsi = bl_get_data(bl);
-	struct himax8389c_yashi_550 *ctx = mipi_dsi_get_drvdata(dsi);
 	u16 brightness = backlight_get_brightness(bl);
 	int ret;
-
-	gpiod_set_value_cansleep(ctx->backlight_gpio, !!brightness);
 
 	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
 
@@ -335,11 +331,6 @@ static int himax8389c_yashi_550_probe(struct mipi_dsi_device *dsi)
 	if (IS_ERR(ctx->reset_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
 				     "Failed to get reset-gpios\n");
-
-	ctx->backlight_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_LOW);
-	if (IS_ERR(ctx->backlight_gpio))
-		return dev_err_probe(dev, PTR_ERR(ctx->backlight_gpio),
-				     "Failed to get backlight-gpios\n");
 
 	ctx->dsi = dsi;
 	mipi_dsi_set_drvdata(dsi, ctx);
