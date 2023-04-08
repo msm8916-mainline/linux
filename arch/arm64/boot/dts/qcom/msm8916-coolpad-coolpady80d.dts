@@ -3,8 +3,6 @@
 /dts-v1/;
 
 #include "msm8916-pm8916.dtsi"
-#include "msm8916.dtsi"
-#include "pm8916.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 
 / {
