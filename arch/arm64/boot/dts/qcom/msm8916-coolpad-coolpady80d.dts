@@ -125,6 +125,13 @@
 		drive-strength = <2>;
 		bias-pull-down;
 	};
+	
+	gpio_keys_default: gpio-keys-default-state {
+		pins = "gpio107";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
 };
 
 &smd_rpm_regulators {
