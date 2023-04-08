@@ -10,8 +10,6 @@
 #include <linux/of.h>
 #include <linux/regulator/consumer.h>
 
-#include <video/mipi_display.h>
-
 #include <drm/drm_mipi_dsi.h>
 #include <drm/drm_modes.h>
 #include <drm/drm_panel.h>
@@ -21,6 +19,7 @@ struct otm9605a_oufei_550 {
 	struct mipi_dsi_device *dsi;
 	struct regulator *supply;
 	struct gpio_desc *reset_gpio;
+	struct gpio_desc *backlight_gpio;
 	bool prepared;
 };
 
@@ -290,15 +289,9 @@ static int otm9605a_oufei_550_on(struct otm9605a_oufei_550 *ctx)
 			  0x44, 0x44, 0x44, 0x44, 0x44, 0x04);
 	dsi_dcs_write_seq(dsi, 0x00, 0x00);
 	dsi_dcs_write_seq(dsi, 0xff, 0xff, 0xff, 0xff);
-
-	ret = mipi_dsi_dcs_set_display_brightness(dsi, 0x0000);
-	if (ret < 0) {
-		dev_err(dev, "Failed to set display brightness: %d\n", ret);
-		return ret;
-	}
-
-	dsi_dcs_write_seq(dsi, MIPI_DCS_WRITE_CONTROL_DISPLAY, 0x24);
-	dsi_dcs_write_seq(dsi, MIPI_DCS_WRITE_POWER_SAVE, 0x01);
+	dsi_dcs_write_seq(dsi, 0x51, 0x00);
+	dsi_dcs_write_seq(dsi, 0x53, 0x24);
+	dsi_dcs_write_seq(dsi, 0x55, 0x01);
 
 	ret = mipi_dsi_dcs_exit_sleep_mode(dsi);
 	if (ret < 0) {
@@ -433,8 +426,11 @@ static const struct drm_panel_funcs otm9605a_oufei_550_panel_funcs = {
 static int otm9605a_oufei_550_bl_update_status(struct backlight_device *bl)
 {
 	struct mipi_dsi_device *dsi = bl_get_data(bl);
+	struct otm9605a_oufei_550 *ctx = mipi_dsi_get_drvdata(dsi);
 	u16 brightness = backlight_get_brightness(bl);
 	int ret;
+
+	gpiod_set_value_cansleep(ctx->backlight_gpio, !!brightness);
 
 	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
 
@@ -504,6 +500,11 @@ static int otm9605a_oufei_550_probe(struct mipi_dsi_device *dsi)
 	if (IS_ERR(ctx->reset_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
 				     "Failed to get reset-gpios\n");
+
+	ctx->backlight_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_LOW);
+	if (IS_ERR(ctx->backlight_gpio))
+		return dev_err_probe(dev, PTR_ERR(ctx->backlight_gpio),
+				     "Failed to get backlight-gpios\n");
 
 	ctx->dsi = dsi;
 	mipi_dsi_set_drvdata(dsi, ctx);
