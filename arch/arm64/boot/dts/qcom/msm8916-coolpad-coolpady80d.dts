@@ -81,14 +81,9 @@
 	status = "okay";
 };
 
-&usb {
-	extcon = <&pm8916_usbin>;
-	dr_mode = "peripheral";
+&pronto {
 	status = "okay";
-};
-
-&usb_hs_phy {
-	extcon = <&pm8916_usbin>;
+	//this device uses WCN3620
 };
 
 &sdhc_1 {
@@ -107,6 +102,16 @@
 	cd-gpios = <&msmgpio 38 GPIO_ACTIVE_LOW>;
 
 	status = "okay";
+};
+
+&usb {
+	extcon = <&pm8916_usbin>;
+	dr_mode = "peripheral";
+	status = "okay";
+};
+
+&usb_hs_phy {
+	extcon = <&pm8916_usbin>;
 };
 
 &msmgpio {
