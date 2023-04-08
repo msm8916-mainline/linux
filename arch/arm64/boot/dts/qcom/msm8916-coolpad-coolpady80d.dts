@@ -17,15 +17,7 @@
 	chosen {
 		stdout-path = "serial0";
 	};
-	/*
-	usb_id: usb-id {
-		compatible = "linux,extcon-usb-gpio";
-		id-gpios = <&msmgpio 110 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&usb_id_default>;
-	};
-	* THIS SHIT HAS UART ON THE ID PIN
-	*/
+
 	gpio-keys {
 		compatible = "gpio-keys";
 
@@ -53,16 +45,13 @@
 	pinctrl-1 = <&mdss_sleep>;
 	pinctrl-names = "default", "sleep";
 
-	pinctrl-0 = <&mdss_default>;
-	pinctrl-1 = <&mdss_sleep>;
-	pinctrl-names = "default", "sleep";
-
         panel@0 {
-                compatible = "mdss,otm9605a-lide-550";
+                compatible = "coolpad,otm9605a-lide";
                 reg = <0>;
 
                 reset-gpios = <&msmgpio 25 GPIO_ACTIVE_HIGH>;
-
+                backlight-gpio = <&msmgpio 98 GPIO_ACTIVE_HIGH>;
+                
                 port {
                         panel_in: endpoint {
                                 remote-endpoint = <&dsi0_out>;
@@ -118,7 +107,7 @@
 
 	status = "okay";
 };
-/*
+
 &msmgpio {
 	mdss_default: mdss-default-state {
 		pins = "gpio25";
@@ -135,31 +124,8 @@
 		drive-strength = <2>;
 		bias-pull-down;
 	};
-	mdss_default: mdss-default-state {
-		pins = "gpio25";
-		function = "gpio";
-
-		drive-strength = <8>;
-		bias-disable;
-	};
-
-	mdss_sleep: mdss-sleep-state {
-		pins = "gpio25";
-		function = "gpio";
-
-		drive-strength = <2>;
-		bias-pull-down;
-	};
-	usb_id_default: usb-id-default-state {
-		pins = "gpio110";
-		function = "gpio";
-
-		drive-strength = <8>;
-		bias-pull-up;
-	};
 };
-* THIS SHIT HAS UART ON THE ID PIN
-*/
+
 &smd_rpm_regulators {
 	vdd_l1_l2_l3-supply = <&pm8916_s3>;
 	vdd_l4_l5_l6-supply = <&pm8916_s4>;
