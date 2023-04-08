@@ -70,6 +70,9 @@
         qcom,dsi-phy-regulator-ldo-mode;
 };
 
+&gcc {
+	clocks = <&xo_board>, <&sleep_clk>, <0>, <0>, <0>, <0>, <0>;
+};
 //USB-ID pin "present", but occupied by UART.
 //This PM8916 inplementation is used as a workaround
 &pm8916_usbin {
