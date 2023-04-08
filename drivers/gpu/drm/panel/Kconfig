@@ -737,15 +737,5 @@ config DRM_PANEL_XINPENG_XPP055C272
 	  XPP055C272 controller for 720x1280 LCD panels with MIPI/RGB/SPI
 	  system interfaces.
 
-config DRM_PANEL_OTM9605A_LIDE_550
-	tristate "OTM9605A lide variant panel driver"
-	depends on OF
-	depends on DRM_MIPI_DSI
-	depends on BACKLIGHT_CLASS_DEVICE
-	help
-	Say Y here if you want to enable support for the OTM9605A
-	5.5-inch panel, 'lide' variant. This is a DSI video-mode
-	panel.
-
 source "drivers/gpu/drm/panel/msm8916-generated/Kconfig"
 endmenu
