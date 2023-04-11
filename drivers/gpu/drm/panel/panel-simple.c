@@ -6569,6 +6569,37 @@ static const struct panel_desc_dsi tsd_tst070wsbe_196c = {
 	.lanes = 4,
 };
 
+static const struct drm_display_mode tc358764_ltl101a106_mode = {
+	.clock = (1280 + 52 + 4 + 48) * (800 + 32 + 6 + 64) * 60 / 1000,
+	.hdisplay = 1280,
+	.hsync_start = 1280 + 52,
+	.hsync_end = 1280 + 52 + 4,
+	.htotal = 1280 + 52 + 4 + 48,
+	.vdisplay = 800,
+	.vsync_start = 800 + 32,
+	.vsync_end = 800 + 32 + 6,
+	.vtotal = 800 + 32 + 6 + 64,
+	.width_mm = 228,
+	.height_mm = 149,
+};
+
+static const struct panel_desc_dsi tc358764_ltl101a106 = {
+	.desc = {
+		.modes = &tc358764_ltl101a106_mode,
+		.num_modes = 1,
+		.bpc = 8,
+		.size = {
+			.width = 228,
+			.height = 149,
+		},
+		.connector_type = DRM_MODE_CONNECTOR_DSI,
+	},
+	.flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
+		 MIPI_DSI_MODE_NO_EOT_PACKET,
+	.format = MIPI_DSI_FMT_RGB888,
+	.lanes = 4,
+};
+
 static const struct of_device_id dsi_of_match[] = {
 	{
 		.compatible = "auo,b080uan01",
@@ -6597,6 +6628,9 @@ static const struct of_device_id dsi_of_match[] = {
 	}, {
 		.compatible = "team-source-display,tst070wsbe-196c",
 		.data = &tsd_tst070wsbe_196c
+	}, {
+		.compatible = "samsung,tc358764-ltl101al06-simple",
+		.data = &tc358764_ltl101a106
 	}, {
 		/* sentinel */
 	}
