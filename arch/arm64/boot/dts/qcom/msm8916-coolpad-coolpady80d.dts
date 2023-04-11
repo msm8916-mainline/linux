@@ -33,6 +33,30 @@
 			linux,code = <KEY_VOLUMEUP>;
 		};
 	};
+	
+	tps65132@3e {
+		compatible = "ti,tps65132";
+		reg = <0x3e>;
+
+		pinctrl-0 = <&disp_en_default>;
+		pinctrl-names = "default";
+
+		reg_lcd_pos: outp {
+			regulator-name = "outp";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			enable-gpios = <&pm8916_gpios 97 GPIO_ACTIVE_HIGH>;
+			regulator-active-discharge = <1>;
+		};
+
+		reg_lcd_neg: outn {
+			regulator-name = "outn";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			enable-gpios = <&pm8916_gpios 97 GPIO_ACTIVE_HIGH>;
+			regulator-active-discharge = <1>;
+		};
+	};
 };
 
 &blsp1_uart2 {
@@ -51,13 +75,23 @@
                 reg = <0>;
 
                 reset-gpios = <&msmgpio 25 GPIO_ACTIVE_HIGH>;
-                backlight-gpio = <&msmgpio 98 GPIO_ACTIVE_HIGH>;
+                backlight-gpios = <&msmgpio 98 GPIO_ACTIVE_HIGH>;
                 
                 port {
                         panel_in: endpoint {
                                 remote-endpoint = <&dsi0_out>;
                         };
                 };
+                /*
+                fixedregulator@0 {
+					compatible = "regulator-fixed";
+					regulator-name = "fixed-supply";
+					regulator-boot-on;
+					enable-active-high;
+					regulator-min-microvolt= <1800000>;
+					regulator-max-microvolt
+				};
+				*/
         };
 };
 
@@ -242,5 +276,15 @@
 	l18 {
 		regulator-min-microvolt = <2700000>;
 		regulator-max-microvolt = <2700000>;
+	};
+};
+
+//TODO: Verify GPIOs!
+&pm8916_gpios {
+	disp_en_default: disp-en-default-state {
+		pins = "gpio97";
+		function = PMIC_GPIO_FUNC_NORMAL;
+		power-source = <PM8916_GPIO_L2>;
+		bias-disable;
 	};
 };
