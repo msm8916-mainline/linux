@@ -172,7 +172,7 @@
 	lcd_avdd_en_default: lcd-avdd-en-default-state {
 		pins = "gpio97";
 		function = "gpio";
-		drive-strength = <8>;
+		drive-strength = <2>;
 		bias-disable;
 	};
 };
