@@ -39,26 +39,17 @@
 	 * Unfortunately, the schematics were incomplete, and we are not
 	 * able to locate that pin right away.
 	 */
-	 lcd_regulator_pos: regulator {
+	 lcd_regulator: regulator {
 		compatible = "fixed-regulator";
 		regulator-name = "tps65132-pos";
 		regulator-min-microvolt = "5000000";
 		regulator-max-microvolt = "5000000";
+		regulator-boot-on;
 		regulator-always-on;
 		gpio = <&msmgpio 97 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		pinctrl-names = "default";
-		pinctrl-0 = <&lcd_avdd_en_p_default>;
-	};
-	 lcd_regulator_neg: regulator {
-		compatible = "fixed-regulator";
-		regulator-name = "tps65132-neg";
-		regulator-min-microvolt = "5000000";
-		regulator-max-microvolt = "5000000";
-		gpio = <&msmgpio 97 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-		pinctrl-names = "default";
-		pinctrl-0 = <&lcd_avdd_en_n_default>;
+		pinctrl-0 = <&lcd_avdd_en_default>;
 	};
 };
 
@@ -101,8 +92,7 @@
                 compatible = "coolpad,otm9605a-lide";
                 reg = <0>;
 				
-				vsp-supply = <&msmgpio 97 GPIO_ACTIVE_HIGH>;
-				vsn-supply = <&msmgpio 97 GPIO_ACTIVE_HIGH>;
+				power-supply = <&lcd_regulator>;
                 reset-gpios = <&msmgpio 25 GPIO_ACTIVE_HIGH>;
                 backlight-gpios = <&msmgpio 98 GPIO_ACTIVE_HIGH>;
                 
@@ -200,16 +190,10 @@
 		bias-pull-up;
 	};
 	
-	lcd_avdd_en_p_default: lcd-avdd-en-p-default-state {
+	lcd_avdd_en_default: lcd-avdd-en-p-default-state {
 		pins = "gpio97";
 		function = "gpio";
-		drive-strength = <2>;
-		bias-disable;
-	};
-	lcd_avdd_en_n_default: lcd-avdd-en-n-default-state {
-		pins = "gpio97";
-		function = "gpio";
-		drive-strength = <2>;
+		drive-strength = <4>;
 		bias-disable;
 	};
 };
