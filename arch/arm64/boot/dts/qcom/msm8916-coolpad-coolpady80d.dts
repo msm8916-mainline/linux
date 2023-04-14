@@ -27,7 +27,7 @@
 
 		label = "GPIO Buttons";
 
-		volume-up {
+		button-volume-up {
 			label = "Volume Up";
 			gpios = <&msmgpio 107 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_VOLUMEUP>;
@@ -127,8 +127,8 @@
 
 &sdhc_2 {
 	pinctrl-names = "default", "sleep";
-	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on>;  // add &sdc2_cd_on if you use cd-gpios below
-	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off>; // add &sdc2_cd_off if you use cd-gpios below
+	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on>;
+	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off>;
 
 	cd-gpios = <&msmgpio 38 GPIO_ACTIVE_LOW>;
 
