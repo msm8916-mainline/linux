@@ -44,6 +44,7 @@
 		regulator-name = "fixed-supply";
 		regulator-min-microvolt = "5000000";
 		regulator-max-microvolt = "5000000";
+		regulator-always-on;
 		gpio = <&msmgpio 97 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		pinctrl-names = "default";
