@@ -6,6 +6,7 @@ obj-$(CONFIG_DRM_PANEL_ASUS_Z010D_R69339) += panel-asus-z010d-r69339.o
 obj-$(CONFIG_DRM_PANEL_COOLPAD_HIMAX8389C_YASHIOTP) += panel-coolpad-himax8389c-yashiotp.o
 obj-$(CONFIG_DRM_PANEL_COOLPAD_HIMAX8389C_YASHI) += panel-coolpad-himax8389c-yashi.o
 obj-$(CONFIG_DRM_PANEL_COOLPAD_OTM9605A_BOYIOTP) += panel-coolpad-otm9605a-boyiotp.o
+obj-$(CONFIG_DRM_PANEL_COOLPAD_OTM9605A_BOYI) += panel-coolpad-otm9605a-boyi.o
 obj-$(CONFIG_DRM_PANEL_COOLPAD_OTM9605A_DIJING) += panel-coolpad-otm9605a-dijing.o
 obj-$(CONFIG_DRM_PANEL_COOLPAD_OTM9605A_LIDE) += panel-coolpad-otm9605a-lide.o
 obj-$(CONFIG_DRM_PANEL_COOLPAD_OTM9605A_OUFEI) += panel-coolpad-otm9605a-oufei.o

@@ -14,7 +14,7 @@
 #include <drm/drm_modes.h>
 #include <drm/drm_panel.h>
 
-struct otm9605a_dijing_550 {
+struct otm9605a_boyi_550 {
 	struct drm_panel panel;
 	struct mipi_dsi_device *dsi;
 	struct regulator *supply;
@@ -24,9 +24,9 @@ struct otm9605a_dijing_550 {
 };
 
 static inline
-struct otm9605a_dijing_550 *to_otm9605a_dijing_550(struct drm_panel *panel)
+struct otm9605a_boyi_550 *to_otm9605a_boyi_550(struct drm_panel *panel)
 {
-	return container_of(panel, struct otm9605a_dijing_550, panel);
+	return container_of(panel, struct otm9605a_boyi_550, panel);
 }
 
 #define dsi_dcs_write_seq(dsi, seq...) do {				\
@@ -37,7 +37,7 @@ struct otm9605a_dijing_550 *to_otm9605a_dijing_550(struct drm_panel *panel)
 			return ret;					\
 	} while (0)
 
-static void otm9605a_dijing_550_reset(struct otm9605a_dijing_550 *ctx)
+static void otm9605a_boyi_550_reset(struct otm9605a_boyi_550 *ctx)
 {
 	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
 	msleep(20);
@@ -47,7 +47,7 @@ static void otm9605a_dijing_550_reset(struct otm9605a_dijing_550 *ctx)
 	msleep(20);
 }
 
-static int otm9605a_dijing_550_on(struct otm9605a_dijing_550 *ctx)
+static int otm9605a_boyi_550_on(struct otm9605a_boyi_550 *ctx)
 {
 	struct mipi_dsi_device *dsi = ctx->dsi;
 	struct device *dev = &dsi->dev;
@@ -181,12 +181,12 @@ static int otm9605a_dijing_550_on(struct otm9605a_dijing_550 *ctx)
 	dsi_dcs_write_seq(dsi, 0xd9, 0x24);
 	dsi_dcs_write_seq(dsi, 0x00, 0x00);
 	dsi_dcs_write_seq(dsi, 0xe1,
-			  0x02, 0x0d, 0x13, 0x0e, 0x06, 0x10, 0x0b, 0x0a, 0x03,
-			  0x07, 0x0b, 0x08, 0x0f, 0x11, 0x0c, 0x06);
+			  0x02, 0x09, 0x0e, 0x0d, 0x06, 0x0e, 0x0b, 0x0a, 0x04,
+			  0x08, 0x0c, 0x07, 0x0e, 0x0d, 0x06, 0x01);
 	dsi_dcs_write_seq(dsi, 0x00, 0x00);
 	dsi_dcs_write_seq(dsi, 0xe2,
-			  0x02, 0x0d, 0x14, 0x0e, 0x07, 0x10, 0x0b, 0x0a, 0x04,
-			  0x07, 0x0b, 0x08, 0x0f, 0x11, 0x0c, 0x06);
+			  0x02, 0x08, 0x0d, 0x0d, 0x05, 0x0f, 0x0b, 0x09, 0x04,
+			  0x08, 0x0c, 0x07, 0x0e, 0x0d, 0x06, 0x01);
 	dsi_dcs_write_seq(dsi, 0x00, 0x80);
 	dsi_dcs_write_seq(dsi, 0xd6, 0x48);
 	dsi_dcs_write_seq(dsi, 0x00, 0x80);
@@ -273,16 +273,16 @@ static int otm9605a_dijing_550_on(struct otm9605a_dijing_550 *ctx)
 	dsi_dcs_write_seq(dsi, 0xc6, 0x10);
 	dsi_dcs_write_seq(dsi, 0x00, 0x00);
 	dsi_dcs_write_seq(dsi, 0xec,
-			  0x30, 0x34, 0x34, 0x34, 0x43, 0x43, 0x33, 0x34, 0x34,
-			  0x34, 0x43, 0x43, 0x43, 0x33, 0x34, 0x34, 0x34, 0x43,
-			  0x43, 0x33, 0x34, 0x34, 0x34, 0x43, 0x43, 0x43, 0x33,
-			  0x34, 0x34, 0x43, 0x43, 0x43, 0x03);
+			  0x40, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
+			  0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
+			  0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
+			  0x44, 0x44, 0x44, 0x44, 0x44, 0x04);
 	dsi_dcs_write_seq(dsi, 0x00, 0x00);
 	dsi_dcs_write_seq(dsi, 0xed,
-			  0x40, 0x43, 0x34, 0x44, 0x43, 0x34, 0x44, 0x43, 0x34,
-			  0x44, 0x43, 0x34, 0x44, 0x43, 0x34, 0x44, 0x34, 0x44,
-			  0x43, 0x34, 0x44, 0x43, 0x34, 0x44, 0x43, 0x34, 0x44,
-			  0x43, 0x34, 0x44, 0x43, 0x34, 0x04);
+			  0x40, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
+			  0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
+			  0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
+			  0x44, 0x44, 0x44, 0x44, 0x44, 0x04);
 	dsi_dcs_write_seq(dsi, 0x00, 0x00);
 	dsi_dcs_write_seq(dsi, 0xee,
 			  0x40, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
@@ -312,7 +312,7 @@ static int otm9605a_dijing_550_on(struct otm9605a_dijing_550 *ctx)
 	return 0;
 }
 
-static int otm9605a_dijing_550_off(struct otm9605a_dijing_550 *ctx)
+static int otm9605a_boyi_550_off(struct otm9605a_boyi_550 *ctx)
 {
 	struct mipi_dsi_device *dsi = ctx->dsi;
 	struct device *dev = &dsi->dev;
@@ -337,9 +337,9 @@ static int otm9605a_dijing_550_off(struct otm9605a_dijing_550 *ctx)
 	return 0;
 }
 
-static int otm9605a_dijing_550_prepare(struct drm_panel *panel)
+static int otm9605a_boyi_550_prepare(struct drm_panel *panel)
 {
-	struct otm9605a_dijing_550 *ctx = to_otm9605a_dijing_550(panel);
+	struct otm9605a_boyi_550 *ctx = to_otm9605a_boyi_550(panel);
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
@@ -352,9 +352,9 @@ static int otm9605a_dijing_550_prepare(struct drm_panel *panel)
 		return ret;
 	}
 
-	otm9605a_dijing_550_reset(ctx);
+	otm9605a_boyi_550_reset(ctx);
 
-	ret = otm9605a_dijing_550_on(ctx);
+	ret = otm9605a_boyi_550_on(ctx);
 	if (ret < 0) {
 		dev_err(dev, "Failed to initialize panel: %d\n", ret);
 		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
@@ -366,16 +366,16 @@ static int otm9605a_dijing_550_prepare(struct drm_panel *panel)
 	return 0;
 }
 
-static int otm9605a_dijing_550_unprepare(struct drm_panel *panel)
+static int otm9605a_boyi_550_unprepare(struct drm_panel *panel)
 {
-	struct otm9605a_dijing_550 *ctx = to_otm9605a_dijing_550(panel);
+	struct otm9605a_boyi_550 *ctx = to_otm9605a_boyi_550(panel);
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
 	if (!ctx->prepared)
 		return 0;
 
-	ret = otm9605a_dijing_550_off(ctx);
+	ret = otm9605a_boyi_550_off(ctx);
 	if (ret < 0)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
 
@@ -386,7 +386,7 @@ static int otm9605a_dijing_550_unprepare(struct drm_panel *panel)
 	return 0;
 }
 
-static const struct drm_display_mode otm9605a_dijing_550_mode = {
+static const struct drm_display_mode otm9605a_boyi_550_mode = {
 	.clock = (540 + 52 + 4 + 48) * (960 + 18 + 2 + 14) * 60 / 1000,
 	.hdisplay = 540,
 	.hsync_start = 540 + 52,
@@ -400,12 +400,12 @@ static const struct drm_display_mode otm9605a_dijing_550_mode = {
 	.height_mm = 120,
 };
 
-static int otm9605a_dijing_550_get_modes(struct drm_panel *panel,
-					 struct drm_connector *connector)
+static int otm9605a_boyi_550_get_modes(struct drm_panel *panel,
+				       struct drm_connector *connector)
 {
 	struct drm_display_mode *mode;
 
-	mode = drm_mode_duplicate(connector->dev, &otm9605a_dijing_550_mode);
+	mode = drm_mode_duplicate(connector->dev, &otm9605a_boyi_550_mode);
 	if (!mode)
 		return -ENOMEM;
 
@@ -419,16 +419,16 @@ static int otm9605a_dijing_550_get_modes(struct drm_panel *panel,
 	return 1;
 }
 
-static const struct drm_panel_funcs otm9605a_dijing_550_panel_funcs = {
-	.prepare = otm9605a_dijing_550_prepare,
-	.unprepare = otm9605a_dijing_550_unprepare,
-	.get_modes = otm9605a_dijing_550_get_modes,
+static const struct drm_panel_funcs otm9605a_boyi_550_panel_funcs = {
+	.prepare = otm9605a_boyi_550_prepare,
+	.unprepare = otm9605a_boyi_550_unprepare,
+	.get_modes = otm9605a_boyi_550_get_modes,
 };
 
-static int otm9605a_dijing_550_bl_update_status(struct backlight_device *bl)
+static int otm9605a_boyi_550_bl_update_status(struct backlight_device *bl)
 {
 	struct mipi_dsi_device *dsi = bl_get_data(bl);
-	struct otm9605a_dijing_550 *ctx = mipi_dsi_get_drvdata(dsi);
+	struct otm9605a_boyi_550 *ctx = mipi_dsi_get_drvdata(dsi);
 	u16 brightness = backlight_get_brightness(bl);
 	int ret;
 
@@ -447,7 +447,7 @@ static int otm9605a_dijing_550_bl_update_status(struct backlight_device *bl)
 
 // TODO: Check if /sys/class/backlight/.../actual_brightness actually returns
 // correct values. If not, remove this function.
-static int otm9605a_dijing_550_bl_get_brightness(struct backlight_device *bl)
+static int otm9605a_boyi_550_bl_get_brightness(struct backlight_device *bl)
 {
 	struct mipi_dsi_device *dsi = bl_get_data(bl);
 	u16 brightness;
@@ -464,13 +464,13 @@ static int otm9605a_dijing_550_bl_get_brightness(struct backlight_device *bl)
 	return brightness & 0xff;
 }
 
-static const struct backlight_ops otm9605a_dijing_550_bl_ops = {
-	.update_status = otm9605a_dijing_550_bl_update_status,
-	.get_brightness = otm9605a_dijing_550_bl_get_brightness,
+static const struct backlight_ops otm9605a_boyi_550_bl_ops = {
+	.update_status = otm9605a_boyi_550_bl_update_status,
+	.get_brightness = otm9605a_boyi_550_bl_get_brightness,
 };
 
 static struct backlight_device *
-otm9605a_dijing_550_create_backlight(struct mipi_dsi_device *dsi)
+otm9605a_boyi_550_create_backlight(struct mipi_dsi_device *dsi)
 {
 	struct device *dev = &dsi->dev;
 	const struct backlight_properties props = {
@@ -480,13 +480,13 @@ otm9605a_dijing_550_create_backlight(struct mipi_dsi_device *dsi)
 	};
 
 	return devm_backlight_device_register(dev, dev_name(dev), dev, dsi,
-					      &otm9605a_dijing_550_bl_ops, &props);
+					      &otm9605a_boyi_550_bl_ops, &props);
 }
 
-static int otm9605a_dijing_550_probe(struct mipi_dsi_device *dsi)
+static int otm9605a_boyi_550_probe(struct mipi_dsi_device *dsi)
 {
 	struct device *dev = &dsi->dev;
-	struct otm9605a_dijing_550 *ctx;
+	struct otm9605a_boyi_550 *ctx;
 	int ret;
 
 	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
@@ -517,10 +517,10 @@ static int otm9605a_dijing_550_probe(struct mipi_dsi_device *dsi)
 			  MIPI_DSI_MODE_VIDEO_HSE | MIPI_DSI_MODE_NO_EOT_PACKET |
 			  MIPI_DSI_CLOCK_NON_CONTINUOUS;
 
-	drm_panel_init(&ctx->panel, dev, &otm9605a_dijing_550_panel_funcs,
+	drm_panel_init(&ctx->panel, dev, &otm9605a_boyi_550_panel_funcs,
 		       DRM_MODE_CONNECTOR_DSI);
 
-	ctx->panel.backlight = otm9605a_dijing_550_create_backlight(dsi);
+	ctx->panel.backlight = otm9605a_boyi_550_create_backlight(dsi);
 	if (IS_ERR(ctx->panel.backlight))
 		return dev_err_probe(dev, PTR_ERR(ctx->panel.backlight),
 				     "Failed to create backlight\n");
@@ -537,9 +537,9 @@ static int otm9605a_dijing_550_probe(struct mipi_dsi_device *dsi)
 	return 0;
 }
 
-static void otm9605a_dijing_550_remove(struct mipi_dsi_device *dsi)
+static void otm9605a_boyi_550_remove(struct mipi_dsi_device *dsi)
 {
-	struct otm9605a_dijing_550 *ctx = mipi_dsi_get_drvdata(dsi);
+	struct otm9605a_boyi_550 *ctx = mipi_dsi_get_drvdata(dsi);
 	int ret;
 
 	ret = mipi_dsi_detach(dsi);
@@ -549,22 +549,22 @@ static void otm9605a_dijing_550_remove(struct mipi_dsi_device *dsi)
 	drm_panel_remove(&ctx->panel);
 }
 
-static const struct of_device_id otm9605a_dijing_550_of_match[] = {
-	{ .compatible = "coolpad,otm9605a-dijing" }, // FIXME
+static const struct of_device_id otm9605a_boyi_550_of_match[] = {
+	{ .compatible = "coolpad,otm9605a-boyi" }, // FIXME
 	{ /* sentinel */ }
 };
-MODULE_DEVICE_TABLE(of, otm9605a_dijing_550_of_match);
+MODULE_DEVICE_TABLE(of, otm9605a_boyi_550_of_match);
 
-static struct mipi_dsi_driver otm9605a_dijing_550_driver = {
-	.probe = otm9605a_dijing_550_probe,
-	.remove = otm9605a_dijing_550_remove,
+static struct mipi_dsi_driver otm9605a_boyi_550_driver = {
+	.probe = otm9605a_boyi_550_probe,
+	.remove = otm9605a_boyi_550_remove,
 	.driver = {
-		.name = "panel-otm9605a-dijing-550",
-		.of_match_table = otm9605a_dijing_550_of_match,
+		.name = "panel-otm9605a-boyi-550",
+		.of_match_table = otm9605a_boyi_550_of_match,
 	},
 };
-module_mipi_dsi_driver(otm9605a_dijing_550_driver);
+module_mipi_dsi_driver(otm9605a_boyi_550_driver);
 
 MODULE_AUTHOR("linux-mdss-dsi-panel-driver-generator <fix@me>"); // FIXME
-MODULE_DESCRIPTION("DRM driver for LCD_TYPE_OTM9605A_DIJING_QHD_550");
+MODULE_DESCRIPTION("DRM driver for LCD_TYPE_9605A_BOYI_NOOTP_QHD_550");
 MODULE_LICENSE("GPL");
