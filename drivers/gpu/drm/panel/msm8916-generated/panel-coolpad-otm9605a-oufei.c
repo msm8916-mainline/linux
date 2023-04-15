@@ -8,8 +8,7 @@
 #include <linux/gpio/consumer.h>
 #include <linux/module.h>
 #include <linux/of.h>
-
-#include <video/mipi_display.h>
+#include <linux/regulator/consumer.h>
 
 #include <drm/drm_mipi_dsi.h>
 #include <drm/drm_modes.h>
@@ -18,6 +17,7 @@
 struct otm9605a_oufei_550 {
 	struct drm_panel panel;
 	struct mipi_dsi_device *dsi;
+	struct regulator_bulk_data supplies[2];
 	struct gpio_desc *reset_gpio;
 	bool prepared;
 };
@@ -288,15 +288,9 @@ static int otm9605a_oufei_550_on(struct otm9605a_oufei_550 *ctx)
 			  0x44, 0x44, 0x44, 0x44, 0x44, 0x04);
 	dsi_dcs_write_seq(dsi, 0x00, 0x00);
 	dsi_dcs_write_seq(dsi, 0xff, 0xff, 0xff, 0xff);
-
-	ret = mipi_dsi_dcs_set_display_brightness(dsi, 0x0000);
-	if (ret < 0) {
-		dev_err(dev, "Failed to set display brightness: %d\n", ret);
-		return ret;
-	}
-
-	dsi_dcs_write_seq(dsi, MIPI_DCS_WRITE_CONTROL_DISPLAY, 0x24);
-	dsi_dcs_write_seq(dsi, MIPI_DCS_WRITE_POWER_SAVE, 0x01);
+	dsi_dcs_write_seq(dsi, 0x51, 0x00);
+	dsi_dcs_write_seq(dsi, 0x53, 0x24);
+	dsi_dcs_write_seq(dsi, 0x55, 0x01);
 
 	ret = mipi_dsi_dcs_exit_sleep_mode(dsi);
 	if (ret < 0) {
@@ -349,12 +343,19 @@ static int otm9605a_oufei_550_prepare(struct drm_panel *panel)
 	if (ctx->prepared)
 		return 0;
 
+	ret = regulator_bulk_enable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
+	if (ret < 0) {
+		dev_err(dev, "Failed to enable regulators: %d\n", ret);
+		return ret;
+	}
+
 	otm9605a_oufei_550_reset(ctx);
 
 	ret = otm9605a_oufei_550_on(ctx);
 	if (ret < 0) {
 		dev_err(dev, "Failed to initialize panel: %d\n", ret);
 		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+		regulator_bulk_disable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
 		return ret;
 	}
 
@@ -376,6 +377,7 @@ static int otm9605a_oufei_550_unprepare(struct drm_panel *panel)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
 
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+	regulator_bulk_disable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
 
 	ctx->prepared = false;
 	return 0;
@@ -484,6 +486,13 @@ static int otm9605a_oufei_550_probe(struct mipi_dsi_device *dsi)
 	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
 	if (!ctx)
 		return -ENOMEM;
+
+	ctx->supplies[0].supply = "vsp";
+	ctx->supplies[1].supply = "vsn";
+	ret = devm_regulator_bulk_get(dev, ARRAY_SIZE(ctx->supplies),
+				      ctx->supplies);
+	if (ret < 0)
+		return dev_err_probe(dev, ret, "Failed to get regulators\n");
 
 	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->reset_gpio))
