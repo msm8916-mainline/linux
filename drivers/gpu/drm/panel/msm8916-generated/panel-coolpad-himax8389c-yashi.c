@@ -10,6 +10,8 @@
 #include <linux/of.h>
 #include <linux/regulator/consumer.h>
 
+#include <video/mipi_display.h>
+
 #include <drm/drm_mipi_dsi.h>
 #include <drm/drm_modes.h>
 #include <drm/drm_panel.h>
@@ -116,13 +118,25 @@ static int himax8389c_yashi_550_on(struct himax8389c_yashi_550 *ctx)
 	dsi_dcs_write_seq(dsi, 0xcc, 0x02);
 	dsi_dcs_write_seq(dsi, 0xd2, 0x33);
 	dsi_dcs_write_seq(dsi, 0xc0, 0x43, 0x17);
-	dsi_dcs_write_seq(dsi, 0x35, 0x00);
+
+	ret = mipi_dsi_dcs_set_tear_on(dsi, MIPI_DSI_DCS_TEAR_MODE_VBLANK);
+	if (ret < 0) {
+		dev_err(dev, "Failed to set tear on: %d\n", ret);
+		return ret;
+	}
+
 	dsi_dcs_write_seq(dsi, 0xc9, 0x1f, 0x00, 0x0e);
 	dsi_dcs_write_seq(dsi, 0xe4, 0x13);
 	dsi_dcs_write_seq(dsi, 0xbc, 0x04);
-	dsi_dcs_write_seq(dsi, 0x51, 0x00);
-	dsi_dcs_write_seq(dsi, 0x53, 0x24);
-	dsi_dcs_write_seq(dsi, 0x55, 0x01);
+
+	ret = mipi_dsi_dcs_set_display_brightness(dsi, 0x0000);
+	if (ret < 0) {
+		dev_err(dev, "Failed to set display brightness: %d\n", ret);
+		return ret;
+	}
+
+	dsi_dcs_write_seq(dsi, MIPI_DCS_WRITE_CONTROL_DISPLAY, 0x24);
+	dsi_dcs_write_seq(dsi, MIPI_DCS_WRITE_POWER_SAVE, 0x01);
 
 	ret = mipi_dsi_dcs_exit_sleep_mode(dsi);
 	if (ret < 0) {
@@ -278,28 +292,8 @@ static int himax8389c_yashi_550_bl_update_status(struct backlight_device *bl)
 	return 0;
 }
 
-// TODO: Check if /sys/class/backlight/.../actual_brightness actually returns
-// correct values. If not, remove this function.
-static int himax8389c_yashi_550_bl_get_brightness(struct backlight_device *bl)
-{
-	struct mipi_dsi_device *dsi = bl_get_data(bl);
-	u16 brightness;
-	int ret;
-
-	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
-
-	ret = mipi_dsi_dcs_get_display_brightness(dsi, &brightness);
-	if (ret < 0)
-		return ret;
-
-	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
-
-	return brightness & 0xff;
-}
-
 static const struct backlight_ops himax8389c_yashi_550_bl_ops = {
 	.update_status = himax8389c_yashi_550_bl_update_status,
-	.get_brightness = himax8389c_yashi_550_bl_get_brightness,
 };
 
 static struct backlight_device *
