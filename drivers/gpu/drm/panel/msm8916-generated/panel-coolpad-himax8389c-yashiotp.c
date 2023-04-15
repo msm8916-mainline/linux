@@ -8,7 +8,6 @@
 #include <linux/gpio/consumer.h>
 #include <linux/module.h>
 #include <linux/of.h>
-#include <linux/regulator/consumer.h>
 
 #include <video/mipi_display.h>
 
@@ -19,9 +18,7 @@
 struct himax8389c_yashi_otp_550 {
 	struct drm_panel panel;
 	struct mipi_dsi_device *dsi;
-	struct regulator_bulk_data supplies[4];
 	struct gpio_desc *reset_gpio;
-	struct gpio_desc *backlight_gpio;
 	bool prepared;
 };
 
@@ -192,19 +189,12 @@ static int himax8389c_yashi_otp_550_prepare(struct drm_panel *panel)
 	if (ctx->prepared)
 		return 0;
 
-	ret = regulator_bulk_enable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
-	if (ret < 0) {
-		dev_err(dev, "Failed to enable regulators: %d\n", ret);
-		return ret;
-	}
-
 	himax8389c_yashi_otp_550_reset(ctx);
 
 	ret = himax8389c_yashi_otp_550_on(ctx);
 	if (ret < 0) {
 		dev_err(dev, "Failed to initialize panel: %d\n", ret);
 		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-		regulator_bulk_disable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
 		return ret;
 	}
 
@@ -226,7 +216,6 @@ static int himax8389c_yashi_otp_550_unprepare(struct drm_panel *panel)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
 
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-	regulator_bulk_disable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
 
 	ctx->prepared = false;
 	return 0;
@@ -274,11 +263,8 @@ static const struct drm_panel_funcs himax8389c_yashi_otp_550_panel_funcs = {
 static int himax8389c_yashi_otp_550_bl_update_status(struct backlight_device *bl)
 {
 	struct mipi_dsi_device *dsi = bl_get_data(bl);
-	struct himax8389c_yashi_otp_550 *ctx = mipi_dsi_get_drvdata(dsi);
 	u16 brightness = backlight_get_brightness(bl);
 	int ret;
-
-	gpiod_set_value_cansleep(ctx->backlight_gpio, !!brightness);
 
 	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
 
@@ -291,8 +277,28 @@ static int himax8389c_yashi_otp_550_bl_update_status(struct backlight_device *bl
 	return 0;
 }
 
+// TODO: Check if /sys/class/backlight/.../actual_brightness actually returns
+// correct values. If not, remove this function.
+static int himax8389c_yashi_otp_550_bl_get_brightness(struct backlight_device *bl)
+{
+	struct mipi_dsi_device *dsi = bl_get_data(bl);
+	u16 brightness;
+	int ret;
+
+	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
+
+	ret = mipi_dsi_dcs_get_display_brightness(dsi, &brightness);
+	if (ret < 0)
+		return ret;
+
+	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
+
+	return brightness & 0xff;
+}
+
 static const struct backlight_ops himax8389c_yashi_otp_550_bl_ops = {
 	.update_status = himax8389c_yashi_otp_550_bl_update_status,
+	.get_brightness = himax8389c_yashi_otp_550_bl_get_brightness,
 };
 
 static struct backlight_device *
@@ -319,24 +325,10 @@ static int himax8389c_yashi_otp_550_probe(struct mipi_dsi_device *dsi)
 	if (!ctx)
 		return -ENOMEM;
 
-	ctx->supplies[0].supply = "vddio";
-	ctx->supplies[1].supply = "vsp";
-	ctx->supplies[2].supply = "vsn";
-	ctx->supplies[3].supply = "power";
-	ret = devm_regulator_bulk_get(dev, ARRAY_SIZE(ctx->supplies),
-				      ctx->supplies);
-	if (ret < 0)
-		return dev_err_probe(dev, ret, "Failed to get regulators\n");
-
 	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->reset_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
 				     "Failed to get reset-gpios\n");
-
-	ctx->backlight_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_LOW);
-	if (IS_ERR(ctx->backlight_gpio))
-		return dev_err_probe(dev, PTR_ERR(ctx->backlight_gpio),
-				     "Failed to get backlight-gpios\n");
 
 	ctx->dsi = dsi;
 	mipi_dsi_set_drvdata(dsi, ctx);
