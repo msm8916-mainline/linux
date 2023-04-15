@@ -44,8 +44,8 @@
 	 lcd_regulator: regulator {
 		compatible = "fixed-regulator";
 		regulator-name = "tps65132-lcd-avdd";
-		regulator-min-microvolt = "5400000";
-		regulator-max-microvolt = "5400000";
+		regulator-min-microvolt = <5400000>;
+		regulator-max-microvolt = <5400000>;
 		regulator-boot-on;
 		regulator-always-on;
 		gpio = <&msmgpio 97 GPIO_ACTIVE_HIGH>;
