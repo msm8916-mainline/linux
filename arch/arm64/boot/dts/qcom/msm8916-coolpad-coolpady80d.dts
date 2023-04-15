@@ -48,7 +48,7 @@
 		regulator-max-microvolt = "5000000";
 		regulator-boot-on;
 		regulator-always-on;
-		gpio = <&msmgpio 98 GPIO_ACTIVE_HIGH>;
+		gpio = <&msmgpio 97 GPIO_ACTIVE_HIGH>;
 		enable-active-high = <1>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&lcd_avdd_en_default>;
@@ -117,7 +117,13 @@
 };
 
 &dsi0_out {
-        data-lanes = <0 1>;
+        data-lanes = <0 1 2 3>;
+        /*
+         * Regarding the data-lanes attribute:
+         * lmdpdg's output has only two lanes declared,
+         * but the schematics suggest that the device uses
+         * a four-lane DSI.
+        */
         remote-endpoint = <&panel_in>;
 };
 
@@ -202,7 +208,7 @@
 	};
 	
 	lcd_avdd_en_default: lcd-avdd-en-default-state {
-		pins = "gpio98";
+		pins = "gpio97";
 		function = "gpio";
 		drive-strength = <4>;
 		bias-disable;
