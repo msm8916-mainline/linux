@@ -2195,6 +2195,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
+			clock-frequency = <19200000>;
 
 			frame@b121000 {
 				reg = <0x0b121000 0x1000>,
