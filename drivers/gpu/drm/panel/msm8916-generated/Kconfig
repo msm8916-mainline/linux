@@ -5,6 +5,10 @@ menu "MSM8916 panel drivers generated with linux-mdss-dsi-panel-driver-generator
 config DRM_PANEL_MSM8916_GENERATED
 	tristate "Select all generated MSM8916 panel drivers by default"
 
+config DRM_PANEL_ACER_A1_724_HX8394D
+	tristate "Acer A1 724 HX8394D"
+	default DRM_PANEL_MSM8916_GENERATED
+
 config DRM_PANEL_ALCATEL_AUO_HX8394D
 	tristate "Alcatel AUO HX8394D"
 	default DRM_PANEL_MSM8916_GENERATED

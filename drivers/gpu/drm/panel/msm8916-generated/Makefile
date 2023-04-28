@@ -1,3 +1,4 @@
+obj-$(CONFIG_DRM_PANEL_ACER_A1_724_HX8394D) += panel-acer-a1-724-hx8394d.o
 obj-$(CONFIG_DRM_PANEL_ALCATEL_AUO_HX8394D) += panel-alcatel-auo-hx8394d.o
 obj-$(CONFIG_DRM_PANEL_ALCATEL_IDOL3_NT35596) += panel-alcatel-idol3-nt35596.o
 obj-$(CONFIG_DRM_PANEL_ALCATEL_IDOL3_R63315) += panel-alcatel-idol3-r63315.o
