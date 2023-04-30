@@ -8,7 +8,7 @@
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 
 / {
-	model = "Coolpad Y80D";
+	model = "Coolpad FengShang Y80D";
 	compatible = "coolpad,coolpady80d", "qcom,msm8916";
 	chassis-type = "handset";
 	
