@@ -166,7 +166,7 @@
 
 		qcom,float-voltage-mv = <4400>;
 		qcom,iterm-ma = <100>;
-		qcom,charging-timeout = <192>; /* 768 in downstream */
+		qcom,charging-timeout = <768>;
 		qcom,recharge-thresh-mv = <50>;
 		qcom,chg-inhibit-disabled;
 
