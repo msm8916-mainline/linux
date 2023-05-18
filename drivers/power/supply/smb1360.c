@@ -1411,6 +1411,34 @@ static int smb1360_find_fastchg_current(struct smb1360 *smb, int current_ma)
 	return -EINVAL;
 }
 
+static int smb1360_set_fastchg_current(struct smb1360 *smb, int fastchg_current)
+{
+	int i;
+	int ret;
+
+	/*
+	 * The sensing resistor for smb1360 would usually be 20 milli-ohms but
+	 * on some devices 10 milli-ohms are installed, changing the measured
+	 * value by a factor of 2. To allow a max. throughput of e.g. 900 mA
+	 * into the battery, those devices need to set the fastcharge current
+	 * in fact to 450 mA to get that behavior.
+	 */
+	if (smb->rsense_10mohm)
+		fastchg_current /= 2;
+
+	i = smb1360_find_fastchg_current(smb, fastchg_current);
+	if (i < 0)
+		return i;
+
+	ret = regmap_update_bits(smb->regmap, CHG_CURRENT_REG,
+				 FASTCHG_CURR_MASK, i << FASTCHG_CURR_SHIFT);
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
+
+
 static int smb1360_jeita_init(struct smb1360 *smb)
 {
 	int ret;
@@ -1527,6 +1555,41 @@ static int smb1360_hw_init(struct i2c_client *client)
 	/* AICL enable and set input-uv glitch flt to 20ms */
 	ret = regmap_set_bits(smb->regmap, CFG_GLITCH_FLT_REG,
 			      AICL_ENABLED_BIT | INPUT_UV_GLITCH_FLT_20MS_BIT);
+	if (ret < 0)
+		return ret;
+
+	/*
+	 * TODO: This is a temporary solution
+	 * Set input current limit to 800 mA. This is a compromise between
+	 * charging speed (when attached to a wall charger) and supply voltage
+	 * drop (when attached to a PC). To implement correctly, this should
+	 * be decided in runtime based on connector type detection.
+	 */
+	ret = regmap_update_bits(smb->regmap, CFG_BATT_CHG_ICL_REG,
+				 INPUT_CURR_LIM_MASK, 0x06);
+	if (ret < 0)
+		return ret;
+
+	/*
+	 * TODO: This is a temporary solution
+	 * Set the fastcharge current to 900 mA. That's the maximal current
+	 * that acctually goes into the battery. It mainly comes into play
+	 * when using parallel-charging, where a secondary charger chip is
+	 * used to increase the charging speed. To implement correctly, this
+	 * should be decided in runtime based on connector type detection.
+	 */
+	ret = smb1360_set_fastchg_current(smb, 900);
+	if (ret < 0)
+		return ret;
+
+	/*
+	 * TODO: This is a temporary solution
+	 * Set the USB charging current bit to AC instead of default USB_500.
+	 * To implement correctly, this should be decided in runtime based on
+	 * connector type detection.
+	 */
+	ret = regmap_update_bits(smb->regmap, CMD_IL_REG, USB_CTRL_MASK,
+				 USB_AC_BIT);
 	if (ret < 0)
 		return ret;
 
