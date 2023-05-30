@@ -122,6 +122,10 @@
 	status = "disabled";
 };
 
+&sound {
+	model = "samsung-gmax";
+};
+
 &msmgpio {
 	gpio_leds_default: gpio-led-default-state {
 		pins = "gpio60";
