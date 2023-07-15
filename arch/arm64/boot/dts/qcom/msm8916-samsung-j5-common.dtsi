@@ -105,7 +105,6 @@
 
 			interrupt-parent = <&tlmm>;
 			interrupts = <115 IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-names = "INT1";
 
 			pinctrl-names = "default";
 			pinctrl-0 = <&accel_int_default>;
