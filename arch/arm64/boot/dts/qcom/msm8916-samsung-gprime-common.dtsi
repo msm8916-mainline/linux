@@ -203,7 +203,6 @@
 		reg = <0x1d>;
 		interrupt-parent = <&tlmm>;
 		interrupts = <115 IRQ_TYPE_LEVEL_HIGH>;
-		interrupt-names = "INT1";
 
 		vdd-supply = <&pm8916_l17>;
 		vddio-supply = <&pm8916_l5>;
