@@ -11,6 +11,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/leds/common.h>
 
 /*
  * NOTE: The original firmware from Samsung can only boot ARM32 kernels.
@@ -44,6 +45,21 @@
 		tz-apps@85500000 {
 			reg = <0x0 0x85500000 0x0 0xb00000>;
 			no-map;
+		};
+	};
+
+	flash-led-controller {
+		compatible = "richtek,rt5033-led";
+		enable-gpios = <&tlmm 34 GPIO_ACTIVE_HIGH>;
+		flash-gpios = <&tlmm 36 GPIO_ACTIVE_HIGH>;
+
+		pinctrl-0 = <&camera_flash_default>;
+		pinctrl-names = "default";
+
+		flash_led: led {
+			function = LED_FUNCTION_FLASH;
+			color = <LED_COLOR_ID_WHITE>;
+			flash-max-timeout-us = <544000>;
 		};
 	};
 
@@ -444,6 +460,14 @@
 };
 
 &tlmm {
+	camera_flash_default: camera-flash-default-state {
+		pins = "gpio34", "gpio36";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	fg_alert_default: fg-alert-default-state {
 		pins = "gpio121";
 		function = "gpio";
