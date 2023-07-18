@@ -8,7 +8,7 @@
 #include <dt-bindings/sound/apq8016-lpass.h>
 
 / {
-	model = "Huawei Honor 5X";
+	model = "Huawei Honor 5X / GR5 (2016)";
 	compatible = "huawei,kiwi", "qcom,msm8939";
 	chassis-type = "handset";
 
