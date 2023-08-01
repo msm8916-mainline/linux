@@ -254,6 +254,7 @@ static const struct drm_encoder_helper_funcs mdp5_encoder_helper_funcs = {
 	.disable = mdp5_encoder_disable,
 	.enable = mdp5_encoder_enable,
 	.atomic_check = mdp5_encoder_atomic_check,
+	.late_enable = true,
 };
 
 int mdp5_encoder_get_linecount(struct drm_encoder *encoder)
