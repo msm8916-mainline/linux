@@ -278,29 +278,10 @@ phy_en_fail:
 	return ret;
 }
 
-static void dsi_mgr_bridge_power_off(struct drm_bridge *bridge)
-{
-	int id = dsi_mgr_bridge_get_id(bridge);
-	struct msm_dsi *msm_dsi = dsi_mgr_get_dsi(id);
-	struct msm_dsi *msm_dsi1 = dsi_mgr_get_dsi(DSI_1);
-	struct mipi_dsi_host *host = msm_dsi->host;
-	bool is_bonded_dsi = IS_BONDED_DSI();
-
-	msm_dsi_host_disable_irq(host);
-	if (is_bonded_dsi && msm_dsi1) {
-		msm_dsi_host_disable_irq(msm_dsi1->host);
-		msm_dsi_host_power_off(msm_dsi1->host);
-	}
-	msm_dsi_host_power_off(host);
-	dsi_mgr_phy_disable(id);
-}
-
 static void dsi_mgr_bridge_pre_enable(struct drm_bridge *bridge)
 {
 	int id = dsi_mgr_bridge_get_id(bridge);
 	struct msm_dsi *msm_dsi = dsi_mgr_get_dsi(id);
-	struct msm_dsi *msm_dsi1 = dsi_mgr_get_dsi(DSI_1);
-	struct mipi_dsi_host *host = msm_dsi->host;
 	bool is_bonded_dsi = IS_BONDED_DSI();
 	int ret;
 
@@ -317,11 +298,29 @@ static void dsi_mgr_bridge_pre_enable(struct drm_bridge *bridge)
 		dev_err(&msm_dsi->pdev->dev, "Power on failed: %d\n", ret);
 		return;
 	}
+}
+
+static void dsi_mgr_bridge_enable(struct drm_bridge *bridge)
+{
+	int id = dsi_mgr_bridge_get_id(bridge);
+	struct msm_dsi *msm_dsi = dsi_mgr_get_dsi(id);
+	struct msm_dsi *msm_dsi1 = dsi_mgr_get_dsi(DSI_1);
+	struct mipi_dsi_host *host = msm_dsi->host;
+	bool is_bonded_dsi = IS_BONDED_DSI();
+	int ret;
+
+	DBG("id=%d", id);
+	if (!msm_dsi_device_connected(msm_dsi))
+		return;
+
+	/* Do nothing with the host if it is slave-DSI in case of bonded DSI */
+	if (is_bonded_dsi && !IS_MASTER_DSI_LINK(id))
+		return;
 
 	ret = msm_dsi_host_enable(host);
 	if (ret) {
 		pr_err("%s: enable host %d failed, %d\n", __func__, id, ret);
-		goto host_en_fail;
+		return;
 	}
 
 	if (is_bonded_dsi && msm_dsi1) {
@@ -336,8 +335,6 @@ static void dsi_mgr_bridge_pre_enable(struct drm_bridge *bridge)
 
 host1_en_fail:
 	msm_dsi_host_disable(host);
-host_en_fail:
-	dsi_mgr_bridge_power_off(bridge);
 }
 
 void msm_dsi_manager_tpg_enable(void)
@@ -350,6 +347,39 @@ void msm_dsi_manager_tpg_enable(void)
 		msm_dsi_host_test_pattern_en(m_dsi->host);
 		if (IS_BONDED_DSI() && s_dsi)
 			msm_dsi_host_test_pattern_en(s_dsi->host);
+	}
+}
+
+static void dsi_mgr_bridge_disable(struct drm_bridge *bridge)
+{
+	int id = dsi_mgr_bridge_get_id(bridge);
+	struct msm_dsi *msm_dsi = dsi_mgr_get_dsi(id);
+	struct msm_dsi *msm_dsi1 = dsi_mgr_get_dsi(DSI_1);
+	struct mipi_dsi_host *host = msm_dsi->host;
+	bool is_bonded_dsi = IS_BONDED_DSI();
+	int ret;
+
+	DBG("id=%d", id);
+
+	if (!msm_dsi_device_connected(msm_dsi))
+		return;
+
+	/*
+	 * Do nothing with the host if it is slave-DSI in case of bonded DSI.
+	 * It is safe to call dsi_mgr_phy_disable() here because a single PHY
+	 * won't be diabled until both PHYs request disable.
+	 */
+	if (is_bonded_dsi && !IS_MASTER_DSI_LINK(id))
+		return;
+
+	ret = msm_dsi_host_disable(host);
+	if (ret)
+		pr_err("%s: host %d disable failed, %d\n", __func__, id, ret);
+
+	if (is_bonded_dsi && msm_dsi1) {
+		ret = msm_dsi_host_disable(msm_dsi1->host);
+		if (ret)
+			pr_err("%s: host1 disable failed, %d\n", __func__, ret);
 	}
 }
 
@@ -374,16 +404,6 @@ static void dsi_mgr_bridge_post_disable(struct drm_bridge *bridge)
 	 */
 	if (is_bonded_dsi && !IS_MASTER_DSI_LINK(id))
 		goto disable_phy;
-
-	ret = msm_dsi_host_disable(host);
-	if (ret)
-		pr_err("%s: host %d disable failed, %d\n", __func__, id, ret);
-
-	if (is_bonded_dsi && msm_dsi1) {
-		ret = msm_dsi_host_disable(msm_dsi1->host);
-		if (ret)
-			pr_err("%s: host1 disable failed, %d\n", __func__, ret);
-	}
 
 	msm_dsi_host_disable_irq(host);
 	if (is_bonded_dsi && msm_dsi1)
@@ -460,6 +480,8 @@ static enum drm_mode_status dsi_mgr_bridge_mode_valid(struct drm_bridge *bridge,
 
 static const struct drm_bridge_funcs dsi_mgr_bridge_funcs = {
 	.pre_enable = dsi_mgr_bridge_pre_enable,
+	.enable = dsi_mgr_bridge_enable,
+	.disable = dsi_mgr_bridge_disable,
 	.post_disable = dsi_mgr_bridge_post_disable,
 	.mode_set = dsi_mgr_bridge_mode_set,
 	.mode_valid = dsi_mgr_bridge_mode_valid,
