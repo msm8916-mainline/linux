@@ -1230,11 +1230,14 @@ drm_atomic_helper_commit_encoder_bridge_disable(struct drm_device *dev,
 		 * it away), so we won't call disable hooks twice.
 		 */
 		bridge = drm_bridge_chain_get_first_bridge(encoder);
-		drm_atomic_bridge_chain_disable(bridge, state);
-		drm_bridge_put(bridge);
 
 		/* Right function depends upon target state. */
 		if (funcs) {
+			if (funcs->late_enable) {
+				drm_atomic_bridge_chain_disable(bridge, state);
+				drm_bridge_put(bridge);
+			}
+
 			if (funcs->atomic_disable)
 				funcs->atomic_disable(encoder, state);
 			else if (new_conn_state->crtc && funcs->prepare)
@@ -1244,6 +1247,9 @@ drm_atomic_helper_commit_encoder_bridge_disable(struct drm_device *dev,
 			else if (funcs->dpms)
 				funcs->dpms(encoder, DRM_MODE_DPMS_OFF);
 		}
+
+		if (!funcs || !funcs->late_enable)
+			drm_atomic_bridge_chain_disable(bridge, state);
 	}
 }
 EXPORT_SYMBOL(drm_atomic_helper_commit_encoder_bridge_disable);
@@ -1734,6 +1740,9 @@ drm_atomic_helper_commit_encoder_bridge_enable(struct drm_device *dev, struct dr
 		bridge = drm_bridge_chain_get_first_bridge(encoder);
 
 		if (funcs) {
+			if (funcs->late_enable)
+				drm_atomic_bridge_chain_enable(bridge, state);
+
 			if (funcs->atomic_enable)
 				funcs->atomic_enable(encoder, state);
 			else if (funcs->enable)
@@ -1742,8 +1751,10 @@ drm_atomic_helper_commit_encoder_bridge_enable(struct drm_device *dev, struct dr
 				funcs->commit(encoder);
 		}
 
-		drm_atomic_bridge_chain_enable(bridge, state);
-		drm_bridge_put(bridge);
+		if (!funcs || !funcs->late_enable) {
+			drm_atomic_bridge_chain_enable(bridge, state);
+			drm_bridge_put(bridge);
+		}
 	}
 }
 EXPORT_SYMBOL(drm_atomic_helper_commit_encoder_bridge_enable);
