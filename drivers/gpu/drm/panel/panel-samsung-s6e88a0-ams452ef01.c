@@ -195,6 +195,7 @@ static int s6e88a0_ams452ef01_probe(struct mipi_dsi_device *dsi)
 	dsi->lanes = 2;
 	dsi->format = MIPI_DSI_FMT_RGB888;
 	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST;
+	ctx->panel.prepare_prev_first = true;
 
 	ret = devm_drm_panel_add(dev, &ctx->panel);
 	if (ret)
