@@ -1,5 +1,9 @@
-name: Build
-on: [push, pull_request]
+name: Build and Upload Kernel
+
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
@@ -19,8 +23,14 @@ jobs:
       - name: Build
         run: ./.ci-build.sh
         shell: alpine.sh {0}
+      - name: Find Kernel Files
+        id: find-kernel
+        run: |
+          find .. -name "*.deb" -type f
+        shell: bash
+
       - name: Upload Kernel
         uses: actions/upload-artifact@v2
         with:
           name: Kernel
-          path: path/to/compiled/kernel
+          path: ${{ steps.find-kernel.outputs.stdout }}
