@@ -2569,6 +2569,7 @@
 			#clock-cells = <0>;
 			clocks = <&xo_board>;
 			clock-names = "xo";
+			operating-points-v2 = <&cpu_opp_table>;
 		};
 
 		timer@b020000 {
