@@ -45,6 +45,26 @@
 		default-brightness-level = <255>;
 	};
 
+	cam_vana_rear_vreg: cam-vana-rear-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "cam_vana_rear_vreg";
+		startup-delay-us = <0>;
+		enable-active-high;
+		gpio = <&tlmm 34 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&imx214_vana_default>;
+		pinctrl-names = "default";
+	};
+
+	cam_vdig_rear_vreg: cam-vdig-rear-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "cam_vdig_rear_vreg";
+		startup-delay-us = <0>;
+		enable-active-high;
+		gpio = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&imx214_vdig_default>;
+		pinctrl-names = "default";
+	};
+
 	flash-led-controller {
 		compatible = "ocs,ocp8110";
 		enable-gpios = <&tlmm 49 GPIO_ACTIVE_HIGH>;
@@ -277,6 +297,51 @@
 	status = "okay";
 };
 
+&camss {
+	status = "okay";
+
+	ports {
+		port@0 {
+			reg = <0>;
+			csiphy0_ep: endpoint {
+				clock-lanes = <1>;
+				data-lanes = <0 2 3 4>;
+				remote-endpoint = <&imx214_ep>;
+			};
+		};
+	};
+};
+
+&cci {
+	status = "okay";
+};
+
+&cci_i2c0 {
+	camera@10 {
+		compatible = "sony,imx214";
+		reg = <0x10>;
+
+		vdda-supply = <&cam_vana_rear_vreg>;
+		vddd-supply = <&cam_vdig_rear_vreg>;
+		vdddo-supply = <&pm8916_l6>;
+		enable-gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+		clocks = <&gcc GCC_CAMSS_MCLK0_CLK>;
+		clock-frequency = <24000000>;
+		pinctrl-0 = <&camera_rear_default>;
+		pinctrl-names = "default";
+
+		orientation = <1>; /* Rear camera */
+
+		port {
+			imx214_ep: endpoint {
+				data-lanes = <1 2 3 4>;
+				link-frequencies = /bits/ 64 <480000000>;
+				remote-endpoint = <&csiphy0_ep>;
+			};
+		};
+	};
+};
+
 &gpu {
 	status = "okay";
 };
@@ -455,6 +520,22 @@
 		bias-pull-up;
 	};
 
+	imx214_vana_default: imx214-vana-default-state {
+		pins = "gpio34";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	imx214_vdig_default: imx214-vdig-default-state {
+		pins = "gpio31";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	mag_reset_default: mag-reset-default-state {
 		pins = "gpio111";
 		function = "gpio";
@@ -538,4 +619,8 @@
 		output-low;
 		qcom,dtest = <1>;
 	};
+};
+
+&camera_rear_default {
+	/delete-node/ pwdn-pins;
 };
