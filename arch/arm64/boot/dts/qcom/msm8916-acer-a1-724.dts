@@ -56,7 +56,7 @@
 };
 
 &blsp_i2c2 {
-	status = "okay";
+	//status = "okay";
 
 	accelerometer@10 {
 		compatible = "bosch,bmc150_accel";
@@ -108,7 +108,7 @@
 };
 
 &blsp_i2c5 {
-	status = "okay";
+	//status = "okay";
 
 	touchscreen@38 {
 		/* Actually ft5446 */
@@ -136,11 +136,11 @@
 };
 
 &gpu {
-	status = "okay";
+	//status = "okay";
 };
 
 &mdss {
-	status = "okay";
+	//status = "okay";
 };
 
 &mdss_dsi0 {
@@ -173,15 +173,21 @@
 	status = "okay";
 };
 
+&pm8916_l6 {
+	regulator-boot-on;
+};
+
 &pm8916_rpm_regulators {
 	pm8916_l16: l16 {
 		regulator-min-microvolt = <2900000>;
 		regulator-max-microvolt = <2900000>;
+		regulator-boot-on;
 	};
 
 	pm8916_l17: l17 {
 		regulator-min-microvolt = <2850000>;
 		regulator-max-microvolt = <2850000>;
+		regulator-boot-on;
 	};
 };
 
