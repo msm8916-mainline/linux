@@ -239,6 +239,7 @@ void msm_devfreq_resume(struct msm_gpu *gpu)
 	mutex_lock(&df->lock);
 	df->busy_cycles = gpu->funcs->gpu_busy(gpu, &sample_rate);
 	df->time = ktime_get();
+	df->idle_freq = 0;
 	df->suspended = false;
 	mutex_unlock(&df->lock);
 
@@ -256,10 +257,10 @@ void msm_devfreq_suspend(struct msm_gpu *gpu)
 	df->suspended = true;
 	mutex_unlock(&df->lock);
 
-	devfreq_suspend_device(df->devfreq);
-
 	cancel_idle_work(df);
 	cancel_boost_work(df);
+
+	devfreq_suspend_device(df->devfreq);
 }
 
 static void msm_devfreq_boost_work(struct kthread_work *work)
