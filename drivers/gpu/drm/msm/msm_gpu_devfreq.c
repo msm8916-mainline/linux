@@ -109,6 +109,15 @@ static int msm_devfreq_get_dev_status(struct device *dev,
 
 	status->busy_time = busy_time;
 
+	dev_dbg(&gpu->pdev->dev,
+		"busy %lu / total %lu = %lu | freq %lu MHz bscy: %llu | srate: %lu\n",
+		status->busy_time, status->total_time,
+		status->busy_time / (status->total_time / 100),
+		status->current_frequency / 1000 / 1000,
+		busy_cycles,
+		sample_rate);
+
+
 	return 0;
 }
 
