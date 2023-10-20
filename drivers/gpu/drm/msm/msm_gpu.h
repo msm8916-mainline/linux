@@ -122,6 +122,10 @@ struct msm_gpu_devfreq {
 	/** time: Time of last sampling period. */
 	ktime_t time;
 
+	/** load avg **/
+	unsigned long load;
+	unsigned long load_avg;
+
 	/** suspended: tracks if we're suspended */
 	bool suspended;
 };
@@ -214,6 +218,7 @@ struct msm_gpu {
 	/* Hang and Inactivity Detection:
 	 */
 #define DRM_MSM_INACTIVE_PERIOD   66 /* in ms (roughly four frames) */
+// #define DRM_MSM_INACTIVE_PERIOD   120
 
 #define DRM_MSM_HANGCHECK_DEFAULT_PERIOD 500 /* in ms */
 #define DRM_MSM_HANGCHECK_PROGRESS_RETRIES 3
