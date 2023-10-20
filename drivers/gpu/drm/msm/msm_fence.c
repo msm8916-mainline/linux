@@ -35,7 +35,6 @@ static void deadline_work(struct kthread_work *work)
 	if (msm_fence_completed(fctx, fctx->next_deadline_fence))
 		return;
 
-	msm_devfreq_boost(fctx2gpu(fctx), 2);
 }
 
 
