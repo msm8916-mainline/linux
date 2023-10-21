@@ -920,7 +920,7 @@ _opp_config_clk_single(struct device *dev, struct opp_table *opp_table,
 
 	ret = clk_set_rate(opp_table->clk, freq);
 	if (ret) {
-		dev_err(dev, "%s: failed to set clock rate: %d\n", __func__,
+		dev_err(dev, "%s: failed to set clock rate to %lu: %d\n", __func__, freq,
 			ret);
 	} else {
 		opp_table->rate_clk_single = freq;
@@ -1010,6 +1010,8 @@ static int _set_opp_bw(const struct opp_table *opp_table,
 			avg = opp->bandwidth[i].avg;
 			peak = opp->bandwidth[i].peak;
 		}
+		// without interconnect this is a nop
+		dev_dbg(dev, "set icc_set_bw to %u / %u\n", avg, peak);
 		ret = icc_set_bw(opp_table->paths[i], avg, peak);
 		if (ret) {
 			dev_err(dev, "Failed to %s bandwidth[%d]: %d\n",

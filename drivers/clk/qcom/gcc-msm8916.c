@@ -191,7 +191,7 @@ static const struct parent_map gcc_xo_gpll0a_gpll1_gpll2a_map[] = {
 	{ P_XO, 0 },
 	{ P_GPLL0_AUX, 3 },
 	{ P_GPLL1, 1 },
-	{ P_GPLL2_AUX, 2 },
+	{ P_GPLL2, 2 },
 };
 
 static const struct clk_parent_data gcc_xo_gpll0a_gpll1_gpll2a[] = {
