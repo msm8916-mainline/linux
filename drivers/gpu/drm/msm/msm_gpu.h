@@ -114,25 +114,6 @@ struct msm_gpu_devfreq {
 	struct mutex lock;
 
 	/**
-	 * idle_freq:
-	 *
-	 * Shadow frequency used while the GPU is idle.  From the PoV of
-	 * the devfreq governor, we are continuing to sample busyness and
-	 * adjust frequency while the GPU is idle, but we use this shadow
-	 * value as the GPU is actually clamped to minimum frequency while
-	 * it is inactive.
-	 */
-	unsigned long idle_freq;
-
-	/**
-	 * boost_constraint:
-	 *
-	 * A PM QoS constraint to boost min freq for a period of time
-	 * until the boost expires.
-	 */
-	struct dev_pm_qos_request boost_freq;
-
-	/**
 	 * busy_cycles: Last busy counter value, for calculating elapsed busy
 	 * cycles since last sampling period.
 	 */
@@ -141,23 +122,9 @@ struct msm_gpu_devfreq {
 	/** time: Time of last sampling period. */
 	ktime_t time;
 
-	/** idle_time: Time of last transition to idle: */
-	ktime_t idle_time;
-
-	/**
-	 * idle_work:
-	 *
-	 * Used to delay clamping to idle freq on active->idle transition.
-	 */
-	struct msm_hrtimer_work idle_work;
-
-	/**
-	 * boost_work:
-	 *
-	 * Used to reset the boost_constraint after the boost period has
-	 * elapsed
-	 */
-	struct msm_hrtimer_work boost_work;
+	/** load avg **/
+	unsigned long load;
+	unsigned long load_avg;
 
 	/** suspended: tracks if we're suspended */
 	bool suspended;
@@ -251,6 +218,7 @@ struct msm_gpu {
 	/* Hang and Inactivity Detection:
 	 */
 #define DRM_MSM_INACTIVE_PERIOD   66 /* in ms (roughly four frames) */
+// #define DRM_MSM_INACTIVE_PERIOD   120
 
 #define DRM_MSM_HANGCHECK_DEFAULT_PERIOD 500 /* in ms */
 #define DRM_MSM_HANGCHECK_PROGRESS_RETRIES 3
@@ -638,9 +606,6 @@ void msm_devfreq_init(struct msm_gpu *gpu);
 void msm_devfreq_cleanup(struct msm_gpu *gpu);
 void msm_devfreq_resume(struct msm_gpu *gpu);
 void msm_devfreq_suspend(struct msm_gpu *gpu);
-void msm_devfreq_boost(struct msm_gpu *gpu, unsigned factor);
-void msm_devfreq_active(struct msm_gpu *gpu);
-void msm_devfreq_idle(struct msm_gpu *gpu);
 
 int msm_gpu_hw_init(struct msm_gpu *gpu);
 

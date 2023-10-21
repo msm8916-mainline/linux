@@ -191,7 +191,7 @@ static const struct parent_map gcc_xo_gpll0a_gpll1_gpll2a_map[] = {
 	{ P_XO, 0 },
 	{ P_GPLL0_AUX, 3 },
 	{ P_GPLL1, 1 },
-	{ P_GPLL2_AUX, 2 },
+	{ P_GPLL2, 2 },
 };
 
 static const struct clk_parent_data gcc_xo_gpll0a_gpll1_gpll2a[] = {
@@ -488,6 +488,7 @@ static const struct freq_tbl ftbl_gcc_oxili_gfx3d_clk[] = {
 	F(294912000, P_GPLL1, 3, 0, 0),
 	F(310000000, P_GPLL2, 3, 0, 0),
 	F(400000000, P_GPLL0_AUX, 2, 0, 0),
+	F(465000000, P_GPLL2, 2, 0, 0),
 	{ }
 };
 
