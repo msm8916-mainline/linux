@@ -492,6 +492,16 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			speedbin_efuse_version: speedbin@4{
+				reg = <0x6 0x1>;
+				bits = <2 2>;
+			};
+
+			speedbin_efuse: speedbin@c{
+				reg = <0xc 0x1>;
+				bits = <2 3>;
+			};
+
 			tsens_base1: base1@d0 {
 				reg = <0xd0 0x1>;
 				bits = <0 7>;
@@ -1828,14 +1838,53 @@
 			iommus = <&gpu_iommu 1>, <&gpu_iommu 2>;
 			status = "disabled";
 
+			// opp-avg-kBps / opp-peak-kBps:
+			// need CONFIG_INTERCONNECT=y working, it's bugged:
+			// interconnects = <&bimc MASTER_GRAPHICS_3D &bimc SLAVE_EBI_CH0>;
+			// interconnect-names = "gfx-mem";
+
+			// defining speed bin, we must define opp-supported-hw!
+			// if speedbin val is 0, driver must version 0x1
+			nvmem-cells = <&speedbin_efuse_version>, <&speedbin_efuse>;
+			nvmem-cell-names = "speed_bin_version", "speed_bin";
+
 			gpu_opp_table: opp-table {
 				compatible = "operating-points-v2";
 
+				opp-465000000 {
+					opp-hz = /bits/ 64 <465000000>;
+					opp-supported-hw = <0x02>;
+					// interconnect:
+					// opp-avg-kBps = <1190400>;
+					// opp-peak-kBps = <4761600>;
+				};
 				opp-400000000 {
 					opp-hz = /bits/ 64 <400000000>;
+					opp-supported-hw = <0xffffffff>;
+					// opp-avg-kBps = <1066000>;
+					// opp-peak-kBps = <4264000>;
+				};
+				opp-310000000 {
+					opp-hz = /bits/ 64 <310000000>;
+					opp-supported-hw = <0xffffffff>;
+					// opp-avg-kBps = <800000>;
+					// opp-peak-kBps = <3200000>;
+				};
+				opp-200000000 {
+					opp-hz = /bits/ 64 <200000000>;
+					opp-supported-hw = <0xffffffff>;
+					// opp-avg-kBps = <160000>;
+					// opp-peak-kBps = <1600000>;
+				};
+				opp-100000000 {
+					opp-hz = /bits/ 64 <100000000>;
+					opp-supported-hw = <0xffffffff>;
 				};
 				opp-19200000 {
 					opp-hz = /bits/ 64 <19200000>;
+					opp-supported-hw = <0xffffffff>;
+					// opp-avg-kBps = <0>;
+					// opp-peak-kBps = <0>;
 				};
 			};
 		};
