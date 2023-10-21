@@ -1766,6 +1766,27 @@ static ssize_t trans_stat_store(struct device *dev,
 }
 static DEVICE_ATTR_RW(trans_stat);
 
+static ssize_t load_show(struct device *dev, struct device_attribute *attr,
+			     char *buf)
+{
+	struct devfreq *df = to_devfreq(dev);
+
+	if (!df->profile)
+		return -EINVAL;
+
+	unsigned long total_time = df->last_status.total_time;
+	if (total_time) {
+		uint32_t load = 1000 * df->last_status.busy_time / total_time;
+		return sprintf(buf, "%d.%02d %%%s\n",
+			load / 10, load % 10,
+				(df->stop_polling == true ? " suspend" : "")
+			);
+	}
+
+	return sprintf(buf, "?\n");
+}
+static DEVICE_ATTR_RO(load);
+
 static struct attribute *devfreq_attrs[] = {
 	&dev_attr_name.attr,
 	&dev_attr_governor.attr,
@@ -1776,6 +1797,7 @@ static struct attribute *devfreq_attrs[] = {
 	&dev_attr_min_freq.attr,
 	&dev_attr_max_freq.attr,
 	&dev_attr_trans_stat.attr,
+	&dev_attr_load.attr,
 	NULL,
 };
 ATTRIBUTE_GROUPS(devfreq);
