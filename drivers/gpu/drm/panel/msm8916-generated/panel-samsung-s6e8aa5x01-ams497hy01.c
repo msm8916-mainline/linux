@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
-// Copyright (c) 2023 FIXME
+// Copyright (c) 2023 Christoph Rudorff
 // Generated with linux-mdss-dsi-panel-driver-generator from vendor device tree:
-//   Copyright (c) 2013, The Linux Foundation. All rights reserved. (FIXME)
+//   Copyright (c) 2013, The Linux Foundation. All rights reserved.
 
 #include <linux/delay.h>
 #include <linux/gpio/consumer.h>
@@ -387,8 +387,6 @@ struct s6e8aa5x01_ams497hy01 {
 
 	struct regulator_bulk_data supplies[2];
 	struct gpio_desc *reset_gpio;
-	bool prepared;
-	bool enabled;
 };
 
 static inline
@@ -400,7 +398,7 @@ struct s6e8aa5x01_ams497hy01 *to_s6e8aa5x01_ams497hy01(struct drm_panel *panel)
 static inline int set_brightness_cmd(struct mipi_dsi_device *dsi, int brightness)
 {
 	if (brightness > MAX_BRIGHTNESS || brightness < MIN_BRIGHTNESS)
-		return -1;
+		return -EINVAL;
 
 	int index = candela_to_aid[brightness];
 	mipi_dsi_dcs_write_buffer(dsi, seq_aid[index], AID_CMD_CNT);
@@ -431,6 +429,11 @@ static int s6e8aa5x01_ams497hy01_set_brightness(struct backlight_device *bl_dev)
 	unsigned int brightness = bl_dev->props.brightness;
 	struct mipi_dsi_device *dsi = ctx->dsi;
 
+	// note: not using enabled flag: enable is calling us!
+	if (!ctx->panel.prepared) {
+		dev_dbg(&dsi->dev, "%s I'm not prepared!\n", __func__);
+		return 0;
+	}
 	//KEY ON
 	mipi_dsi_dcs_write_seq(dsi, MCS_TX_LEVEL_KEY, 0x5a, 0x5a);
 
@@ -460,7 +463,6 @@ static int s6e8aa5x01_ams497hy01_on(struct s6e8aa5x01_ams497hy01 *ctx)
 {
 	struct mipi_dsi_device *dsi = ctx->dsi;
 	struct device *dev = &dsi->dev;
-	unsigned int brightness = ctx->bl_dev->props.brightness;
 	int ret;
 
 	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
@@ -475,33 +477,26 @@ static int s6e8aa5x01_ams497hy01_on(struct s6e8aa5x01_ams497hy01 *ctx)
 	}
 	msleep(20);
 
-	//int index = candela_to_elvss[brightness];
-	//mipi_dsi_dcs_write_buffer(dsi, seq_elvss[index], ELVSS_CMD_CNT);
-	//mipi_dsi_dcs_write_seq(dsi, MCS_TX_GAMMA,
-	//		0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x80, 0x80, 0x80,
-	//		0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
-	//		0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
-	//		0x80, 0x80, 0x80, 0x00, 0x00, 0x00);
-	//index = candela_to_aid[brightness];
-	//mipi_dsi_dcs_write_buffer(dsi, seq_aid[index], AID_CMD_CNT);
-	//mipi_dsi_dcs_write_seq(dsi, MCS_TX_AID_CTRL, 0x04, 0xee);
-	//mipi_dsi_dcs_write_seq(dsi, MCS_TX_ELVSS_CTRL, 0xac, 0x0f);
-	//mipi_dsi_dcs_write_seq(dsi, MCS_TX_GAMMA_UPDATE, 0x03);
-	set_brightness_cmd(dsi, brightness);
-
 	mipi_dsi_dcs_write_seq(dsi, MCS_TX_PENTILE, 0xd8, 0xd8, 0x40);
 
 	mipi_dsi_dcs_write_seq(dsi, 0xb0, 0x06); /* 0x06 : De_DIM? */
 	mipi_dsi_dcs_write_seq(dsi, MCS_TX_TSET, 0xa8);
 	mipi_dsi_dcs_write_seq(dsi, MCS_TX_LEVEL_KEY, 0xa5, 0xa5);
 
+	// don't call set_brightness_cmd directly, we're missing mutex_lock
+	// drm_panel_enable() doesn't do this bc we must not define it in DT
+	// and that is ok to set this before display_on
+	backlight_enable(ctx->bl_dev);
+
 	ret = mipi_dsi_dcs_set_display_on(dsi);
+
+	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
+
 	if (ret < 0) {
 		dev_err(dev, "Failed to set display on: %d\n", ret);
 		return ret;
 	}
 
-	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
 
 	return 0;
 }
@@ -511,6 +506,8 @@ static int s6e8aa5x01_ams497hy01_off(struct s6e8aa5x01_ams497hy01 *ctx)
 	struct mipi_dsi_device *dsi = ctx->dsi;
 	struct device *dev = &dsi->dev;
 	int ret;
+
+	backlight_disable(ctx->bl_dev);
 
 	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
 
@@ -536,9 +533,6 @@ static int s6e8aa5x01_ams497hy01_prepare(struct drm_panel *panel)
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
-	if (ctx->prepared)
-		return 0;
-
 	ret = regulator_bulk_enable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
 	if (ret < 0) {
 		dev_err(dev, "Failed to enable regulators: %d\n", ret);
@@ -547,90 +541,54 @@ static int s6e8aa5x01_ams497hy01_prepare(struct drm_panel *panel)
 
 	s6e8aa5x01_ams497hy01_reset(ctx);
 
-	ret = s6e8aa5x01_ams497hy01_on(ctx);
-	if (ret < 0) {
-		dev_err(dev, "Failed to initialize panel: %d\n", ret);
-		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-		regulator_bulk_disable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
-		return ret;
-	}
 
-	ctx->prepared = true;
 	return 0;
 }
 
 static int s6e8aa5x01_ams497hy01_enable(struct drm_panel *panel)
 {
 	struct s6e8aa5x01_ams497hy01 *ctx = to_s6e8aa5x01_ams497hy01(panel);
-	struct mipi_dsi_device *dsi = ctx->dsi;
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
-	if (ctx->prepared)
-		return 0;
+	if (!ctx->panel.prepared) {
+		dev_warn(dev, "I'm not prepared to enable\n");
+		return -EAGAIN;
+	}
 
-	ret = mipi_dsi_dcs_exit_sleep_mode(dsi);
+	ret = s6e8aa5x01_ams497hy01_on(ctx);
 	if (ret < 0) {
-		dev_err(dev, "Failed to enter sleep mode : %d\n", ret);
+		dev_err(dev, "Failed to initialize panel: %d\n", ret);
+		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+		//?? regulator_bulk_disable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
 		return ret;
 	}
-	msleep(20);
 
-	backlight_enable(ctx->bl_dev);
-
-	ctx->enabled = true;
 	return 0;
 }
 
 static int s6e8aa5x01_ams497hy01_disable(struct drm_panel *panel)
 {
 	struct s6e8aa5x01_ams497hy01 *ctx = to_s6e8aa5x01_ams497hy01(panel);
-	struct mipi_dsi_device *dsi = ctx->dsi;
-	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
-	if (ctx->prepared)
-		return 0;
-
-	backlight_disable(ctx->bl_dev);
-
-	ret = mipi_dsi_dcs_set_display_off(dsi);
-	if (ret < 0) {
-		dev_err(dev, "Failed to se display off : %d\n", ret);
-		return ret;
+	if (!ctx->panel.prepared) {
+		dev_warn(panel->dev, "I'm not prepared to disable\n");
+		return -EAGAIN;
 	}
 
-	msleep(10);
+	ret = s6e8aa5x01_ams497hy01_off(ctx);
 
-	ret = mipi_dsi_dcs_enter_sleep_mode(dsi);
-	if (ret < 0) {
-		dev_err(dev, "Failed to enter sleep mode%d\n", ret);
-		return ret;
-	}
-
-	msleep(10);
-
-	ctx->enabled = false;
-	return 0;
+	return ret;
 }
 
 static int s6e8aa5x01_ams497hy01_unprepare(struct drm_panel *panel)
 {
 	struct s6e8aa5x01_ams497hy01 *ctx = to_s6e8aa5x01_ams497hy01(panel);
-	struct device *dev = &ctx->dsi->dev;
-	int ret;
-
-	if (!ctx->prepared)
-		return 0;
-
-	ret = s6e8aa5x01_ams497hy01_off(ctx);
-	if (ret < 0)
-		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
 
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	regulator_bulk_disable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
 
-	ctx->prepared = false;
 	return 0;
 }
 
@@ -726,6 +684,7 @@ static int s6e8aa5x01_ams497hy01_probe(struct mipi_dsi_device *dsi)
 	if (ret < 0) {
 		dev_err(dev, "Failed to attach to DSI host: %d\n", ret);
 		drm_panel_remove(&ctx->panel);
+		backlight_device_unregister(ctx->bl_dev);
 		return ret;
 	}
 
@@ -737,15 +696,17 @@ static void s6e8aa5x01_ams497hy01_remove(struct mipi_dsi_device *dsi)
 	struct s6e8aa5x01_ams497hy01 *ctx = mipi_dsi_get_drvdata(dsi);
 	int ret;
 
-	ret = mipi_dsi_detach(dsi);
+	ret = mipi_dsi_detach(dsi); // CRASH ... drm_mode_config_cleanup (usage counter?)
 	if (ret < 0)
 		dev_err(&dsi->dev, "Failed to detach from DSI host: %d\n", ret);
 
 	drm_panel_remove(&ctx->panel);
+
+	backlight_device_unregister(ctx->bl_dev);
 }
 
 static const struct of_device_id s6e8aa5x01_ams497hy01_of_match[] = {
-	{ .compatible = "samsung,s6e8aa5x01-ams497hy01" }, // FIXME
+	{ .compatible = "samsung,s6e8aa5x01-ams497hy01" },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, s6e8aa5x01_ams497hy01_of_match);
@@ -760,6 +721,7 @@ static struct mipi_dsi_driver s6e8aa5x01_ams497hy01_driver = {
 };
 module_mipi_dsi_driver(s6e8aa5x01_ams497hy01_driver);
 
-MODULE_AUTHOR("linux-mdss-dsi-panel-driver-generator <fix@me>"); // FIXME
+MODULE_AUTHOR("linux-mdss-dsi-panel-driver-generator <fix@me>");
+MODULE_AUTHOR("chr[]");
 MODULE_DESCRIPTION("DRM driver for ss_dsi_panel_S6E8AA5X01_AMS497HY01_720p");
 MODULE_LICENSE("GPL");
