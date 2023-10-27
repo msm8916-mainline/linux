@@ -449,6 +449,13 @@ static const struct backlight_ops s6e8aa5x01_ams497hy01_bl_ops = {
 	.update_status = s6e8aa5x01_ams497hy01_set_brightness,
 };
 
+static const struct backlight_properties s6e8aa5x01_ams497hy01_bl_props = {
+	.type = BACKLIGHT_PLATFORM, // well ... OLED via mipi
+	.brightness = DEFAULT_BRIGHTNESS,
+	.max_brightness = MAX_BRIGHTNESS,
+	.scale = BACKLIGHT_SCALE_LINEAR,
+};
+
 static void s6e8aa5x01_ams497hy01_reset(struct s6e8aa5x01_ams497hy01 *ctx)
 {
 	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
@@ -658,16 +665,13 @@ static int s6e8aa5x01_ams497hy01_probe(struct mipi_dsi_device *dsi)
 	ctx->dsi = dsi;
 	mipi_dsi_set_drvdata(dsi, ctx);
 
-	ctx->bl_dev = backlight_device_register("panel", dev, ctx,
-		&s6e8aa5x01_ams497hy01_bl_ops, NULL);
+	ctx->bl_dev = devm_backlight_device_register(dev, dev_name(dev), dev, ctx,
+		&s6e8aa5x01_ams497hy01_bl_ops, &s6e8aa5x01_ams497hy01_bl_props);
 
 	if (IS_ERR(ctx->bl_dev)) {
 		dev_err(dev, "Failed to register backlight device\n");
 		return PTR_ERR(ctx->bl_dev);
 	}
-
-	ctx->bl_dev->props.max_brightness = MAX_BRIGHTNESS;
-	ctx->bl_dev->props.brightness = DEFAULT_BRIGHTNESS;
 
 	dsi->lanes = 4;
 	dsi->format = MIPI_DSI_FMT_RGB888;
@@ -684,7 +688,6 @@ static int s6e8aa5x01_ams497hy01_probe(struct mipi_dsi_device *dsi)
 	if (ret < 0) {
 		dev_err(dev, "Failed to attach to DSI host: %d\n", ret);
 		drm_panel_remove(&ctx->panel);
-		backlight_device_unregister(ctx->bl_dev);
 		return ret;
 	}
 
@@ -701,8 +704,6 @@ static void s6e8aa5x01_ams497hy01_remove(struct mipi_dsi_device *dsi)
 		dev_err(&dsi->dev, "Failed to detach from DSI host: %d\n", ret);
 
 	drm_panel_remove(&ctx->panel);
-
-	backlight_device_unregister(ctx->bl_dev);
 }
 
 static const struct of_device_id s6e8aa5x01_ams497hy01_of_match[] = {
