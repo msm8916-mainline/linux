@@ -53,6 +53,7 @@ struct pm8916_bms_vm_battery {
 	unsigned int last_ocv;
 	time64_t last_ocv_time;
 	unsigned int vbat_now;
+	unsigned int fake_ocv;
 };
 
 static int pm8916_bms_vm_battery_get_property(struct power_supply *psy,
@@ -84,6 +85,10 @@ static int pm8916_bms_vm_battery_get_property(struct power_supply *psy,
 			val->intval = POWER_SUPPLY_HEALTH_GOOD;
 		return 0;
 
+	case POWER_SUPPLY_PROP_CAPACITY:
+		val->intval = power_supply_batinfo_ocv2cap(info, bat->fake_ocv, 20);
+		return 0;
+
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
 		val->intval = bat->vbat_now;
 		return 0;
@@ -109,28 +114,75 @@ static enum power_supply_property pm8916_bms_vm_battery_properties[] = {
 	POWER_SUPPLY_PROP_VOLTAGE_NOW,
 	POWER_SUPPLY_PROP_VOLTAGE_OCV,
 	POWER_SUPPLY_PROP_HEALTH,
+	POWER_SUPPLY_PROP_CAPACITY,
 };
 
 static irqreturn_t pm8916_bms_vm_fifo_update_done_irq(int irq, void *data)
 {
 	struct pm8916_bms_vm_battery *bat = data;
+	struct power_supply_battery_info *info = bat->info;
 	u16 vbat_data[PM8916_BMS_VM_FIFO_COUNT];
-	int ret;
+	int i, ret, delta = 0, loc_delta;
+	unsigned int tmp = 0;
+	int supplied;
 
 	ret = regmap_bulk_read(bat->regmap, bat->reg + PM8916_BMS_VM_BMS_FIFO_REG_0_LSB,
 			       &vbat_data, PM8916_BMS_VM_FIFO_COUNT * 2);
 	if (ret)
 		return IRQ_HANDLED;
 
+	/* We assume that we don't charge if no charger is present */
+	supplied = power_supply_am_i_supplied(bat->battery);
+	if (supplied == -ENODEV)
+		supplied = 0;
+	else if (supplied < 0)
+		return IRQ_HANDLED;
+
+	for (i = 0; i < PM8916_BMS_VM_FIFO_COUNT; i++) {
+		tmp = vbat_data[i] * 300 - 100000;
+
+		loc_delta = tmp - bat->vbat_now;
+		delta += loc_delta;
+		bat->vbat_now = tmp;
+	}
+
 	/*
 	 * The VM-BMS hardware only collects voltage data and the software
 	 * has to process it to calculate the OCV and SoC. Hardware provides
 	 * up to 8 averaged measurements for software to take in account.
 	 *
-	 * Just use the last measured value for now to report the current
-	 * battery voltage.
+	 * NOTE: Since VM-BMS is mostly implemented in software, OCV needs to be estimated.
+	 * This driver makes some assumptions to estimate OCV from averaged VBAT measurements
+	 * and initial OCV measurements taken on boot or while in suspend:
+	 *
+	 *  - When charger is online, ocv can only increase.
+	 *  - When charger is offline, ocv can only decrease and ocv > vbat.
+	 *  - ocv can't change more than 0.025v between the measurements.
+	 *  - When charger is in CV mode (vbat = const vbat-max), ocv increases by
+	 *    0.004v every measurement until it reaches vbat.
+	 *
+	 * Those assumptions give somewhat realistic estimation of ocv and capacity, though
+	 * in some worst case scenarios it will perform poorly.
+	 * Ideally proper BMS algorithm should be implemented in userspace.
 	 */
-	bat->vbat_now = vbat_data[PM8916_BMS_VM_FIFO_COUNT - 1] * 300;
+
+	if ((supplied && delta > 0) || (!supplied && delta < 0))
+		if (abs(delta) < 25000) /* 0.025v */
+			bat->fake_ocv += delta;
+
+	if (!supplied && bat->fake_ocv < bat->vbat_now)
+		bat->fake_ocv = bat->vbat_now;
+
+	regmap_write(bat->regmap, bat->reg + PM8916_BMS_VM_STATUS1, 0);
+	regmap_read(bat->regmap, bat->reg + PM8916_BMS_VM_STATUS1, &tmp);
+
+	if (PM8916_BMS_VM_FSM_STATE(tmp) == PM8916_BMS_VM_FSM_STATE_S2 &&
+	    bat->fake_ocv < bat->vbat_now - 10000 /* 0.01v */) {
+		bat->fake_ocv += 4000; /* 0.004v */
+	}
+
+	if (supplied && bat->fake_ocv > info->voltage_max_design_uv)
+		bat->fake_ocv = info->voltage_max_design_uv;
 
 	power_supply_changed(bat->battery);
 
@@ -208,6 +260,7 @@ static int pm8916_bms_vm_battery_probe(struct platform_device *pdev)
 	bat->last_ocv_time = ktime_get_seconds();
 	bat->last_ocv = tmp * 300;
 	bat->vbat_now = bat->last_ocv;
+	bat->fake_ocv = bat->last_ocv;
 
 	psy_cfg.drv_data = bat;
 	psy_cfg.of_node = dev->of_node;
@@ -266,6 +319,7 @@ static int pm8916_bms_vm_battery_resume(struct platform_device *pdev)
 
 	bat->last_ocv_time = ktime_get_seconds();
 	bat->last_ocv = tmp * 300;
+	bat->fake_ocv = bat->last_ocv;
 
 	ret = regmap_write(bat->regmap,
 			   bat->reg + PM8916_SEC_ACCESS, PM8916_SEC_MAGIC);
