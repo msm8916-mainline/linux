@@ -62,8 +62,8 @@
 		vddio-supply = <&pm8916_l5>;
 
 		st,drdy-int-pin = <1>;
-		mount-matrix = "1", "0", "0",
-			       "0", "-1", "0",
+		mount-matrix = "-1", "0", "0",
+			       "0", "1", "0",
 			       "0", "0", "1";
 
 		pinctrl-0 = <&accel_int_default>;
