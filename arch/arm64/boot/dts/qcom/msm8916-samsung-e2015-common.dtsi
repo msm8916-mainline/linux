@@ -51,7 +51,7 @@
 	/delete-node/ accelerometer@10;
 	/delete-node/ magnetometer@12;
 
-	accelerometer@1d {
+	accelerometer: accelerometer@1d {
 		compatible = "st,lis2hh12";
 		reg = <0x1d>;
 
