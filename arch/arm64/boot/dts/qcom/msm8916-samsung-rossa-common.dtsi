@@ -33,6 +33,10 @@
 	status = "disabled";
 };
 
+&panel {
+	/delete-property/ backlight;
+};
+
 &s3fwrn5_nfc {
 	status = "okay";
 };
