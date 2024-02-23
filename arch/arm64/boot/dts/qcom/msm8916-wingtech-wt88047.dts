@@ -237,6 +237,59 @@
 	status = "okay";
 };
 
+&camss {
+	status = "okay";
+
+	ports {
+		port@0 {
+			reg = <0>;
+			csiphy0_ep: endpoint {
+				clock-lanes = <1>;
+				data-lanes = <0 2 3 4>;
+				remote-endpoint = <&ov8865_ep>;
+			};
+		};
+	};
+};
+
+&cci {
+	status= "okay";
+};
+
+&cci_i2c0 {
+	ov8865: camera@10 {
+		compatible = "ovti,ov8865";
+		reg = <0x10>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&camera_rear_default>;
+
+		clocks = <&gcc GCC_CAMSS_MCLK0_CLK>;
+
+		avdd-supply = <&pm8916_l17>;
+		dovdd-supply = <&pm8916_l6>;
+		dvdd-supply = <&pm8916_l2>;
+
+		powerdown-gpios = <&tlmm 35 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&tlmm 34 GPIO_ACTIVE_LOW>;
+
+		orientation = <1>;
+		rotation = <90>;
+
+		flash-leds = <&flash_led>;
+
+		port {
+			ov8865_ep: endpoint {
+
+				data-lanes = <1 2 3 4>;
+				link-frequencies = /bits/ 64 <360000000>;
+
+				remote-endpoint = <&csiphy0_ep>;
+			};
+		};
+	};
+};
+
 &gps_mem {
 	status = "disabled";
 };
