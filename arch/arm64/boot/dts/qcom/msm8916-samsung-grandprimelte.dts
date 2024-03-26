@@ -6,7 +6,7 @@
 
 / {
 	model = "Samsung Galaxy Grand Prime (SM-G530FZ)";
-	compatible = "samsung,grandprimelte", "qcom,msm8916";
+	compatible = "samsung,grandprimelte", "samsung,fortuna", "qcom,msm8916";
 	chassis-type = "handset";
 };
 

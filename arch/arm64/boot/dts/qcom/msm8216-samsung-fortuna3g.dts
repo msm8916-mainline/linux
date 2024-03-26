@@ -6,7 +6,7 @@
 
 / {
 	model = "Samsung Galaxy Grand Prime (SM-G530H)";
-	compatible = "samsung,fortuna3g", "qcom,msm8916";
+	compatible = "samsung,fortuna3g", "samsung,fortuna", "qcom,msm8916";
 	chassis-type = "handset";
 };
 
