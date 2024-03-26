@@ -6,7 +6,7 @@
 
 / {
 	model = "Samsung Galaxy Grand Prime (SM-G530W)";
-	compatible = "samsung,gprimeltecan", "qcom,msm8916";
+	compatible = "samsung,gprimeltecan", "samsung,fortuna", "qcom,msm8916";
 	chassis-type = "handset";
 
 	reserved-memory {
