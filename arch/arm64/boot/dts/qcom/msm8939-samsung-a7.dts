@@ -476,6 +476,7 @@
 
 &mdss_dsi0_phy {
 	qcom,dsi-phy-regulator-ldo-mode;
+	status = "okay";
 };
 
 &mpss_mem {
