@@ -200,6 +200,9 @@ properties:
               - gplus,fl8005a
               - huawei,g7
               - longcheer,l8910
+              - motorola,harpia
+              - motorola,osprey
+              - motorola,surnia
               - samsung,a3u-eur
               - samsung,a5u-eur
               - samsung,e5
