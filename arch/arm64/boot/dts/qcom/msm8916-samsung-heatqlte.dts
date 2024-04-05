@@ -25,6 +25,17 @@
 	chassis-type = "handset";
 };
 
+&battery {
+	charge-term-current-microamp = <150000>;
+	constant-charge-current-max-microamp = <700000>;
+	constant-charge-voltage-max-microvolt = <4350000>;
+};
+
+&charger {
+	richtek,usb-connector = <&usb_con_sm5504>;
+	status = "okay";
+};
+
 &muic_sm5504 {
 	status = "okay";
 };
