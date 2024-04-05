@@ -46,6 +46,14 @@
 	status = "okay";
 };
 
+&st_accel {
+	compatible = "st,lis2hh12";
+	mount-matrix = "1",  "0", "0",
+		       "0", "-1", "0",
+		       "0",  "0", "1";
+	status = "okay";
+};
+
 &usb {
 	extcon = <&muic_sm5502>, <&muic_sm5502>;
 	status = "okay";
