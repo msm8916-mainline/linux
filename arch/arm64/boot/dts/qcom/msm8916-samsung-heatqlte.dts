@@ -21,3 +21,9 @@
 	compatible = "samsung,heatqlte", "qcom,msm8916";
 	chassis-type = "handset";
 };
+
+&battery {
+	charge-term-current-microamp = <150000>;
+	constant-charge-current-max-microamp = <700000>;
+	constant-charge-voltage-max-microvolt = <4350000>;
+};
