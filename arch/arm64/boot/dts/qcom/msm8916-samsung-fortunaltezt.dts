@@ -37,6 +37,13 @@
 	status = "disabled";
 };
 
+&panel {
+	/* Actually hx8389c without PWM. There is no other variant */
+	compatible = "samsung,hx8389c-gh9607501a";
+
+	/delete-property/ backlight;
+};
+
 &pn547_nfc {
 	status = "okay";
 };
