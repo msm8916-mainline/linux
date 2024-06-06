@@ -3,6 +3,7 @@
 // Generated with linux-mdss-dsi-panel-driver-generator from vendor device tree:
 //   Copyright (c) 2013, The Linux Foundation. All rights reserved. (FIXME)
 
+#include <linux/backlight.h>
 #include <linux/delay.h>
 #include <linux/gpio/consumer.h>
 #include <linux/module.h>
@@ -14,6 +15,7 @@
 #include <drm/drm_mipi_dsi.h>
 #include <drm/drm_modes.h>
 #include <drm/drm_panel.h>
+#include <drm/drm_probe_helper.h>
 
 struct samsung {
 	struct drm_panel panel;
@@ -164,25 +166,13 @@ static const struct drm_display_mode samsung_mode = {
 	.vtotal = 800 + 13 + 1 + 2,
 	.width_mm = 56,
 	.height_mm = 94,
+	.type = DRM_MODE_TYPE_DRIVER,
 };
 
 static int samsung_get_modes(struct drm_panel *panel,
 			     struct drm_connector *connector)
 {
-	struct drm_display_mode *mode;
-
-	mode = drm_mode_duplicate(connector->dev, &samsung_mode);
-	if (!mode)
-		return -ENOMEM;
-
-	drm_mode_set_name(mode);
-
-	mode->type = DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED;
-	connector->display_info.width_mm = mode->width_mm;
-	connector->display_info.height_mm = mode->height_mm;
-	drm_mode_probed_add(connector, mode);
-
-	return 1;
+	return drm_connector_helper_get_modes_fixed(connector, &samsung_mode);
 }
 
 static const struct drm_panel_funcs samsung_panel_funcs = {
@@ -190,6 +180,61 @@ static const struct drm_panel_funcs samsung_panel_funcs = {
 	.unprepare = samsung_unprepare,
 	.get_modes = samsung_get_modes,
 };
+
+static int samsung_bl_update_status(struct backlight_device *bl)
+{
+	struct mipi_dsi_device *dsi = bl_get_data(bl);
+	u16 brightness = backlight_get_brightness(bl);
+	int ret;
+
+	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
+
+	ret = mipi_dsi_dcs_set_display_brightness(dsi, brightness);
+	if (ret < 0)
+		return ret;
+
+	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
+
+	return 0;
+}
+
+// TODO: Check if /sys/class/backlight/.../actual_brightness actually returns
+// correct values. If not, remove this function.
+static int samsung_bl_get_brightness(struct backlight_device *bl)
+{
+	struct mipi_dsi_device *dsi = bl_get_data(bl);
+	u16 brightness;
+	int ret;
+
+	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
+
+	ret = mipi_dsi_dcs_get_display_brightness(dsi, &brightness);
+	if (ret < 0)
+		return ret;
+
+	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
+
+	return brightness & 0xff;
+}
+
+static const struct backlight_ops samsung_bl_ops = {
+	.update_status = samsung_bl_update_status,
+	.get_brightness = samsung_bl_get_brightness,
+};
+
+static struct backlight_device *
+samsung_create_backlight(struct mipi_dsi_device *dsi)
+{
+	struct device *dev = &dsi->dev;
+	const struct backlight_properties props = {
+		.type = BACKLIGHT_RAW,
+		.brightness = 255,
+		.max_brightness = 255,
+	};
+
+	return devm_backlight_device_register(dev, dev_name(dev), dev, dsi,
+					      &samsung_bl_ops, &props);
+}
 
 static int samsung_probe(struct mipi_dsi_device *dsi)
 {
@@ -225,13 +270,17 @@ static int samsung_probe(struct mipi_dsi_device *dsi)
 		       DRM_MODE_CONNECTOR_DSI);
 	ctx->panel.prepare_prev_first = true;
 
+	ctx->panel.backlight = samsung_create_backlight(dsi);
+	if (IS_ERR(ctx->panel.backlight))
+		return dev_err_probe(dev, PTR_ERR(ctx->panel.backlight),
+				     "Failed to create backlight\n");
+
 	drm_panel_add(&ctx->panel);
 
 	ret = mipi_dsi_attach(dsi);
 	if (ret < 0) {
-		dev_err(dev, "Failed to attach to DSI host: %d\n", ret);
 		drm_panel_remove(&ctx->panel);
-		return ret;
+		return dev_err_probe(dev, ret, "Failed to attach to DSI host\n");
 	}
 
 	return 0;
@@ -250,7 +299,7 @@ static void samsung_remove(struct mipi_dsi_device *dsi)
 }
 
 static const struct of_device_id samsung_of_match[] = {
-	{ .compatible = "samsung,s6288a0" }, // FIXME
+	{ .compatible = "samsung,s6288a0" },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, samsung_of_match);
