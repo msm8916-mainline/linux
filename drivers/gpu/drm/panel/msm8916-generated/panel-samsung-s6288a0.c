@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
-// Copyright (c) 2023 FIXME
+// Copyright (c) 2024 FIXME
 // Generated with linux-mdss-dsi-panel-driver-generator from vendor device tree:
-//   Copyright (c) 2013, The Linux Foundation. All rights reserved. (FIXME)
+//   Copyright (c) 2013-2014, The Linux Foundation. All rights reserved.
 
 #include <linux/backlight.h>
 #include <linux/delay.h>
@@ -16,6 +16,11 @@
 #include <drm/drm_modes.h>
 #include <drm/drm_panel.h>
 #include <drm/drm_probe_helper.h>
+
+//From downstream dt property "samsung,panel-aid-cmds-list-350"
+#define AID_MIN 8
+#define AID_MAX 785
+#define MAX_BRIGHTNESS (AID_MAX - AID_MIN)
 
 struct samsung {
 	struct drm_panel panel;
@@ -40,6 +45,29 @@ static void samsung_reset(struct samsung *ctx)
 	usleep_range(10000, 11000);
 }
 
+static int samsung_send_dcs_aid(struct mipi_dsi_device *dsi, u16 brightness)
+{
+	u8 payload[5] = { 0x40, 0x08, 0x20, 0, 0 };
+	int ret;
+	u16 aid;
+
+	//Calculate AID value from brightness level
+	if (brightness > MAX_BRIGHTNESS)
+		brightness = MAX_BRIGHTNESS;
+	aid = (MAX_BRIGHTNESS - brightness) + AID_MIN;
+	payload[3] = (aid >> 8) & 0xff;
+	payload[4] = aid & 0xff;
+
+	//Set AID
+	ret = mipi_dsi_dcs_write(dsi, 0xb2, payload, sizeof(payload));
+	if (ret < 0) {
+		dev_err(&dsi->dev, "Failed to set AID: %d\n", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 static int samsung_on(struct samsung *ctx)
 {
 	struct mipi_dsi_device *dsi = ctx->dsi;
@@ -48,7 +76,9 @@ static int samsung_on(struct samsung *ctx)
 
 	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
 
+	//Tesk key ON - Enable level 1 control commands
 	mipi_dsi_dcs_write_seq(dsi, 0xf0, 0x5a, 0x5a);
+	//Enable level 2 control commands
 	mipi_dsi_dcs_write_seq(dsi, 0xfc, 0x5a, 0x5a);
 
 	ret = mipi_dsi_dcs_exit_sleep_mode(dsi);
@@ -58,17 +88,37 @@ static int samsung_on(struct samsung *ctx)
 	}
 	msleep(120);
 
+	//AVDD Setting
 	mipi_dsi_dcs_write_seq(dsi, 0xb8, 0x38, 0x0b, 0x30);
+
+	//Brightness gamma
 	mipi_dsi_dcs_write_seq(dsi, 0xca,
-			       0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x80, 0x80,
-			       0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
-			       0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
-			       0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00, 0x00,
-			       0x00);
-	mipi_dsi_dcs_write_seq(dsi, 0xb2, 0x40, 0x08, 0x20, 0x00, 0x08);
+				0x01, 0x00, 0x01, 0x00, 0x01, 0x00, // V255 RGB
+				0x80, 0x80, 0x80,                   // V203 RGB
+				0x80, 0x80, 0x80,                   // V151 RGB
+				0x80, 0x80, 0x80,                   // V87  RGB
+				0x80, 0x80, 0x80,                   // V51  RGB
+				0x80, 0x80, 0x80,                   // V35  RGB
+				0x80, 0x80, 0x80,                   // V23  RGB
+				0x80, 0x80, 0x80,                   // V11  RGB
+				0x80, 0x80, 0x80,                   // V3   RGB
+				0x00, 0x00, 0x00);                  // VT   RGB
+
+	//Set AID
+	// We need the actual backlight value even while blank, hence why the
+	// value is read directly instead of via backlight_get_brightness()
+	samsung_send_dcs_aid(dsi, ctx->panel.backlight->props.brightness);
+
+	//Set ELVSS condition
 	mipi_dsi_dcs_write_seq(dsi, 0xb6, 0x28, 0x0b);
+
+	//Set ACL
 	mipi_dsi_dcs_write_seq(dsi, MIPI_DCS_WRITE_POWER_SAVE, 0x00);
+
+	//Update gamma, LTPS(AID)
 	mipi_dsi_dcs_write_seq(dsi, 0xf7, 0x03);
+
+	//Disable level 2 control commands
 	mipi_dsi_dcs_write_seq(dsi, 0xfc, 0xa5, 0xa5);
 
 	ret = mipi_dsi_dcs_set_display_on(dsi);
@@ -87,6 +137,9 @@ static int samsung_off(struct samsung *ctx)
 	int ret;
 
 	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
+
+	//Tesk key OFF - Disable level 1 control commands
+	mipi_dsi_dcs_write_seq(dsi, 0xf0, 0xa5, 0xa5);
 
 	ret = mipi_dsi_dcs_set_display_off(dsi);
 	if (ret < 0) {
@@ -184,42 +237,29 @@ static const struct drm_panel_funcs samsung_panel_funcs = {
 static int samsung_bl_update_status(struct backlight_device *bl)
 {
 	struct mipi_dsi_device *dsi = bl_get_data(bl);
-	u16 brightness = backlight_get_brightness(bl);
 	int ret;
+	u16 brightness = backlight_get_brightness(bl);
 
 	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
 
-	ret = mipi_dsi_dcs_set_display_brightness(dsi, brightness);
-	if (ret < 0)
+	//Set AID
+	ret = samsung_send_dcs_aid(dsi, brightness);
+	if (ret != 0)
 		return ret;
+
+	//Update gamma, LTPS(AID)
+	mipi_dsi_dcs_write_seq(dsi, 0xf7, 0x03);
+
+	//TODO: downstream driver also updates ACL and ELVSS based on brightness
+	// check out dsi-panel-samsung-wvga-video.dtsi
 
 	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
 
 	return 0;
 }
 
-// TODO: Check if /sys/class/backlight/.../actual_brightness actually returns
-// correct values. If not, remove this function.
-static int samsung_bl_get_brightness(struct backlight_device *bl)
-{
-	struct mipi_dsi_device *dsi = bl_get_data(bl);
-	u16 brightness;
-	int ret;
-
-	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
-
-	ret = mipi_dsi_dcs_get_display_brightness(dsi, &brightness);
-	if (ret < 0)
-		return ret;
-
-	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
-
-	return brightness & 0xff;
-}
-
 static const struct backlight_ops samsung_bl_ops = {
 	.update_status = samsung_bl_update_status,
-	.get_brightness = samsung_bl_get_brightness,
 };
 
 static struct backlight_device *
@@ -228,8 +268,8 @@ samsung_create_backlight(struct mipi_dsi_device *dsi)
 	struct device *dev = &dsi->dev;
 	const struct backlight_properties props = {
 		.type = BACKLIGHT_RAW,
-		.brightness = 255,
-		.max_brightness = 255,
+		.brightness = MAX_BRIGHTNESS,
+		.max_brightness = MAX_BRIGHTNESS,
 	};
 
 	return devm_backlight_device_register(dev, dev_name(dev), dev, dsi,
@@ -264,7 +304,7 @@ static int samsung_probe(struct mipi_dsi_device *dsi)
 	dsi->lanes = 2;
 	dsi->format = MIPI_DSI_FMT_RGB888;
 	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
-			  MIPI_DSI_MODE_NO_EOT_PACKET;
+			  MIPI_DSI_MODE_NO_EOT_PACKET | MIPI_DSI_MODE_VIDEO_NO_HFP;
 
 	drm_panel_init(&ctx->panel, dev, &samsung_panel_funcs,
 		       DRM_MODE_CONNECTOR_DSI);
