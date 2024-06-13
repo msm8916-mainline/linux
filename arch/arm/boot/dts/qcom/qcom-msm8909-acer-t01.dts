@@ -98,6 +98,10 @@
 
 		pinctrl-0 = <&accel_int_default>;
 		pinctrl-names = "default";
+
+		mount-matrix = "0", "1", "0",
+			       "-1", "0", "0",
+			       "0", "0", "-1";
 	};
 
 	led-controller@45 {
