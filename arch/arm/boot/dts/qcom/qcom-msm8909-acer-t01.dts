@@ -20,7 +20,42 @@
 	};
 
 	chosen {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
 		stdout-path = "serial0";
+
+		framebuffer@83201000 {
+			compatible = "simple-framebuffer";
+			reg = <0x83201000 (480 * 854 * 3)>;
+
+			width = <480>;
+			height = <854>;
+			stride = <(480 * 3)>;
+			format = "r8g8b8";
+
+			power-domains = <&gcc MDSS_GDSC>;
+
+			clocks = <&gcc GCC_MDSS_AHB_CLK>,
+				 <&gcc GCC_MDSS_AXI_CLK>,
+				 <&gcc GCC_MDSS_VSYNC_CLK>,
+				 <&gcc GCC_MDSS_MDP_CLK>,
+				 <&gcc GCC_MDSS_BYTE0_CLK>,
+				 <&gcc GCC_MDSS_PCLK0_CLK>,
+				 <&gcc GCC_MDSS_ESC0_CLK>;
+		};
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		framebuffer@83201000 {
+			reg = <0x83201000 (480 * 854 * 3)>;
+			no-map;
+		};
 	};
 
 	backlight: backlight {
