@@ -1,0 +1,68 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-thwc-mf601xx.dtsi"
+
+/ {
+	model = "Tong Heng Wei Chuang 4G Modem Stick MF601SL_CT_V07";
+	compatible = "thwc,mf601sl-v7", "qcom,msm8916";
+};
+
+&leds {
+	led-wan-green {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_WAN;
+		default-state = "off";
+		gpios = <&tlmm 116 GPIO_ACTIVE_HIGH>;
+	};
+
+	led-wan-red {
+		color = <LED_COLOR_ID_RED>;
+		function = LED_FUNCTION_WAN;
+		default-state = "on";
+		gpios = <&tlmm 115 GPIO_ACTIVE_HIGH>;
+	};
+
+	led-battery-green {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_POWER;
+		default-state = "on";
+		gpios = <&tlmm 112 GPIO_ACTIVE_HIGH>;
+	};
+
+	led-battery-red {
+		color = <LED_COLOR_ID_RED>;
+		function = LED_FUNCTION_POWER;
+		default-state = "off";
+		gpios = <&tlmm 110 GPIO_ACTIVE_HIGH>;
+	};
+
+	led-message-green {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_INDICATOR;
+		default-state = "off";
+		gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
+	};
+
+	led-message-red {
+		color = <LED_COLOR_ID_RED>;
+		function = LED_FUNCTION_INDICATOR;
+		default-state = "on";
+		gpios = <&tlmm 121 GPIO_ACTIVE_HIGH>;
+	};
+
+	led-wifi-green {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_WLAN;
+		default-state = "off";
+		gpios = <&tlmm 120 GPIO_ACTIVE_HIGH>;
+	};
+
+	led-wifi-red {
+		color = <LED_COLOR_ID_RED>;
+		function = LED_FUNCTION_WLAN;
+		default-state = "on";
+		gpios = <&tlmm 119 GPIO_ACTIVE_HIGH>;
+	};
+};

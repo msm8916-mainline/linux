@@ -1,0 +1,201 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// A common dtsi for MF601xx series LTE modem dongles.
+
+#include "msm8916-pm8916.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	chassis-type = "embedded";
+
+	aliases {
+		mmc0 = &sdhc_1; /* eMMC */
+		mmc1 = &sdhc_2; /* external SD slot */
+		serial0 = &blsp_uart2;
+	};
+
+	chosen {
+		stdout-path = "serial0";
+	};
+
+	battery: battery {
+		compatible = "simple-battery";
+		voltage-min-design-microvolt = <3400000>;
+		voltage-max-design-microvolt = <4200000>;
+		energy-full-design-microwatt-hours = <7770000>;
+		charge-full-design-microamp-hours = <2100000>;
+
+		ocv-capacity-celsius = <25>;
+		ocv-capacity-table-0 = <4189000 100>, <4073000 95>,
+			<4044000 90>, <4039000 85>, <4032000 80>, <4025000 75>,
+			<4008000 70>, <3974000 65>, <3953000 60>, <3912000 55>,
+			<3884000 50>, <3858000 45>, <3849000 40>, <3839000 35>,
+			<3816000 30>, <3774000 25>, <3690000 20>, <3647000 16>,
+			<3611000 13>, <3539000 11>, <3477000 10>, <3421000 9>,
+			<3388000 8>, <3364000 7>, <3328000 6>, <3235000 5>,
+			<3174000 4>, <3096000 3>, <3062000 2>, <3035000 1>,
+			<3000000 0>;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		pinctrl-0 = <&button_default>;
+		pinctrl-names = "default";
+
+		label = "GPIO Buttons";
+
+		button-restart {
+			label = "Restart";
+			gpios = <&tlmm 34 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		pinctrl-0 = <&gpio_leds_default>;
+		pinctrl-names = "default";
+
+		/* LEDs are board-specific */
+	};
+};
+
+&bam_dmux {
+	status = "okay";
+};
+
+&bam_dmux_dma {
+	status = "okay";
+};
+
+&blsp_uart2 {
+	status = "okay";
+};
+
+/* Remove &dsi_phy0 from clocks to make sure that gcc probes with display disabled */
+&gcc {
+	clocks = <&xo_board>, <&sleep_clk>, <0>, <0>, <0>, <0>, <0>;
+};
+
+&mba_mem {
+	status = "okay";
+};
+
+&mpss {
+	pinctrl-0 = <&sim_ctrl_default>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
+
+&mpss_mem {
+	reg = <0x00 0x86800000 0x00 0x5500000>;
+	status = "okay";
+};
+
+&gps_mem {
+	status = "okay";
+};
+
+&pm8916_bms {
+	monitored-battery = <&battery>;
+	power-supplies = <&pm8916_charger>;
+
+	status = "okay";
+};
+
+&pm8916_charger {
+	qcom,fast-charge-safe-current = <700000>;
+	qcom,fast-charge-safe-voltage = <4200000>;
+
+	monitored-battery = <&battery>;
+
+	status = "okay";
+};
+
+&sdhc_1 {
+	status = "okay";
+};
+
+&sdhc_2 {
+	status = "okay";
+};
+
+&usb {
+	extcon = <&pm8916_charger>;
+	usb-role-switch;
+
+	status = "okay";
+};
+
+&usb_hs_phy {
+	extcon = <&pm8916_charger>;
+};
+
+&venus {
+	status = "okay";
+};
+
+&venus_mem {
+	status = "okay";
+};
+
+&wcnss {
+	status = "okay";
+};
+
+&wcnss_iris {
+	compatible = "qcom,wcn3620";
+};
+
+&wcnss_mem {
+	status = "okay";
+};
+
+&tlmm {
+	button_default: button-default-state {
+		function = "gpio";
+		drive-strength = <2>;
+		pins = "gpio34", "gpio107";
+		bias-pull-up;
+	};
+
+	gpio_leds_default: gpio-leds-default-state {
+		function = "gpio";
+		drive-strength = <2>;
+		pins = "gpio20", "gpio21", "gpio22", "gpio110", "gpio112",
+		       "gpio113", "gpio114", "gpio115", "gpio116", "gpio117",
+		       "gpio118", "gpio119", "gpio120", "gpio121";
+		bias-disable;
+	};
+
+	/* This selects the external SIM card slot by default */
+	sim_ctrl_default: sim-ctrl-default-state {
+		esim-sel-pins {
+			function = "gpio";
+			drive-strength = <2>;
+			pins = "gpio50", "gpio51";
+			bias-disable;
+			output-low;
+		};
+
+		sim-en-pins {
+			function = "gpio";
+			drive-strength = <2>;
+			pins = "gpio24";
+			bias-disable;
+			output-low;
+		};
+
+		sim-sel-pins {
+			function = "gpio";
+			drive-strength = <2>;
+			pins = "gpio49";
+			bias-disable;
+			output-high;
+		};
+	};
+};
