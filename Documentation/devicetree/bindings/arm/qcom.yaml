@@ -250,6 +250,7 @@ properties:
               - samsung,serranove
               - thwc,uf896
               - thwc,ufi001c
+              - thwc,mf601sl-v7
               - thwc,mf32-v2
               - wingtech,wt88047
               - yiming,uz801-v3
