@@ -1,0 +1,68 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-thwc-mf32.dtsi"
+
+/ {
+	model = "Tong Heng Wei Chuang 4G Modem Stick MF32_MB_V02";
+	compatible = "thwc,mf32-v2", "qcom,msm8916";
+};
+
+&leds {
+	led-wan-green {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_WAN;
+		default-state = "off";
+		gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+	};
+
+	led-wan-blue {
+		color = <LED_COLOR_ID_BLUE>;
+		function = LED_FUNCTION_WAN;
+		default-state = "on";
+		gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
+	};
+
+	led-wan-red {
+		color = <LED_COLOR_ID_RED>;
+		function = LED_FUNCTION_WAN;
+		default-state = "off";
+		gpios = <&tlmm 28 GPIO_ACTIVE_HIGH>;
+	};
+
+	led-wlan {
+		color = <LED_COLOR_ID_BLUE>;
+		function = LED_FUNCTION_WLAN;
+		default-state = "on";
+		gpios = <&tlmm 27 GPIO_ACTIVE_HIGH>;
+	};
+
+	led-battery-1 {
+		color = <LED_COLOR_ID_BLUE>;
+		function = LED_FUNCTION_POWER;
+		default-state = "on";
+		gpios = <&tlmm 19 GPIO_ACTIVE_HIGH>;
+	};
+
+	led-battery-2 {
+		color = <LED_COLOR_ID_BLUE>;
+		function = LED_FUNCTION_POWER;
+		default-state = "on";
+		gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
+	};
+
+	led-battery-3 {
+		color = <LED_COLOR_ID_BLUE>;
+		function = LED_FUNCTION_POWER;
+		default-state = "on";
+		gpios = <&tlmm 21 GPIO_ACTIVE_HIGH>;
+	};
+
+	led-battery-4 {
+		color = <LED_COLOR_ID_BLUE>;
+		function = LED_FUNCTION_POWER;
+		default-state = "on";
+		gpios = <&tlmm 20 GPIO_ACTIVE_HIGH>;
+	};
+};
