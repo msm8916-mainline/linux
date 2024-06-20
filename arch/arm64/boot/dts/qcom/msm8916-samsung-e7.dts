@@ -36,6 +36,12 @@
 	};
 };
 
+&battery {
+	charge-term-current-microamp = <200000>;
+	constant-charge-current-max-microamp = <1500000>;
+	constant-charge-voltage-max-microvolt = <4350000>;
+};
+
 &blsp_i2c5 {
 	status = "okay";
 
@@ -56,13 +62,6 @@
 		pinctrl-names = "default";
 	};
 };
-
-&battery {
-	charge-term-current-microamp = <200000>;
-	constant-charge-current-max-microamp = <1500000>;
-	constant-charge-voltage-max-microvolt = <4350000>;
-};
-
 
 &pm8916_l17 {
 	regulator-min-microvolt = <3000000>;
