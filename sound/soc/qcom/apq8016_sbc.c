@@ -130,12 +130,12 @@ static int apq8016_dai_init(struct snd_soc_pcm_runtime *rtd, int mi2s)
 
 		component = codec_dai->component;
 		/* Set default mclk for internal codec */
-		rval = snd_soc_component_set_sysclk(component, 0, 0, DEFAULT_MCLK_RATE,
-				       SND_SOC_CLOCK_IN);
-		if (rval != 0 && rval != -ENOTSUPP) {
-			dev_warn(card->dev, "Failed to set mclk: %d\n", rval);
-			return rval;
-		}
+/*		rval = snd_soc_component_set_sysclk(component, 0, 0, DEFAULT_MCLK_RATE,*/
+/*				       SND_SOC_CLOCK_IN);*/
+/*		if (rval != 0 && rval != -ENOTSUPP) {*/
+/*			dev_warn(card->dev, "Failed to set mclk: %d\n", rval);*/
+/*			return rval;*/
+/*		}*/
 		rval = snd_soc_component_set_jack(component, &pdata->jack, NULL);
 		if (rval != 0 && rval != -ENOTSUPP) {
 			dev_warn(card->dev, "Failed to set jack: %d\n", rval);
