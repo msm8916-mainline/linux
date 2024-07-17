@@ -50,27 +50,100 @@
 		};
 	};
 
-	i2c-muic {
+	i2c-bl {
 		compatible = "i2c-gpio";
-		sda-gpios = <&tlmm 105 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
-		scl-gpios = <&tlmm 106 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		sda-gpios = <&tlmm 101 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&tlmm 102 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
 
-		pinctrl-0 = <&muic_i2c_default>;
 		pinctrl-names = "default";
+		pinctrl-0 = <&bl_i2c_default>;
 
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		muic: extcon@25 {
-			compatible = "siliconmitus,sm5703-muic";
-			reg = <0x25>;
+		lm3632@11 {
+				compatible = "ti,lm3632";
+				reg = <0x11>;
 
-			interrupt-parent = <&tlmm>;
-			interrupts = <12 IRQ_TYPE_EDGE_FALLING>;
+				enable-gpios = <&tlmm 98 GPIO_ACTIVE_HIGH>;
 
-			pinctrl-0 = <&muic_int_default>;
-			pinctrl-names = "default";
+				regulators {
+						compatible = "ti,lm363x-regulator";
+
+						enable-gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>,
+										<&tlmm 98 GPIO_ACTIVE_HIGH>,
+			       						<&tlmm 120 GPIO_ACTIVE_HIGH>;
+
+						pinctrl-names = "default";
+						pinctrl-0 = <&bl_default>;
+						
+						reg_lcd_vboost: vboost {
+								regulator-name = "lcd_boost";
+								regulator-min-microvolt = <6000000>;
+								regulator-max-microvolt = <6000000>;
+								regulator-always-on;
+						};
+
+						reg_lcd_vpos: vpos {
+								regulator-name = "lcd_vpos";
+								regulator-min-microvolt = <5500000>;
+								regulator-max-microvolt = <5500000>;
+						};
+
+						reg_lcd_vneg: vneg {
+								regulator-name = "lcd_vneg";
+								regulator-min-microvolt = <5500000>;
+								regulator-max-microvolt = <5500000>;
+						};
+				};
+
+				backlight {
+					compatible = "ti,lm3632-backlight";
+
+					pwm-names = "lmu-backlight";
+			
+					lcd {
+						led-sources = <0 1>;
+						pwm-period = <10000>;
+					};
+				};
 		};
+	};
+
+	// i2c-muic {
+	// 	compatible = "i2c-gpio";
+	// 	sda-gpios = <&tlmm 105 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+	// 	scl-gpios = <&tlmm 106 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+	// 	pinctrl-0 = <&muic_i2c_default>;
+	// 	pinctrl-names = "default";
+
+	// 	#address-cells = <1>;
+	// 	#size-cells = <0>;
+
+	// 	muic: extcon@25 {
+	// 		compatible = "siliconmitus,sm5703-muic";
+	// 		reg = <0x25>;
+
+	// 		interrupt-parent = <&tlmm>;
+	// 		interrupts = <12 IRQ_TYPE_EDGE_FALLING>;
+
+	// 		pinctrl-0 = <&muic_int_default>;
+	// 		pinctrl-names = "default";
+	// 	};
+	// };
+
+	reg_lcd: regulator-lcd {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd";
+		regulator-min-microvolt = <2100000>;
+		regulator-max-microvolt = <2100000>;
+
+		gpio = <&tlmm 16 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_en_default>;
 	};
 };
 
@@ -78,8 +151,44 @@
 	status = "okay";
 };
 
+&mdss_dsi0 {
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&mdss_default>;
+		pinctrl-1 = <&mdss_sleep>;
+
+        panel@0 {
+                compatible = "samsung,s6d7aa0x62-bv050hdm";
+                reg = <0>;
+
+                lcd-supply = <&reg_lcd>;
+				vpos-supply = <&reg_lcd_vpos>;
+				vneg-supply = <&reg_lcd_vneg>;
+                reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+
+                port {
+                        panel_in: endpoint {
+                                remote-endpoint = <&mdss_dsi0_out>;
+                        };
+                };
+        };
+};
+
+&mdss_dsi0_out {
+        data-lanes = <0 1 2 3>;
+        remote-endpoint = <&panel_in>;
+};
+
+&mdss {
+	status = "okay";
+};
+
 &pm8916_resin {
 	linux,code = <KEY_VOLUMEDOWN>;
+	status = "okay";
+};
+
+/* FIXME: Replace with SM5703 MUIC when driver is fixed */
+&pm8916_usbin {
 	status = "okay";
 };
 
@@ -98,12 +207,13 @@
 };
 
 &usb {
-	extcon = <&muic>, <&muic>;
+	dr_mode = "peripheral";
+	extcon = <&pm8916_usbin>;
 	status = "okay";
 };
 
 &usb_hs_phy {
-	extcon = <&muic>;
+	extcon = <&pm8916_usbin>;
 };
 
 &venus {
@@ -134,19 +244,60 @@
 		bias-pull-up;
 	};
 
-	muic_i2c_default: muic-i2c-default-state {
-		pins = "gpio105", "gpio106";
+	bl_default: bl-default {
+		pins = "gpio97", "gpio98", "gpio120";
 		function = "gpio";
+
 		drive-strength = <2>;
 		bias-disable;
 	};
 
-	muic_int_default: muic-int-default-state {
-		pins = "gpio12";
+	bl_i2c_default: bl-i2c-default {
+		pins = "gpio101", "gpio102";
 		function = "gpio";
+
 		drive-strength = <2>;
 		bias-disable;
 	};
+
+	lcd_en_default: lcd-en-default {
+		pins = "gpio16";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	mdss {
+		mdss_default: mdss-default {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <8>;
+			bias-disable;
+		};
+		mdss_sleep: mdss-sleep {
+			pins = "gpio25";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
+
+	// muic_i2c_default: muic-i2c-default-state {
+	// 	pins = "gpio105", "gpio106";
+	// 	function = "gpio";
+	// 	drive-strength = <2>;
+	// 	bias-disable;
+	// };
+
+	// muic_int_default: muic-int-default-state {
+	// 	pins = "gpio12";
+	// 	function = "gpio";
+	// 	drive-strength = <2>;
+	// 	bias-disable;
+	// };
 
 	sdc2_cd_default: sdc2-cd-default-state {
 		pins = "gpio38";
