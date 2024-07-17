@@ -71,8 +71,12 @@
 						compatible = "ti,lm363x-regulator";
 
 						enable-gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>,
+										<&tlmm 98 GPIO_ACTIVE_HIGH>,
 			       						<&tlmm 120 GPIO_ACTIVE_HIGH>;
 
+						pinctrl-names = "default";
+						pinctrl-0 = <&bl_default>;
+						
 						reg_lcd_vboost: vboost {
 								regulator-name = "lcd_boost";
 								regulator-min-microvolt = <6000000>;
@@ -91,6 +95,17 @@
 								regulator-min-microvolt = <5500000>;
 								regulator-max-microvolt = <5500000>;
 						};
+				};
+
+				backlight {
+					compatible = "ti,lm3632-backlight";
+
+					pwm-names = "lmu-backlight";
+			
+					lcd {
+						led-sources = <0 1>;
+						pwm-period = <10000>;
+					};
 				};
 		};
 	};
@@ -227,6 +242,14 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-up;
+	};
+
+	bl_default: bl-default {
+		pins = "gpio97", "gpio98", "gpio120";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	bl_i2c_default: bl-i2c-default {
