@@ -33,6 +33,7 @@ dtb-$(CONFIG_ARCH_QCOM) += \
 	qcom-msm8660-surf.dtb \
 	qcom-msm8905-nokia-argon.dtb \
 	qcom-msm8909-acer-t01.dtb \
+	qcom-msm8909-fareastone-smart506.dtb \
 	qcom-msm8909-nokia-leo.dtb \
 	qcom-msm8909-nokia-sparkler.dtb \
 	qcom-msm8916-samsung-e5.dtb \
