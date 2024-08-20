@@ -195,11 +195,13 @@ struct imx214 {
 	struct regulator_bulk_data	supplies[IMX214_NUM_SUPPLIES];
 
 	struct gpio_desc *enable_gpio;
+
+	/* Two or Four lanes */
+	u8 lanes;
 };
 
 /*From imx214_mode_tbls.h*/
 static const struct cci_reg_sequence mode_4096x2304[] = {
-	{ IMX214_REG_CSI_LANE_MODE, IMX214_CSI_4_LANE_MODE },
 	{ IMX214_REG_HDR_MODE, IMX214_HDR_MODE_OFF },
 	{ IMX214_REG_HDR_RES_REDUCTION, IMX214_HDR_RES_REDU_THROUGH },
 	{ IMX214_REG_EXPOSURE_RATIO, 1 },
@@ -272,7 +274,6 @@ static const struct cci_reg_sequence mode_4096x2304[] = {
 };
 
 static const struct cci_reg_sequence mode_1920x1080[] = {
-	{ IMX214_REG_CSI_LANE_MODE, IMX214_CSI_4_LANE_MODE },
 	{ IMX214_REG_HDR_MODE, IMX214_HDR_MODE_OFF },
 	{ IMX214_REG_HDR_RES_REDUCTION, IMX214_HDR_RES_REDU_THROUGH },
 	{ IMX214_REG_EXPOSURE_RATIO, 1 },
@@ -774,6 +775,13 @@ static int imx214_ctrls_init(struct imx214 *imx214)
 	return 0;
 };
 
+static int imx214_configure_lanes(struct imx214 *imx214)
+{
+	return cci_write(imx214->regmap, IMX214_REG_CSI_LANE_MODE,
+			 imx214->lanes == 2 ? IMX214_CSI_2_LANE_MODE :
+			 IMX214_CSI_4_LANE_MODE, NULL);
+};
+
 static int imx214_start_streaming(struct imx214 *imx214)
 {
 	const struct imx214_mode *mode;
@@ -783,6 +791,13 @@ static int imx214_start_streaming(struct imx214 *imx214)
 				  ARRAY_SIZE(mode_table_common), NULL);
 	if (ret < 0) {
 		dev_err(imx214->dev, "could not sent common table %d\n", ret);
+		return ret;
+	}
+
+	/* Configure two or four Lane mode */
+	ret = imx214_configure_lanes(imx214);
+	if (ret) {
+		dev_err(imx214->dev, "%s failed to configure lanes\n", __func__);
 		return ret;
 	}
 
@@ -930,7 +945,7 @@ static int imx214_get_regulators(struct device *dev, struct imx214 *imx214)
 				       imx214->supplies);
 }
 
-static int imx214_parse_fwnode(struct device *dev)
+static int imx214_parse_fwnode(struct device *dev, struct imx214 *imx214)
 {
 	struct fwnode_handle *endpoint;
 	struct v4l2_fwnode_endpoint bus_cfg = {
@@ -948,6 +963,14 @@ static int imx214_parse_fwnode(struct device *dev)
 		dev_err_probe(dev, ret, "parsing endpoint node failed\n");
 		goto done;
 	}
+
+	/* Check the number of MIPI CSI2 data lanes */
+	if (bus_cfg.bus.mipi_csi2.num_data_lanes != 4) {
+		dev_err_probe(dev, -EINVAL,
+			      "only 4 data lanes are currently supported\n");
+		goto done;
+	}
+	imx214->lanes = bus_cfg.bus.mipi_csi2.num_data_lanes;
 
 	for (i = 0; i < bus_cfg.nr_of_link_frequencies; i++)
 		if (bus_cfg.link_frequencies[i] == IMX214_DEFAULT_LINK_FREQ)
@@ -973,13 +996,13 @@ static int imx214_probe(struct i2c_client *client)
 	struct imx214 *imx214;
 	int ret;
 
-	ret = imx214_parse_fwnode(dev);
-	if (ret)
-		return ret;
-
 	imx214 = devm_kzalloc(dev, sizeof(*imx214), GFP_KERNEL);
 	if (!imx214)
 		return -ENOMEM;
+
+	ret = imx214_parse_fwnode(dev, imx214);
+	if (ret)
+		return ret;
 
 	imx214->dev = dev;
 
