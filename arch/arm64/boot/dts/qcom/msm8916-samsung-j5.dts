@@ -19,6 +19,10 @@
 	status = "disabled";
 };
 
+&front_flash_led {
+	ctrl-gpios = <&tlmm 50 GPIO_ACTIVE_HIGH>;
+};
+
 &panel {
 	vdd3-supply = <&reg_vdd_lcd_1p8>;
 	vci-supply = <&pm8916_l17>;
@@ -30,7 +34,6 @@
 
 &reg_vdd_lcd_1p8 {
 	gpio = <&tlmm 16 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 };
 
 &touchscreen {
@@ -43,4 +46,8 @@
 
 &lcd_1p8_ldo_en_default {
 	pins = "gpio16";
+};
+
+&vtcam_flash_en_default {
+	pins = "gpio50";
 };

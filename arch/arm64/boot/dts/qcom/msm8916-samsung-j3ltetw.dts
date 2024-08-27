@@ -2,48 +2,12 @@
 
 /dts-v1/;
 
-#include "msm8916-samsung-j5-common.dtsi"
+#include "msm8916-samsung-j3-common.dtsi"
 
 / {
 	model = "Samsung Galaxy J3 (2016) (SM-J320YZ)";
 	compatible = "samsung,j3ltetw", "qcom,msm8916";
 	chassis-type = "handset";
-
-	reserved-memory {
-		/delete-node/ tz-apps@85500000;
-
-		/* Additional memory used by Samsung firmware modifications */
-		tz-apps@85a00000 {
-			reg = <0x0 0x85a00000 0x0 0x600000>;
-			no-map;
-		};
-	};
-
-	reg_vdd_tsp_a: regulator-vdd-tsp-a {
-		compatible = "regulator-fixed";
-		regulator-name = "vdd_tsp_a";
-		regulator-min-microvolt = <3000000>;
-		regulator-max-microvolt = <3000000>;
-
-		gpio = <&tlmm 16 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-
-		pinctrl-0 = <&tsp_ldo_en_default>;
-		pinctrl-names = "default";
-	};
-};
-
-&accelerometer {
-	vdd-supply = <&pm8916_l5>;
-	vddio-supply = <&pm8916_l5>;
-
-	mount-matrix = "0", "-1", "0",
-		       "1", "0", "0",
-		       "0", "0", "-1";
-};
-
-&gpio_hall_sensor {
-	status = "disabled";
 };
 
 &i2c_muic {
@@ -52,36 +16,9 @@
 };
 
 &i2c_sensors {
+	/* I2C2 */
 	sda-gpios = <&tlmm 6 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
 	scl-gpios = <&tlmm 7 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
-};
-
-&panel {
-	vdd3-supply = <&pm8916_l6>;
-	vci-supply = <&reg_vdd_lcd_3p0>;
-};
-
-&reg_vdd_lcd_3p0 {
-	vin-supply = <&pm8916_l17>;
-	gpio = <&tlmm 102 GPIO_ACTIVE_HIGH>;
-	status = "okay";
-};
-
-&touchscreen {
-	vdd-supply = <&reg_vdd_tsp_a>;
-};
-
-&tlmm {
-	tsp_ldo_en_default: tsp-ldo-en-default-state {
-		pins = "gpio16";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-disable;
-	};
-};
-
-&lcd_3p0_ldo_en_default {
-	pins = "gpio102";
 };
 
 &muic_i2c_default {
@@ -89,5 +26,6 @@
 };
 
 &sensors_i2c_default {
+	/* I2C2 */
 	pins = "gpio6", "gpio7";
 };
