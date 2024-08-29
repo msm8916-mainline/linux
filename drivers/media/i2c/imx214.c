@@ -15,26 +15,188 @@
 #include <linux/regmap.h>
 #include <linux/regulator/consumer.h>
 #include <media/media-entity.h>
+#include <media/v4l2-cci.h>
 #include <media/v4l2-ctrls.h>
 #include <media/v4l2-fwnode.h>
 #include <media/v4l2-subdev.h>
 
-#define IMX214_REG_MODE_SELECT		0x0100
+/* Chip ID */
+#define IMX214_REG_CHIP_ID		CCI_REG16(0x0016)
+#define IMX214_CHIP_ID			0x0214
+
+#define IMX214_REG_MODE_SELECT		CCI_REG8(0x0100)
 #define IMX214_MODE_STANDBY		0x00
 #define IMX214_MODE_STREAMING		0x01
+
+#define IMX214_REG_FAST_STANDBY_CTRL	CCI_REG8(0x0106)
 
 #define IMX214_DEFAULT_CLK_FREQ	24000000
 #define IMX214_DEFAULT_LINK_FREQ 480000000
 #define IMX214_DEFAULT_PIXEL_RATE ((IMX214_DEFAULT_LINK_FREQ * 8LL) / 10)
 #define IMX214_FPS 30
-#define IMX214_MBUS_CODE MEDIA_BUS_FMT_SRGGB10_1X10
+
+/* V-TIMING internal */
+#define IMX214_REG_FRM_LENGTH_LINES	CCI_REG16(0x0340)
+#define IMX214_VTS_MAX			0xffff
+
+#define IMX214_VBLANK_MIN		4
+
+/* HBLANK control - read only */
+#define IMX214_PPL_DEFAULT		5008
 
 /* Exposure control */
-#define IMX214_REG_EXPOSURE		0x0202
-#define IMX214_EXPOSURE_MIN		0
-#define IMX214_EXPOSURE_MAX		3184
+#define IMX214_REG_EXPOSURE		CCI_REG16(0x0202)
+#define IMX214_EXPOSURE_OFFSET		10
+#define IMX214_EXPOSURE_MIN		1
+#define IMX214_EXPOSURE_MAX		(IMX214_VTS_MAX - IMX214_EXPOSURE_OFFSET)
 #define IMX214_EXPOSURE_STEP		1
 #define IMX214_EXPOSURE_DEFAULT		3184
+#define IMX214_REG_EXPOSURE_RATIO	CCI_REG8(0x0222)
+#define IMX214_REG_SHORT_EXPOSURE	CCI_REG16(0x0224)
+
+/* Analog gain control */
+#define IMX214_REG_ANALOG_GAIN		CCI_REG16(0x0204)
+#define IMX214_REG_SHORT_ANALOG_GAIN	CCI_REG16(0x0216)
+#define IMX214_ANA_GAIN_MIN		0
+#define IMX214_ANA_GAIN_MAX		448
+#define IMX214_ANA_GAIN_STEP		1
+#define IMX214_ANA_GAIN_DEFAULT		0x0
+
+/* Digital gain control */
+#define IMX214_REG_DIG_GAIN_GREENR	CCI_REG16(0x020e)
+#define IMX214_REG_DIG_GAIN_RED		CCI_REG16(0x0210)
+#define IMX214_REG_DIG_GAIN_BLUE	CCI_REG16(0x0212)
+#define IMX214_REG_DIG_GAIN_GREENB	CCI_REG16(0x0214)
+#define IMX214_DGTL_GAIN_MIN		0x0100
+#define IMX214_DGTL_GAIN_MAX		0x0fff
+#define IMX214_DGTL_GAIN_DEFAULT	0x0100
+#define IMX214_DGTL_GAIN_STEP		1
+
+#define IMX214_REG_ORIENTATION		CCI_REG8(0x0101)
+
+#define IMX214_REG_MASK_CORR_FRAMES	CCI_REG8(0x0105)
+#define IMX214_CORR_FRAMES_TRANSMIT	0
+#define IMX214_CORR_FRAMES_MASK		1
+
+#define IMX214_REG_CSI_DATA_FORMAT	CCI_REG16(0x0112)
+#define IMX214_CSI_DATA_FORMAT_RAW8	0x0808
+#define IMX214_CSI_DATA_FORMAT_RAW10	0x0A0A
+#define IMX214_CSI_DATA_FORMAT_COMP6	0x0A06
+#define IMX214_CSI_DATA_FORMAT_COMP8	0x0A08
+
+#define IMX214_REG_CSI_LANE_MODE	CCI_REG8(0x0114)
+#define IMX214_CSI_2_LANE_MODE		1
+#define IMX214_CSI_4_LANE_MODE		3
+
+#define IMX214_REG_EXCK_FREQ		CCI_REG16(0x0136)
+#define IMX214_EXCK_FREQ(n)		((n) * 256)	/* n expressed in MHz */
+
+#define IMX214_REG_TEMP_SENSOR_CONTROL	CCI_REG8(0x0138)
+
+#define IMX214_REG_HDR_MODE		CCI_REG8(0x0220)
+#define IMX214_HDR_MODE_OFF		0
+#define IMX214_HDR_MODE_ON		1
+
+#define IMX214_REG_HDR_RES_REDUCTION	CCI_REG8(0x0221)
+#define IMX214_HDR_RES_REDU_THROUGH	0x11
+#define IMX214_HDR_RES_REDU_2_BINNING	0x22
+
+/* PLL settings */
+#define IMX214_REG_VTPXCK_DIV		CCI_REG8(0x0301)
+#define IMX214_REG_VTSYCK_DIV		CCI_REG8(0x0303)
+#define IMX214_REG_PREPLLCK_VT_DIV	CCI_REG8(0x0305)
+#define IMX214_REG_PLL_VT_MPY		CCI_REG16(0x0306)
+#define IMX214_REG_OPPXCK_DIV		CCI_REG8(0x0309)
+#define IMX214_REG_OPSYCK_DIV		CCI_REG8(0x030b)
+#define IMX214_REG_PLL_MULT_DRIV	CCI_REG8(0x0310)
+#define IMX214_PLL_SINGLE		0
+#define IMX214_PLL_DUAL			1
+
+#define IMX214_REG_LINE_LENGTH_PCK	CCI_REG16(0x0342)
+#define IMX214_REG_X_ADD_STA		CCI_REG16(0x0344)
+#define IMX214_REG_Y_ADD_STA		CCI_REG16(0x0346)
+#define IMX214_REG_X_ADD_END		CCI_REG16(0x0348)
+#define IMX214_REG_Y_ADD_END		CCI_REG16(0x034a)
+#define IMX214_REG_X_OUTPUT_SIZE	CCI_REG16(0x034c)
+#define IMX214_REG_Y_OUTPUT_SIZE	CCI_REG16(0x034e)
+#define IMX214_REG_X_EVEN_INC		CCI_REG8(0x0381)
+#define IMX214_REG_X_ODD_INC		CCI_REG8(0x0383)
+#define IMX214_REG_Y_EVEN_INC		CCI_REG8(0x0385)
+#define IMX214_REG_Y_ODD_INC		CCI_REG8(0x0387)
+
+#define IMX214_REG_SCALE_MODE		CCI_REG8(0x0401)
+#define IMX214_SCALE_NONE		0
+#define IMX214_SCALE_HORIZONTAL		1
+#define IMX214_SCALE_FULL		2
+#define IMX214_REG_SCALE_M		CCI_REG16(0x0404)
+
+#define IMX214_REG_DIG_CROP_X_OFFSET	CCI_REG16(0x0408)
+#define IMX214_REG_DIG_CROP_Y_OFFSET	CCI_REG16(0x040a)
+#define IMX214_REG_DIG_CROP_WIDTH	CCI_REG16(0x040c)
+#define IMX214_REG_DIG_CROP_HEIGHT	CCI_REG16(0x040e)
+
+#define IMX214_REG_REQ_LINK_BIT_RATE	CCI_REG32(0x0820)
+#define IMX214_LINK_BIT_RATE_MBPS(n)	((n) << 16)
+
+/* Binning mode */
+#define IMX214_REG_BINNING_MODE		CCI_REG8(0x0900)
+#define IMX214_BINNING_NONE		0
+#define IMX214_BINNING_ENABLE		1
+#define IMX214_REG_BINNING_TYPE		CCI_REG8(0x0901)
+#define IMX214_BINNING_1X1		0
+#define IMX214_BINNING_2X2		0x22
+#define IMX214_BINNING_4X4		0x44
+#define IMX214_REG_BINNING_WEIGHTING	CCI_REG8(0x0902)
+#define IMX214_BINNING_AVERAGE		0x00
+#define IMX214_BINNING_SUMMED		0x01
+#define IMX214_BINNING_BAYER		0x02
+
+#define IMX214_REG_SING_DEF_CORR_EN	CCI_REG8(0x0b06)
+#define IMX214_SING_DEF_CORR_OFF	0
+#define IMX214_SING_DEF_CORR_ON		1
+
+/* AWB control */
+#define IMX214_REG_ABS_GAIN_GREENR	CCI_REG16(0x0b8e)
+#define IMX214_REG_ABS_GAIN_RED		CCI_REG16(0x0b90)
+#define IMX214_REG_ABS_GAIN_BLUE	CCI_REG16(0x0b92)
+#define IMX214_REG_ABS_GAIN_GREENB	CCI_REG16(0x0b94)
+
+#define IMX214_REG_RMSC_NR_MODE		CCI_REG8(0x3001)
+#define IMX214_REG_STATS_OUT_EN		CCI_REG8(0x3013)
+#define IMX214_STATS_OUT_OFF		0
+#define IMX214_STATS_OUT_ON		1
+
+/* Chroma noise reduction */
+#define IMX214_REG_NML_NR_EN		CCI_REG8(0x30a2)
+#define IMX214_NML_NR_OFF		0
+#define IMX214_NML_NR_ON		1
+
+#define IMX214_REG_EBD_SIZE_V		CCI_REG8(0x5041)
+#define IMX214_EBD_NO			0
+#define IMX214_EBD_4_LINE		4
+
+#define IMX214_REG_RG_STATS_LMT		CCI_REG16(0x6d12)
+#define IMX214_RG_STATS_LMT_10_BIT	0x03FF
+#define IMX214_RG_STATS_LMT_14_BIT	0x3FFF
+
+#define IMX214_REG_ATR_FAST_MOVE	CCI_REG8(0x9300)
+
+/* Test Pattern Control */
+#define IMX214_REG_TEST_PATTERN		CCI_REG16(0x0600)
+#define IMX214_TEST_PATTERN_DISABLE	0
+#define IMX214_TEST_PATTERN_SOLID_COLOR	1
+#define IMX214_TEST_PATTERN_COLOR_BARS	2
+#define IMX214_TEST_PATTERN_GREY_COLOR	3
+#define IMX214_TEST_PATTERN_PN9		4
+
+/* Test pattern colour components */
+#define IMX214_REG_TESTP_RED		CCI_REG16(0x0602)
+#define IMX214_REG_TESTP_GREENR		CCI_REG16(0x0604)
+#define IMX214_REG_TESTP_BLUE		CCI_REG16(0x0606)
+#define IMX214_REG_TESTP_GREENB		CCI_REG16(0x0608)
+#define IMX214_TESTP_COLOUR_MIN		0
+#define IMX214_TESTP_COLOUR_MAX		0x03ff
+#define IMX214_TESTP_COLOUR_STEP	1
 
 /* IMX214 native and active pixel array size */
 #define IMX214_NATIVE_WIDTH		4224U
@@ -52,6 +214,38 @@ static const char * const imx214_supply_name[] = {
 
 #define IMX214_NUM_SUPPLIES ARRAY_SIZE(imx214_supply_name)
 
+/*
+ * The supported formats.
+ * This table MUST contain 4 entries per format, to cover the various flip
+ * combinations in the order
+ * - no flip
+ * - h flip
+ * - v flip
+ * - h&v flips
+ */
+static const u32 imx214_mbus_formats[] = {
+	MEDIA_BUS_FMT_SRGGB10_1X10,
+	MEDIA_BUS_FMT_SGRBG10_1X10,
+	MEDIA_BUS_FMT_SGBRG10_1X10,
+	MEDIA_BUS_FMT_SBGGR10_1X10,
+};
+
+static const char * const imx214_test_pattern_menu[] = {
+	"Disabled",
+	"Color Bars",
+	"Solid Color",
+	"Grey Color Bars",
+	"PN9"
+};
+
+static const int imx214_test_pattern_val[] = {
+	IMX214_TEST_PATTERN_DISABLE,
+	IMX214_TEST_PATTERN_COLOR_BARS,
+	IMX214_TEST_PATTERN_SOLID_COLOR,
+	IMX214_TEST_PATTERN_GREY_COLOR,
+	IMX214_TEST_PATTERN_PN9,
+};
+
 struct imx214 {
 	struct device *dev;
 	struct clk *xclk;
@@ -65,359 +259,231 @@ struct imx214 {
 	struct v4l2_ctrl_handler ctrls;
 	struct v4l2_ctrl *pixel_rate;
 	struct v4l2_ctrl *link_freq;
+	struct v4l2_ctrl *vblank;
+	struct v4l2_ctrl *hblank;
 	struct v4l2_ctrl *exposure;
+	struct v4l2_ctrl *vflip;
+	struct v4l2_ctrl *hflip;
 	struct v4l2_ctrl *unit_size;
 
 	struct regulator_bulk_data	supplies[IMX214_NUM_SUPPLIES];
 
 	struct gpio_desc *enable_gpio;
 
-	/*
-	 * Serialize control access, get/set format, get selection
-	 * and start streaming.
-	 */
-	struct mutex mutex;
-};
-
-struct reg_8 {
-	u16 addr;
-	u8 val;
-};
-
-enum {
-	IMX214_TABLE_WAIT_MS = 0,
-	IMX214_TABLE_END,
-	IMX214_MAX_RETRIES,
-	IMX214_WAIT_MS
+	/* Two or Four lanes */
+	u8 lanes;
 };
 
 /*From imx214_mode_tbls.h*/
-static const struct reg_8 mode_4096x2304[] = {
-	{0x0114, 0x03},
-	{0x0220, 0x00},
-	{0x0221, 0x11},
-	{0x0222, 0x01},
-	{0x0340, 0x0C},
-	{0x0341, 0x7A},
-	{0x0342, 0x13},
-	{0x0343, 0x90},
-	{0x0344, 0x00},
-	{0x0345, 0x38},
-	{0x0346, 0x01},
-	{0x0347, 0x98},
-	{0x0348, 0x10},
-	{0x0349, 0x37},
-	{0x034A, 0x0A},
-	{0x034B, 0x97},
-	{0x0381, 0x01},
-	{0x0383, 0x01},
-	{0x0385, 0x01},
-	{0x0387, 0x01},
-	{0x0900, 0x00},
-	{0x0901, 0x00},
-	{0x0902, 0x00},
-	{0x3000, 0x35},
-	{0x3054, 0x01},
-	{0x305C, 0x11},
+static const struct cci_reg_sequence mode_4096x2304[] = {
+	{ IMX214_REG_HDR_MODE, IMX214_HDR_MODE_OFF },
+	{ IMX214_REG_HDR_RES_REDUCTION, IMX214_HDR_RES_REDU_THROUGH },
+	{ IMX214_REG_EXPOSURE_RATIO, 1 },
+	{ IMX214_REG_X_EVEN_INC, 1 },
+	{ IMX214_REG_X_ODD_INC, 1 },
+	{ IMX214_REG_Y_EVEN_INC, 1 },
+	{ IMX214_REG_Y_ODD_INC, 1 },
+	{ IMX214_REG_BINNING_WEIGHTING, IMX214_BINNING_AVERAGE },
+	{ CCI_REG8(0x3000), 0x35 },
+	{ CCI_REG8(0x3054), 0x01 },
+	{ CCI_REG8(0x305C), 0x11 },
 
-	{0x0112, 0x0A},
-	{0x0113, 0x0A},
-	{0x034C, 0x10},
-	{0x034D, 0x00},
-	{0x034E, 0x09},
-	{0x034F, 0x00},
-	{0x0401, 0x00},
-	{0x0404, 0x00},
-	{0x0405, 0x10},
-	{0x0408, 0x00},
-	{0x0409, 0x00},
-	{0x040A, 0x00},
-	{0x040B, 0x00},
-	{0x040C, 0x10},
-	{0x040D, 0x00},
-	{0x040E, 0x09},
-	{0x040F, 0x00},
+	{ IMX214_REG_SCALE_MODE, IMX214_SCALE_NONE },
+	{ IMX214_REG_SCALE_M, 2 },
 
-	{0x0301, 0x05},
-	{0x0303, 0x02},
-	{0x0305, 0x03},
-	{0x0306, 0x00},
-	{0x0307, 0x96},
-	{0x0309, 0x0A},
-	{0x030B, 0x01},
-	{0x0310, 0x00},
+	{ IMX214_REG_VTPXCK_DIV, 5 },
+	{ IMX214_REG_VTSYCK_DIV, 2 },
+	{ IMX214_REG_PREPLLCK_VT_DIV, 3 },
+	{ IMX214_REG_PLL_VT_MPY, 150 },
+	{ IMX214_REG_OPSYCK_DIV, 1 },
+	{ IMX214_REG_PLL_MULT_DRIV, IMX214_PLL_SINGLE },
 
-	{0x0820, 0x12},
-	{0x0821, 0xC0},
-	{0x0822, 0x00},
-	{0x0823, 0x00},
+	{ IMX214_REG_REQ_LINK_BIT_RATE, IMX214_LINK_BIT_RATE_MBPS(4800) },
 
-	{0x3A03, 0x09},
-	{0x3A04, 0x50},
-	{0x3A05, 0x01},
+	{ CCI_REG8(0x3A03), 0x09 },
+	{ CCI_REG8(0x3A04), 0x50 },
+	{ CCI_REG8(0x3A05), 0x01 },
 
-	{0x0B06, 0x01},
-	{0x30A2, 0x00},
+	{ IMX214_REG_SING_DEF_CORR_EN, IMX214_SING_DEF_CORR_ON },
+	{ IMX214_REG_NML_NR_EN, IMX214_NML_NR_OFF },
 
-	{0x30B4, 0x00},
+	{ CCI_REG8(0x30B4), 0x00 },
 
-	{0x3A02, 0xFF},
+	{ CCI_REG8(0x3A02), 0xFF },
 
-	{0x3011, 0x00},
-	{0x3013, 0x01},
+	{ CCI_REG8(0x3011), 0x00 },
+	{ IMX214_REG_STATS_OUT_EN, IMX214_STATS_OUT_ON },
 
-	{0x0202, 0x0C},
-	{0x0203, 0x70},
-	{0x0224, 0x01},
-	{0x0225, 0xF4},
+	{ IMX214_REG_SHORT_EXPOSURE, 500 },
 
-	{0x0204, 0x00},
-	{0x0205, 0x00},
-	{0x020E, 0x01},
-	{0x020F, 0x00},
-	{0x0210, 0x01},
-	{0x0211, 0x00},
-	{0x0212, 0x01},
-	{0x0213, 0x00},
-	{0x0214, 0x01},
-	{0x0215, 0x00},
-	{0x0216, 0x00},
-	{0x0217, 0x00},
-
-	{0x4170, 0x00},
-	{0x4171, 0x10},
-	{0x4176, 0x00},
-	{0x4177, 0x3C},
-	{0xAE20, 0x04},
-	{0xAE21, 0x5C},
-
-	{IMX214_TABLE_WAIT_MS, 10},
-	{0x0138, 0x01},
-	{IMX214_TABLE_END, 0x00}
+	{ CCI_REG8(0x4170), 0x00 },
+	{ CCI_REG8(0x4171), 0x10 },
+	{ CCI_REG8(0x4176), 0x00 },
+	{ CCI_REG8(0x4177), 0x3C },
+	{ CCI_REG8(0xAE20), 0x04 },
+	{ CCI_REG8(0xAE21), 0x5C },
 };
 
-static const struct reg_8 mode_1920x1080[] = {
-	{0x0114, 0x03},
-	{0x0220, 0x00},
-	{0x0221, 0x11},
-	{0x0222, 0x01},
-	{0x0340, 0x0C},
-	{0x0341, 0x7A},
-	{0x0342, 0x13},
-	{0x0343, 0x90},
-	{0x0344, 0x04},
-	{0x0345, 0x78},
-	{0x0346, 0x03},
-	{0x0347, 0xFC},
-	{0x0348, 0x0B},
-	{0x0349, 0xF7},
-	{0x034A, 0x08},
-	{0x034B, 0x33},
-	{0x0381, 0x01},
-	{0x0383, 0x01},
-	{0x0385, 0x01},
-	{0x0387, 0x01},
-	{0x0900, 0x00},
-	{0x0901, 0x00},
-	{0x0902, 0x00},
-	{0x3000, 0x35},
-	{0x3054, 0x01},
-	{0x305C, 0x11},
+static const struct cci_reg_sequence mode_1920x1080[] = {
+	{ IMX214_REG_HDR_MODE, IMX214_HDR_MODE_OFF },
+	{ IMX214_REG_HDR_RES_REDUCTION, IMX214_HDR_RES_REDU_THROUGH },
+	{ IMX214_REG_EXPOSURE_RATIO, 1 },
+	{ IMX214_REG_X_EVEN_INC, 1 },
+	{ IMX214_REG_X_ODD_INC, 1 },
+	{ IMX214_REG_Y_EVEN_INC, 1 },
+	{ IMX214_REG_Y_ODD_INC, 1 },
+	{ IMX214_REG_BINNING_WEIGHTING, IMX214_BINNING_AVERAGE },
+	{ CCI_REG8(0x3000), 0x35 },
+	{ CCI_REG8(0x3054), 0x01 },
+	{ CCI_REG8(0x305C), 0x11 },
 
-	{0x0112, 0x0A},
-	{0x0113, 0x0A},
-	{0x034C, 0x07},
-	{0x034D, 0x80},
-	{0x034E, 0x04},
-	{0x034F, 0x38},
-	{0x0401, 0x00},
-	{0x0404, 0x00},
-	{0x0405, 0x10},
-	{0x0408, 0x00},
-	{0x0409, 0x00},
-	{0x040A, 0x00},
-	{0x040B, 0x00},
-	{0x040C, 0x07},
-	{0x040D, 0x80},
-	{0x040E, 0x04},
-	{0x040F, 0x38},
+	{ IMX214_REG_SCALE_MODE, IMX214_SCALE_NONE },
+	{ IMX214_REG_SCALE_M, 2 },
 
-	{0x0301, 0x05},
-	{0x0303, 0x02},
-	{0x0305, 0x03},
-	{0x0306, 0x00},
-	{0x0307, 0x96},
-	{0x0309, 0x0A},
-	{0x030B, 0x01},
-	{0x0310, 0x00},
+	{ IMX214_REG_VTPXCK_DIV, 5 },
+	{ IMX214_REG_VTSYCK_DIV, 2 },
+	{ IMX214_REG_PREPLLCK_VT_DIV, 3 },
+	{ IMX214_REG_PLL_VT_MPY, 150 },
+	{ IMX214_REG_OPSYCK_DIV, 1 },
+	{ IMX214_REG_PLL_MULT_DRIV, IMX214_PLL_SINGLE },
 
-	{0x0820, 0x12},
-	{0x0821, 0xC0},
-	{0x0822, 0x00},
-	{0x0823, 0x00},
+	{ IMX214_REG_REQ_LINK_BIT_RATE, IMX214_LINK_BIT_RATE_MBPS(4800) },
 
-	{0x3A03, 0x04},
-	{0x3A04, 0xF8},
-	{0x3A05, 0x02},
+	{ CCI_REG8(0x3A03), 0x04 },
+	{ CCI_REG8(0x3A04), 0xF8 },
+	{ CCI_REG8(0x3A05), 0x02 },
 
-	{0x0B06, 0x01},
-	{0x30A2, 0x00},
+	{ IMX214_REG_SING_DEF_CORR_EN, IMX214_SING_DEF_CORR_ON },
+	{ IMX214_REG_NML_NR_EN, IMX214_NML_NR_OFF },
 
-	{0x30B4, 0x00},
+	{ CCI_REG8(0x30B4), 0x00 },
 
-	{0x3A02, 0xFF},
+	{ CCI_REG8(0x3A02), 0xFF },
 
-	{0x3011, 0x00},
-	{0x3013, 0x01},
+	{ CCI_REG8(0x3011), 0x00 },
+	{ IMX214_REG_STATS_OUT_EN, IMX214_STATS_OUT_ON },
 
-	{0x0202, 0x0C},
-	{0x0203, 0x70},
-	{0x0224, 0x01},
-	{0x0225, 0xF4},
+	{ IMX214_REG_SHORT_EXPOSURE, 500 },
 
-	{0x0204, 0x00},
-	{0x0205, 0x00},
-	{0x020E, 0x01},
-	{0x020F, 0x00},
-	{0x0210, 0x01},
-	{0x0211, 0x00},
-	{0x0212, 0x01},
-	{0x0213, 0x00},
-	{0x0214, 0x01},
-	{0x0215, 0x00},
-	{0x0216, 0x00},
-	{0x0217, 0x00},
-
-	{0x4170, 0x00},
-	{0x4171, 0x10},
-	{0x4176, 0x00},
-	{0x4177, 0x3C},
-	{0xAE20, 0x04},
-	{0xAE21, 0x5C},
-
-	{IMX214_TABLE_WAIT_MS, 10},
-	{0x0138, 0x01},
-	{IMX214_TABLE_END, 0x00}
+	{ CCI_REG8(0x4170), 0x00 },
+	{ CCI_REG8(0x4171), 0x10 },
+	{ CCI_REG8(0x4176), 0x00 },
+	{ CCI_REG8(0x4177), 0x3C },
+	{ CCI_REG8(0xAE20), 0x04 },
+	{ CCI_REG8(0xAE21), 0x5C },
 };
 
-static const struct reg_8 mode_table_common[] = {
+static const struct cci_reg_sequence mode_table_common[] = {
 	/* software reset */
 
 	/* software standby settings */
-	{0x0100, 0x00},
+	{ IMX214_REG_MODE_SELECT, IMX214_MODE_STANDBY },
 
 	/* ATR setting */
-	{0x9300, 0x02},
+	{ IMX214_REG_ATR_FAST_MOVE, 2 },
 
 	/* external clock setting */
-	{0x0136, 0x18},
-	{0x0137, 0x00},
+	{ IMX214_REG_EXCK_FREQ, IMX214_EXCK_FREQ(IMX214_DEFAULT_CLK_FREQ / 1000000) },
 
 	/* global setting */
 	/* basic config */
-	{0x0101, 0x00},
-	{0x0105, 0x01},
-	{0x0106, 0x01},
-	{0x4550, 0x02},
-	{0x4601, 0x00},
-	{0x4642, 0x05},
-	{0x6227, 0x11},
-	{0x6276, 0x00},
-	{0x900E, 0x06},
-	{0xA802, 0x90},
-	{0xA803, 0x11},
-	{0xA804, 0x62},
-	{0xA805, 0x77},
-	{0xA806, 0xAE},
-	{0xA807, 0x34},
-	{0xA808, 0xAE},
-	{0xA809, 0x35},
-	{0xA80A, 0x62},
-	{0xA80B, 0x83},
-	{0xAE33, 0x00},
+	{ IMX214_REG_MASK_CORR_FRAMES, IMX214_CORR_FRAMES_MASK },
+	{ IMX214_REG_FAST_STANDBY_CTRL, 1 },
+	{ IMX214_REG_LINE_LENGTH_PCK, IMX214_PPL_DEFAULT },
+	{ CCI_REG8(0x4550), 0x02 },
+	{ CCI_REG8(0x4601), 0x00 },
+	{ CCI_REG8(0x4642), 0x05 },
+	{ CCI_REG8(0x6227), 0x11 },
+	{ CCI_REG8(0x6276), 0x00 },
+	{ CCI_REG8(0x900E), 0x06 },
+	{ CCI_REG8(0xA802), 0x90 },
+	{ CCI_REG8(0xA803), 0x11 },
+	{ CCI_REG8(0xA804), 0x62 },
+	{ CCI_REG8(0xA805), 0x77 },
+	{ CCI_REG8(0xA806), 0xAE },
+	{ CCI_REG8(0xA807), 0x34 },
+	{ CCI_REG8(0xA808), 0xAE },
+	{ CCI_REG8(0xA809), 0x35 },
+	{ CCI_REG8(0xA80A), 0x62 },
+	{ CCI_REG8(0xA80B), 0x83 },
+	{ CCI_REG8(0xAE33), 0x00 },
 
 	/* analog setting */
-	{0x4174, 0x00},
-	{0x4175, 0x11},
-	{0x4612, 0x29},
-	{0x461B, 0x12},
-	{0x461F, 0x06},
-	{0x4635, 0x07},
-	{0x4637, 0x30},
-	{0x463F, 0x18},
-	{0x4641, 0x0D},
-	{0x465B, 0x12},
-	{0x465F, 0x11},
-	{0x4663, 0x11},
-	{0x4667, 0x0F},
-	{0x466F, 0x0F},
-	{0x470E, 0x09},
-	{0x4909, 0xAB},
-	{0x490B, 0x95},
-	{0x4915, 0x5D},
-	{0x4A5F, 0xFF},
-	{0x4A61, 0xFF},
-	{0x4A73, 0x62},
-	{0x4A85, 0x00},
-	{0x4A87, 0xFF},
+	{ CCI_REG8(0x4174), 0x00 },
+	{ CCI_REG8(0x4175), 0x11 },
+	{ CCI_REG8(0x4612), 0x29 },
+	{ CCI_REG8(0x461B), 0x12 },
+	{ CCI_REG8(0x461F), 0x06 },
+	{ CCI_REG8(0x4635), 0x07 },
+	{ CCI_REG8(0x4637), 0x30 },
+	{ CCI_REG8(0x463F), 0x18 },
+	{ CCI_REG8(0x4641), 0x0D },
+	{ CCI_REG8(0x465B), 0x12 },
+	{ CCI_REG8(0x465F), 0x11 },
+	{ CCI_REG8(0x4663), 0x11 },
+	{ CCI_REG8(0x4667), 0x0F },
+	{ CCI_REG8(0x466F), 0x0F },
+	{ CCI_REG8(0x470E), 0x09 },
+	{ CCI_REG8(0x4909), 0xAB },
+	{ CCI_REG8(0x490B), 0x95 },
+	{ CCI_REG8(0x4915), 0x5D },
+	{ CCI_REG8(0x4A5F), 0xFF },
+	{ CCI_REG8(0x4A61), 0xFF },
+	{ CCI_REG8(0x4A73), 0x62 },
+	{ CCI_REG8(0x4A85), 0x00 },
+	{ CCI_REG8(0x4A87), 0xFF },
 
 	/* embedded data */
-	{0x5041, 0x04},
-	{0x583C, 0x04},
-	{0x620E, 0x04},
-	{0x6EB2, 0x01},
-	{0x6EB3, 0x00},
-	{0x9300, 0x02},
+	{ IMX214_REG_EBD_SIZE_V, IMX214_EBD_4_LINE },
+	{ CCI_REG8(0x583C), 0x04 },
+	{ CCI_REG8(0x620E), 0x04 },
+	{ CCI_REG8(0x6EB2), 0x01 },
+	{ CCI_REG8(0x6EB3), 0x00 },
+	{ IMX214_REG_ATR_FAST_MOVE, 2 },
 
 	/* imagequality */
 	/* HDR setting */
-	{0x3001, 0x07},
-	{0x6D12, 0x3F},
-	{0x6D13, 0xFF},
-	{0x9344, 0x03},
-	{0x9706, 0x10},
-	{0x9707, 0x03},
-	{0x9708, 0x03},
-	{0x9E04, 0x01},
-	{0x9E05, 0x00},
-	{0x9E0C, 0x01},
-	{0x9E0D, 0x02},
-	{0x9E24, 0x00},
-	{0x9E25, 0x8C},
-	{0x9E26, 0x00},
-	{0x9E27, 0x94},
-	{0x9E28, 0x00},
-	{0x9E29, 0x96},
+	{ IMX214_REG_RMSC_NR_MODE, 0x07 },
+	{ IMX214_REG_RG_STATS_LMT, IMX214_RG_STATS_LMT_14_BIT },
+	{ CCI_REG8(0x9344), 0x03 },
+	{ CCI_REG8(0x9706), 0x10 },
+	{ CCI_REG8(0x9707), 0x03 },
+	{ CCI_REG8(0x9708), 0x03 },
+	{ CCI_REG8(0x9E04), 0x01 },
+	{ CCI_REG8(0x9E05), 0x00 },
+	{ CCI_REG8(0x9E0C), 0x01 },
+	{ CCI_REG8(0x9E0D), 0x02 },
+	{ CCI_REG8(0x9E24), 0x00 },
+	{ CCI_REG8(0x9E25), 0x8C },
+	{ CCI_REG8(0x9E26), 0x00 },
+	{ CCI_REG8(0x9E27), 0x94 },
+	{ CCI_REG8(0x9E28), 0x00 },
+	{ CCI_REG8(0x9E29), 0x96 },
 
 	/* CNR parameter setting */
-	{0x69DB, 0x01},
+	{ CCI_REG8(0x69DB), 0x01 },
 
 	/* Moire reduction */
-	{0x6957, 0x01},
+	{ CCI_REG8(0x6957), 0x01 },
 
 	/* image enhancement */
-	{0x6987, 0x17},
-	{0x698A, 0x03},
-	{0x698B, 0x03},
+	{ CCI_REG8(0x6987), 0x17 },
+	{ CCI_REG8(0x698A), 0x03 },
+	{ CCI_REG8(0x698B), 0x03 },
 
 	/* white balanace */
-	{0x0B8E, 0x01},
-	{0x0B8F, 0x00},
-	{0x0B90, 0x01},
-	{0x0B91, 0x00},
-	{0x0B92, 0x01},
-	{0x0B93, 0x00},
-	{0x0B94, 0x01},
-	{0x0B95, 0x00},
+	{ IMX214_REG_ABS_GAIN_GREENR, 0x0100 },
+	{ IMX214_REG_ABS_GAIN_RED, 0x0100 },
+	{ IMX214_REG_ABS_GAIN_BLUE, 0x0100 },
+	{ IMX214_REG_ABS_GAIN_GREENB, 0x0100 },
 
 	/* ATR setting */
-	{0x6E50, 0x00},
-	{0x6E51, 0x32},
-	{0x9340, 0x00},
-	{0x9341, 0x3C},
-	{0x9342, 0x03},
-	{0x9343, 0xFF},
-	{IMX214_TABLE_END, 0x00}
+	{ CCI_REG8(0x6E50), 0x00 },
+	{ CCI_REG8(0x6E51), 0x32 },
+	{ CCI_REG8(0x9340), 0x00 },
+	{ CCI_REG8(0x9341), 0x3C },
+	{ CCI_REG8(0x9342), 0x03 },
+	{ CCI_REG8(0x9343), 0xFF },
 };
 
 /*
@@ -427,16 +493,25 @@ static const struct reg_8 mode_table_common[] = {
 static const struct imx214_mode {
 	u32 width;
 	u32 height;
-	const struct reg_8 *reg_table;
+
+	/* V-timing */
+	unsigned int vts_def;
+
+	unsigned int num_of_regs;
+	const struct cci_reg_sequence *reg_table;
 } imx214_modes[] = {
 	{
 		.width = 4096,
 		.height = 2304,
+		.vts_def = 3194,
+		.num_of_regs = ARRAY_SIZE(mode_4096x2304),
 		.reg_table = mode_4096x2304,
 	},
 	{
 		.width = 1920,
 		.height = 1080,
+		.vts_def = 3194,
+		.num_of_regs = ARRAY_SIZE(mode_1920x1080),
 		.reg_table = mode_1920x1080,
 	},
 };
@@ -490,14 +565,50 @@ static int __maybe_unused imx214_power_off(struct device *dev)
 	return 0;
 }
 
+/* Get bayer order based on flip setting. */
+static u32 imx214_get_format_code(struct imx214 *imx214, u32 code)
+{
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(imx214_mbus_formats); i++)
+		if (imx214_mbus_formats[i] == code)
+			break;
+
+	if (i >= ARRAY_SIZE(imx214_mbus_formats))
+		i = 0;
+
+	i = (i & ~3) | (imx214->vflip->val ? 2 : 0) |
+	    (imx214->hflip->val ? 1 : 0);
+
+	return imx214_mbus_formats[i];
+}
+
+static void imx214_update_pad_format(struct imx214 *imx214,
+				     const struct imx214_mode *mode,
+				     struct v4l2_mbus_framefmt *fmt, u32 code)
+{
+	fmt->code = imx214_get_format_code(imx214, code);
+	fmt->width = mode->width;
+	fmt->height = mode->height;
+	fmt->field = V4L2_FIELD_NONE;
+	fmt->colorspace = V4L2_COLORSPACE_SRGB;
+	fmt->ycbcr_enc = V4L2_MAP_YCBCR_ENC_DEFAULT(fmt->colorspace);
+	fmt->quantization = V4L2_MAP_QUANTIZATION_DEFAULT(true,
+							  fmt->colorspace,
+							  fmt->ycbcr_enc);
+	fmt->xfer_func = V4L2_MAP_XFER_FUNC_DEFAULT(fmt->colorspace);
+}
+
 static int imx214_enum_mbus_code(struct v4l2_subdev *sd,
 				 struct v4l2_subdev_state *sd_state,
 				 struct v4l2_subdev_mbus_code_enum *code)
 {
-	if (code->index > 0)
+	struct imx214 *imx214 = to_imx214(sd);
+
+	if (code->index >= (ARRAY_SIZE(imx214_mbus_formats) / 4))
 		return -EINVAL;
 
-	code->code = IMX214_MBUS_CODE;
+	code->code = imx214_get_format_code(imx214, imx214_mbus_formats[code->index * 4]);
 
 	return 0;
 }
@@ -506,7 +617,11 @@ static int imx214_enum_frame_size(struct v4l2_subdev *subdev,
 				  struct v4l2_subdev_state *sd_state,
 				  struct v4l2_subdev_frame_size_enum *fse)
 {
-	if (fse->code != IMX214_MBUS_CODE)
+	struct imx214 *imx214 = to_imx214(subdev);
+	u32 code;
+
+	code = imx214_get_format_code(imx214, fse->code);
+	if (fse->code != code)
 		return -EINVAL;
 
 	if (fse->index >= ARRAY_SIZE(imx214_modes))
@@ -549,52 +664,6 @@ static const struct v4l2_subdev_core_ops imx214_core_ops = {
 #endif
 };
 
-static struct v4l2_mbus_framefmt *
-__imx214_get_pad_format(struct imx214 *imx214,
-			struct v4l2_subdev_state *sd_state,
-			unsigned int pad,
-			enum v4l2_subdev_format_whence which)
-{
-	switch (which) {
-	case V4L2_SUBDEV_FORMAT_TRY:
-		return v4l2_subdev_state_get_format(sd_state, pad);
-	case V4L2_SUBDEV_FORMAT_ACTIVE:
-		return &imx214->fmt;
-	default:
-		return NULL;
-	}
-}
-
-static int imx214_get_format(struct v4l2_subdev *sd,
-			     struct v4l2_subdev_state *sd_state,
-			     struct v4l2_subdev_format *format)
-{
-	struct imx214 *imx214 = to_imx214(sd);
-
-	mutex_lock(&imx214->mutex);
-	format->format = *__imx214_get_pad_format(imx214, sd_state,
-						  format->pad,
-						  format->which);
-	mutex_unlock(&imx214->mutex);
-
-	return 0;
-}
-
-static struct v4l2_rect *
-__imx214_get_pad_crop(struct imx214 *imx214,
-		      struct v4l2_subdev_state *sd_state,
-		      unsigned int pad, enum v4l2_subdev_format_whence which)
-{
-	switch (which) {
-	case V4L2_SUBDEV_FORMAT_TRY:
-		return v4l2_subdev_state_get_crop(sd_state, pad);
-	case V4L2_SUBDEV_FORMAT_ACTIVE:
-		return &imx214->crop;
-	default:
-		return NULL;
-	}
-}
-
 static int imx214_set_format(struct v4l2_subdev *sd,
 			     struct v4l2_subdev_state *sd_state,
 			     struct v4l2_subdev_format *format)
@@ -603,35 +672,75 @@ static int imx214_set_format(struct v4l2_subdev *sd,
 	struct v4l2_mbus_framefmt *__format;
 	struct v4l2_rect *__crop;
 	const struct imx214_mode *mode;
-
-	mutex_lock(&imx214->mutex);
-
-	__crop = __imx214_get_pad_crop(imx214, sd_state, format->pad,
-				       format->which);
+	unsigned int bin_h, bin_v, bin;
 
 	mode = v4l2_find_nearest_size(imx214_modes,
 				      ARRAY_SIZE(imx214_modes), width, height,
 				      format->format.width,
 				      format->format.height);
 
-	__crop->width = mode->width;
-	__crop->height = mode->height;
+	imx214_update_pad_format(imx214, mode, &format->format, format->format.code);
 
-	__format = __imx214_get_pad_format(imx214, sd_state, format->pad,
-					   format->which);
-	__format->width = __crop->width;
-	__format->height = __crop->height;
-	__format->code = IMX214_MBUS_CODE;
-	__format->field = V4L2_FIELD_NONE;
-	__format->colorspace = V4L2_COLORSPACE_SRGB;
-	__format->ycbcr_enc = V4L2_MAP_YCBCR_ENC_DEFAULT(__format->colorspace);
-	__format->quantization = V4L2_MAP_QUANTIZATION_DEFAULT(true,
-				__format->colorspace, __format->ycbcr_enc);
-	__format->xfer_func = V4L2_MAP_XFER_FUNC_DEFAULT(__format->colorspace);
+	__format = v4l2_subdev_state_get_format(sd_state, 0);
+	*__format = format->format;
 
-	format->format = *__format;
+	/*
+	 * Use binning to maximize the crop rectangle size, and centre it in the
+	 * sensor.
+	 */
+	bin_h = IMX214_PIXEL_ARRAY_WIDTH / __format->width;
+	bin_v = IMX214_PIXEL_ARRAY_HEIGHT / __format->height;
 
-	mutex_unlock(&imx214->mutex);
+	switch (min(bin_h, bin_v)) {
+	case 1:
+		bin = 1;
+		break;
+	case 2:
+	case 3:
+		bin = 2;
+		break;
+	case 4:
+	default:
+		bin = 4;
+		break;
+	}
+
+	__crop = v4l2_subdev_state_get_crop(sd_state, 0);
+	__crop->width = __format->width * bin;
+	__crop->height = __format->height * bin;
+	__crop->left = (IMX214_NATIVE_WIDTH - __crop->width) / 2;
+	__crop->top = (IMX214_NATIVE_HEIGHT - __crop->height) / 2;
+
+	if (format->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
+		int exposure_max;
+		int exposure_def;
+		int hblank;
+
+		/* Update limits and set FPS to default */
+		__v4l2_ctrl_modify_range(imx214->vblank, IMX214_VBLANK_MIN,
+					 IMX214_VTS_MAX - mode->height, 1,
+					 mode->vts_def - mode->height);
+		__v4l2_ctrl_s_ctrl(imx214->vblank,
+				   mode->vts_def - mode->height);
+
+		/* Update max exposure while meeting expected vblanking */
+		exposure_max = mode->vts_def - IMX214_EXPOSURE_OFFSET;
+		exposure_def = (exposure_max < IMX214_EXPOSURE_DEFAULT) ?
+			exposure_max : IMX214_EXPOSURE_DEFAULT;
+		__v4l2_ctrl_modify_range(imx214->exposure,
+					 imx214->exposure->minimum,
+					 exposure_max, imx214->exposure->step,
+					 exposure_def);
+
+		/*
+		 * Currently PPL is fixed to IMX214_PPL_DEFAULT, so hblank
+		 * depends on mode->width only, and is not changeble in any
+		 * way other than changing the mode.
+		 */
+		hblank = IMX214_PPL_DEFAULT - mode->width;
+		__v4l2_ctrl_modify_range(imx214->hblank, hblank, hblank, 1,
+					 hblank);
+	}
 
 	return 0;
 }
@@ -640,14 +749,9 @@ static int imx214_get_selection(struct v4l2_subdev *sd,
 				struct v4l2_subdev_state *sd_state,
 				struct v4l2_subdev_selection *sel)
 {
-	struct imx214 *imx214 = to_imx214(sd);
-
 	switch (sel->target) {
 	case V4L2_SEL_TGT_CROP:
-		mutex_lock(&imx214->mutex);
-		sel->r = *__imx214_get_pad_crop(imx214, sd_state, sel->pad,
-						sel->which);
-		mutex_unlock(&imx214->mutex);
+		sel->r = *v4l2_subdev_state_get_crop(sd_state, 0);
 		return 0;
 
 	case V4L2_SEL_TGT_NATIVE_SIZE:
@@ -675,6 +779,7 @@ static int imx214_entity_init_state(struct v4l2_subdev *subdev,
 	struct v4l2_subdev_format fmt = { };
 
 	fmt.which = sd_state ? V4L2_SUBDEV_FORMAT_TRY : V4L2_SUBDEV_FORMAT_ACTIVE;
+	fmt.format.code = MEDIA_BUS_FMT_SRGGB10_1X10;
 	fmt.format.width = imx214_modes[0].width;
 	fmt.format.height = imx214_modes[0].height;
 
@@ -683,12 +788,40 @@ static int imx214_entity_init_state(struct v4l2_subdev *subdev,
 	return 0;
 }
 
+static int imx214_update_digital_gain(struct imx214 *imx214, u32 val)
+{
+	int ret = 0;
+
+	cci_write(imx214->regmap, IMX214_REG_DIG_GAIN_GREENR, val, &ret);
+	cci_write(imx214->regmap, IMX214_REG_DIG_GAIN_RED, val, &ret);
+	cci_write(imx214->regmap, IMX214_REG_DIG_GAIN_BLUE, val, &ret);
+	cci_write(imx214->regmap, IMX214_REG_DIG_GAIN_GREENB, val, &ret);
+
+	return ret;
+}
+
 static int imx214_set_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct imx214 *imx214 = container_of(ctrl->handler,
 					     struct imx214, ctrls);
-	u8 vals[2];
+	const struct v4l2_mbus_framefmt *format;
+	struct v4l2_subdev_state *state;
 	int ret;
+
+	state = v4l2_subdev_get_locked_active_state(&imx214->sd);
+	format = v4l2_subdev_state_get_format(state, 0);
+
+	if (ctrl->id == V4L2_CID_VBLANK) {
+		int exposure_max, exposure_def;
+
+		/* Update max exposure while meeting expected vblanking */
+		exposure_max = format->height + ctrl->val - IMX214_EXPOSURE_OFFSET;
+		exposure_def = min(exposure_max, IMX214_EXPOSURE_DEFAULT);
+		__v4l2_ctrl_modify_range(imx214->exposure,
+					 imx214->exposure->minimum,
+					 exposure_max, imx214->exposure->step,
+					 exposure_def);
+	}
 
 	/*
 	 * Applying V4L2 control value only happens
@@ -698,15 +831,47 @@ static int imx214_set_ctrl(struct v4l2_ctrl *ctrl)
 		return 0;
 
 	switch (ctrl->id) {
-	case V4L2_CID_EXPOSURE:
-		vals[1] = ctrl->val;
-		vals[0] = ctrl->val >> 8;
-		ret = regmap_bulk_write(imx214->regmap, IMX214_REG_EXPOSURE, vals, 2);
-		if (ret < 0)
-			dev_err(imx214->dev, "Error %d\n", ret);
-		ret = 0;
+	case V4L2_CID_ANALOGUE_GAIN:
+		cci_write(imx214->regmap, IMX214_REG_ANALOG_GAIN,
+			  ctrl->val, &ret);
+		cci_write(imx214->regmap, IMX214_REG_SHORT_ANALOG_GAIN,
+			  ctrl->val, &ret);
 		break;
-
+	case V4L2_CID_DIGITAL_GAIN:
+		ret = imx214_update_digital_gain(imx214, ctrl->val);
+		break;
+	case V4L2_CID_EXPOSURE:
+		cci_write(imx214->regmap, IMX214_REG_EXPOSURE, ctrl->val, &ret);
+		break;
+	case V4L2_CID_HFLIP:
+	case V4L2_CID_VFLIP:
+		cci_write(imx214->regmap, IMX214_REG_ORIENTATION,
+			  imx214->hflip->val | imx214->vflip->val << 1, &ret);
+		break;
+	case V4L2_CID_VBLANK:
+		cci_write(imx214->regmap, IMX214_REG_FRM_LENGTH_LINES,
+			  format->height + ctrl->val, &ret);
+		break;
+	case V4L2_CID_TEST_PATTERN:
+		cci_write(imx214->regmap, IMX214_REG_TEST_PATTERN,
+			  imx214_test_pattern_val[ctrl->val], &ret);
+		break;
+	case V4L2_CID_TEST_PATTERN_RED:
+		cci_write(imx214->regmap, IMX214_REG_TESTP_RED,
+			  ctrl->val, &ret);
+		break;
+	case V4L2_CID_TEST_PATTERN_GREENR:
+		cci_write(imx214->regmap, IMX214_REG_TESTP_GREENR,
+			  ctrl->val, &ret);
+		break;
+	case V4L2_CID_TEST_PATTERN_BLUE:
+		cci_write(imx214->regmap, IMX214_REG_TESTP_BLUE,
+			  ctrl->val, &ret);
+		break;
+	case V4L2_CID_TEST_PATTERN_GREENB:
+		cci_write(imx214->regmap, IMX214_REG_TESTP_GREENB,
+			  ctrl->val, &ret);
+		break;
 	default:
 		ret = -EINVAL;
 	}
@@ -729,16 +894,19 @@ static int imx214_ctrls_init(struct imx214 *imx214)
 		.width = 1120,
 		.height = 1120,
 	};
+	const struct imx214_mode *mode = &imx214_modes[0];
 	struct v4l2_fwnode_device_properties props;
 	struct v4l2_ctrl_handler *ctrl_hdlr;
-	int ret;
+	int exposure_max, exposure_def;
+	int hblank;
+	int i, ret;
 
 	ret = v4l2_fwnode_device_parse(imx214->dev, &props);
 	if (ret < 0)
 		return ret;
 
 	ctrl_hdlr = &imx214->ctrls;
-	ret = v4l2_ctrl_handler_init(&imx214->ctrls, 6);
+	ret = v4l2_ctrl_handler_init(&imx214->ctrls, 13);
 	if (ret)
 		return ret;
 
@@ -754,22 +922,64 @@ static int imx214_ctrls_init(struct imx214 *imx214)
 	if (imx214->link_freq)
 		imx214->link_freq->flags |= V4L2_CTRL_FLAG_READ_ONLY;
 
-	/*
-	 * WARNING!
-	 * Values obtained reverse engineering blobs and/or devices.
-	 * Ranges and functionality might be wrong.
-	 *
-	 * Sony, please release some register set documentation for the
-	 * device.
-	 *
-	 * Yours sincerely, Ricardo.
-	 */
+	/* Initial vblank/hblank/exposure parameters based on current mode */
+	imx214->vblank = v4l2_ctrl_new_std(ctrl_hdlr, &imx214_ctrl_ops,
+					   V4L2_CID_VBLANK, IMX214_VBLANK_MIN,
+					   IMX214_VTS_MAX - mode->height, 1,
+					   mode->vts_def - mode->height);
+
+	hblank = IMX214_PPL_DEFAULT - mode->width;
+	imx214->hblank = v4l2_ctrl_new_std(ctrl_hdlr, &imx214_ctrl_ops,
+					   V4L2_CID_HBLANK, hblank, hblank,
+					   1, hblank);
+	if (imx214->hblank)
+		imx214->hblank->flags |= V4L2_CTRL_FLAG_READ_ONLY;
+
+	exposure_max = mode->vts_def - IMX214_EXPOSURE_OFFSET;
+	exposure_def = min(exposure_max, IMX214_EXPOSURE_DEFAULT);
 	imx214->exposure = v4l2_ctrl_new_std(ctrl_hdlr, &imx214_ctrl_ops,
 					     V4L2_CID_EXPOSURE,
-					     IMX214_EXPOSURE_MIN,
-					     IMX214_EXPOSURE_MAX,
+					     IMX214_EXPOSURE_MIN, exposure_max,
 					     IMX214_EXPOSURE_STEP,
-					     IMX214_EXPOSURE_DEFAULT);
+					     exposure_def);
+
+	v4l2_ctrl_new_std(ctrl_hdlr, &imx214_ctrl_ops, V4L2_CID_ANALOGUE_GAIN,
+			  IMX214_ANA_GAIN_MIN, IMX214_ANA_GAIN_MAX,
+			  IMX214_ANA_GAIN_STEP, IMX214_ANA_GAIN_DEFAULT);
+
+	v4l2_ctrl_new_std(ctrl_hdlr, &imx214_ctrl_ops, V4L2_CID_DIGITAL_GAIN,
+			  IMX214_DGTL_GAIN_MIN, IMX214_DGTL_GAIN_MAX,
+			  IMX214_DGTL_GAIN_STEP, IMX214_DGTL_GAIN_DEFAULT);
+
+	imx214->hflip = v4l2_ctrl_new_std(ctrl_hdlr, &imx214_ctrl_ops,
+					  V4L2_CID_HFLIP, 0, 1, 1, 0);
+	if (imx214->hflip)
+		imx214->hflip->flags |= V4L2_CTRL_FLAG_MODIFY_LAYOUT;
+
+	imx214->vflip = v4l2_ctrl_new_std(ctrl_hdlr, &imx214_ctrl_ops,
+					  V4L2_CID_VFLIP, 0, 1, 1, 0);
+	if (imx214->vflip)
+		imx214->vflip->flags |= V4L2_CTRL_FLAG_MODIFY_LAYOUT;
+
+	v4l2_ctrl_new_std_menu_items(ctrl_hdlr, &imx214_ctrl_ops,
+				     V4L2_CID_TEST_PATTERN,
+				     ARRAY_SIZE(imx214_test_pattern_menu) - 1,
+				     0, 0, imx214_test_pattern_menu);
+	for (i = 0; i < 4; i++) {
+		/*
+		 * The assumption is that
+		 * V4L2_CID_TEST_PATTERN_GREENR == V4L2_CID_TEST_PATTERN_RED + 1
+		 * V4L2_CID_TEST_PATTERN_BLUE   == V4L2_CID_TEST_PATTERN_RED + 2
+		 * V4L2_CID_TEST_PATTERN_GREENB == V4L2_CID_TEST_PATTERN_RED + 3
+		 */
+		v4l2_ctrl_new_std(ctrl_hdlr, &imx214_ctrl_ops,
+				  V4L2_CID_TEST_PATTERN_RED + i,
+				  IMX214_TESTP_COLOUR_MIN,
+				  IMX214_TESTP_COLOUR_MAX,
+				  IMX214_TESTP_COLOUR_STEP,
+				  IMX214_TESTP_COLOUR_MAX);
+		/* The "Solid color" pattern is white by default */
+	}
 
 	imx214->unit_size = v4l2_ctrl_new_std_compound(ctrl_hdlr,
 				NULL,
@@ -790,76 +1000,130 @@ static int imx214_ctrls_init(struct imx214 *imx214)
 	return 0;
 };
 
-#define MAX_CMD 4
-static int imx214_write_table(struct imx214 *imx214,
-			      const struct reg_8 table[])
+static int imx214_set_framefmt(struct imx214 *imx214,
+			       struct v4l2_subdev_state *state)
 {
-	u8 vals[MAX_CMD];
-	int i;
-	int ret;
+	const struct v4l2_mbus_framefmt *format;
+	const struct v4l2_rect *crop;
+	unsigned int bpp;
+	u64 bin_mode;
+	u64 bin_type;
+	int ret = 0;
 
-	for (; table->addr != IMX214_TABLE_END ; table++) {
-		if (table->addr == IMX214_TABLE_WAIT_MS) {
-			usleep_range(table->val * 1000,
-				     table->val * 1000 + 500);
-			continue;
-		}
+	format = v4l2_subdev_state_get_format(state, 0);
+	crop = v4l2_subdev_state_get_crop(state, 0);
 
-		for (i = 0; i < MAX_CMD; i++) {
-			if (table[i].addr != (table[0].addr + i))
-				break;
-			vals[i] = table[i].val;
-		}
-
-		ret = regmap_bulk_write(imx214->regmap, table->addr, vals, i);
-
-		if (ret) {
-			dev_err(imx214->dev, "write_table error: %d\n", ret);
-			return ret;
-		}
-
-		table += i - 1;
+	switch (format->code) {
+	case MEDIA_BUS_FMT_SRGGB10_1X10:
+	case MEDIA_BUS_FMT_SGRBG10_1X10:
+	case MEDIA_BUS_FMT_SGBRG10_1X10:
+	case MEDIA_BUS_FMT_SBGGR10_1X10:
+	default:
+		bpp = 10;
+		break;
 	}
 
-	return 0;
-}
+	cci_write(imx214->regmap, IMX214_REG_X_ADD_STA,
+		  crop->left - IMX214_PIXEL_ARRAY_LEFT, &ret);
+	cci_write(imx214->regmap, IMX214_REG_X_ADD_END,
+		  crop->left - IMX214_PIXEL_ARRAY_LEFT + crop->width - 1, &ret);
+	cci_write(imx214->regmap, IMX214_REG_Y_ADD_STA,
+		  crop->top - IMX214_PIXEL_ARRAY_TOP, &ret);
+	cci_write(imx214->regmap, IMX214_REG_Y_ADD_END,
+		  crop->top - IMX214_PIXEL_ARRAY_TOP + crop->height - 1, &ret);
 
-static int imx214_start_streaming(struct imx214 *imx214)
+	/* Proper setting is required even if cropping is not used */
+	cci_write(imx214->regmap, IMX214_REG_DIG_CROP_WIDTH, crop->width, &ret);
+	cci_write(imx214->regmap, IMX214_REG_DIG_CROP_HEIGHT, crop->height, &ret);
+
+	switch (crop->width / format->width) {
+	case 1:
+	default:
+		bin_mode = IMX214_BINNING_NONE;
+		bin_type = IMX214_BINNING_1X1;
+		break;
+	case 2:
+		bin_mode = IMX214_BINNING_ENABLE;
+		bin_type = IMX214_BINNING_2X2;
+		break;
+	case 4:
+		bin_mode = IMX214_BINNING_ENABLE;
+		bin_type = IMX214_BINNING_4X4;
+		break;
+	}
+
+	cci_write(imx214->regmap, IMX214_REG_BINNING_MODE, bin_mode, &ret);
+	cci_write(imx214->regmap, IMX214_REG_BINNING_TYPE, bin_type, &ret);
+
+	cci_write(imx214->regmap, IMX214_REG_X_OUTPUT_SIZE, format->width, &ret);
+	cci_write(imx214->regmap, IMX214_REG_Y_OUTPUT_SIZE, format->height, &ret);
+
+	cci_write(imx214->regmap, IMX214_REG_CSI_DATA_FORMAT,
+		  (bpp << 8) | bpp, &ret);
+	cci_write(imx214->regmap, IMX214_REG_OPPXCK_DIV, bpp, &ret);
+
+	return ret;
+};
+
+static int imx214_configure_lanes(struct imx214 *imx214)
+{
+	return cci_write(imx214->regmap, IMX214_REG_CSI_LANE_MODE,
+			 imx214->lanes == 2 ? IMX214_CSI_2_LANE_MODE :
+			 IMX214_CSI_4_LANE_MODE, NULL);
+};
+
+static int imx214_start_streaming(struct imx214 *imx214,
+				  struct v4l2_subdev_state *state)
 {
 	const struct imx214_mode *mode;
 	int ret;
 
-	mutex_lock(&imx214->mutex);
-	ret = imx214_write_table(imx214, mode_table_common);
+	ret = cci_multi_reg_write(imx214->regmap, mode_table_common,
+				  ARRAY_SIZE(mode_table_common), NULL);
 	if (ret < 0) {
 		dev_err(imx214->dev, "could not sent common table %d\n", ret);
-		goto error;
+		return ret;
+	}
+
+	/* Configure two or four Lane mode */
+	ret = imx214_configure_lanes(imx214);
+	if (ret) {
+		dev_err(imx214->dev, "%s failed to configure lanes\n", __func__);
+		return ret;
+	}
+
+	/* Apply format and crop settings */
+	ret = imx214_set_framefmt(imx214, state);
+	if (ret) {
+		dev_err(imx214->dev, "%s failed to set frame format: %d\n",
+			__func__, ret);
+		return ret;
 	}
 
 	mode = v4l2_find_nearest_size(imx214_modes,
 				ARRAY_SIZE(imx214_modes), width, height,
 				imx214->fmt.width, imx214->fmt.height);
-	ret = imx214_write_table(imx214, mode->reg_table);
+	ret = cci_multi_reg_write(imx214->regmap, mode->reg_table,
+				  mode->num_of_regs, NULL);
 	if (ret < 0) {
 		dev_err(imx214->dev, "could not sent mode table %d\n", ret);
-		goto error;
+		return ret;
 	}
+
+	usleep_range(10000, 10500);
+
+	cci_write(imx214->regmap, IMX214_REG_TEMP_SENSOR_CONTROL, 0x01, NULL);
+
 	ret = __v4l2_ctrl_handler_setup(&imx214->ctrls);
 	if (ret < 0) {
 		dev_err(imx214->dev, "could not sync v4l2 controls\n");
-		goto error;
+		return ret;
 	}
-	ret = regmap_write(imx214->regmap, IMX214_REG_MODE_SELECT, IMX214_MODE_STREAMING);
-	if (ret < 0) {
+	ret = cci_write(imx214->regmap, IMX214_REG_MODE_SELECT,
+			IMX214_MODE_STREAMING, NULL);
+	if (ret < 0)
 		dev_err(imx214->dev, "could not sent start table %d\n", ret);
-		goto error;
-	}
 
-	mutex_unlock(&imx214->mutex);
-	return 0;
-
-error:
-	mutex_unlock(&imx214->mutex);
 	return ret;
 }
 
@@ -867,7 +1131,8 @@ static int imx214_stop_streaming(struct imx214 *imx214)
 {
 	int ret;
 
-	ret = regmap_write(imx214->regmap, IMX214_REG_MODE_SELECT, IMX214_MODE_STANDBY);
+	ret = cci_write(imx214->regmap, IMX214_REG_MODE_SELECT,
+			IMX214_MODE_STANDBY, NULL);
 	if (ret < 0)
 		dev_err(imx214->dev, "could not sent stop table %d\n",	ret);
 
@@ -877,6 +1142,7 @@ static int imx214_stop_streaming(struct imx214 *imx214)
 static int imx214_s_stream(struct v4l2_subdev *subdev, int enable)
 {
 	struct imx214 *imx214 = to_imx214(subdev);
+	struct v4l2_subdev_state *state;
 	int ret;
 
 	if (enable) {
@@ -884,7 +1150,9 @@ static int imx214_s_stream(struct v4l2_subdev *subdev, int enable)
 		if (ret < 0)
 			return ret;
 
-		ret = imx214_start_streaming(imx214);
+		state = v4l2_subdev_lock_and_get_active_state(subdev);
+		ret = imx214_start_streaming(imx214, state);
+		v4l2_subdev_unlock_state(state);
 		if (ret < 0)
 			goto err_rpm_put;
 	} else {
@@ -922,6 +1190,7 @@ static int imx214_enum_frame_interval(struct v4l2_subdev *subdev,
 				struct v4l2_subdev_state *sd_state,
 				struct v4l2_subdev_frame_interval_enum *fie)
 {
+	struct imx214 *imx214 = to_imx214(subdev);
 	const struct imx214_mode *mode;
 
 	if (fie->index != 0)
@@ -931,7 +1200,7 @@ static int imx214_enum_frame_interval(struct v4l2_subdev *subdev,
 				ARRAY_SIZE(imx214_modes), width, height,
 				fie->width, fie->height);
 
-	fie->code = IMX214_MBUS_CODE;
+	fie->code = imx214_get_format_code(imx214, fie->code);
 	fie->width = mode->width;
 	fie->height = mode->height;
 	fie->interval.numerator = 1;
@@ -948,7 +1217,7 @@ static const struct v4l2_subdev_pad_ops imx214_subdev_pad_ops = {
 	.enum_mbus_code = imx214_enum_mbus_code,
 	.enum_frame_size = imx214_enum_frame_size,
 	.enum_frame_interval = imx214_enum_frame_interval,
-	.get_fmt = imx214_get_format,
+	.get_fmt = v4l2_subdev_get_fmt,
 	.set_fmt = imx214_set_format,
 	.get_selection = imx214_get_selection,
 	.get_frame_interval = imx214_get_frame_interval,
@@ -965,12 +1234,6 @@ static const struct v4l2_subdev_internal_ops imx214_internal_ops = {
 	.init_state = imx214_entity_init_state,
 };
 
-static const struct regmap_config sensor_regmap_config = {
-	.reg_bits = 16,
-	.val_bits = 8,
-	.cache_type = REGCACHE_MAPLE,
-};
-
 static int imx214_get_regulators(struct device *dev, struct imx214 *imx214)
 {
 	unsigned int i;
@@ -982,7 +1245,28 @@ static int imx214_get_regulators(struct device *dev, struct imx214 *imx214)
 				       imx214->supplies);
 }
 
-static int imx214_parse_fwnode(struct device *dev)
+/* Verify chip ID */
+static int imx214_identify_module(struct imx214 *imx214)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(&imx214->sd);
+	int ret;
+	u64 val;
+
+	ret = cci_read(imx214->regmap, IMX214_REG_CHIP_ID, &val, NULL);
+	if (ret)
+		return dev_err_probe(&client->dev, ret,
+				     "failed to read chip id %x\n",
+				     IMX214_CHIP_ID);
+
+	if (val != IMX214_CHIP_ID)
+		return dev_err_probe(&client->dev, -EIO,
+				     "chip id mismatch: %x!=%llx\n",
+				     IMX214_CHIP_ID, val);
+
+	return 0;
+}
+
+static int imx214_parse_fwnode(struct device *dev, struct imx214 *imx214)
 {
 	struct fwnode_handle *endpoint;
 	struct v4l2_fwnode_endpoint bus_cfg = {
@@ -992,24 +1276,31 @@ static int imx214_parse_fwnode(struct device *dev)
 	int ret;
 
 	endpoint = fwnode_graph_get_next_endpoint(dev_fwnode(dev), NULL);
-	if (!endpoint) {
-		dev_err(dev, "endpoint node not found\n");
-		return -EINVAL;
-	}
+	if (!endpoint)
+		return dev_err_probe(dev, -EINVAL, "endpoint node not found\n");
 
 	ret = v4l2_fwnode_endpoint_alloc_parse(endpoint, &bus_cfg);
 	if (ret) {
-		dev_err(dev, "parsing endpoint node failed\n");
+		dev_err_probe(dev, ret, "parsing endpoint node failed\n");
 		goto done;
 	}
+
+	/* Check the number of MIPI CSI2 data lanes */
+	if (bus_cfg.bus.mipi_csi2.num_data_lanes != 4) {
+		dev_err_probe(dev, -EINVAL,
+			      "only 4 data lanes are currently supported\n");
+		goto done;
+	}
+	imx214->lanes = bus_cfg.bus.mipi_csi2.num_data_lanes;
 
 	for (i = 0; i < bus_cfg.nr_of_link_frequencies; i++)
 		if (bus_cfg.link_frequencies[i] == IMX214_DEFAULT_LINK_FREQ)
 			break;
 
 	if (i == bus_cfg.nr_of_link_frequencies) {
-		dev_err(dev, "link-frequencies %d not supported, Please review your DT\n",
-			IMX214_DEFAULT_LINK_FREQ);
+		dev_err_probe(dev, -EINVAL,
+			      "link-frequencies %d not supported, Please review your DT\n",
+			      IMX214_DEFAULT_LINK_FREQ);
 		ret = -EINVAL;
 		goto done;
 	}
@@ -1026,45 +1317,38 @@ static int imx214_probe(struct i2c_client *client)
 	struct imx214 *imx214;
 	int ret;
 
-	ret = imx214_parse_fwnode(dev);
-	if (ret)
-		return ret;
-
 	imx214 = devm_kzalloc(dev, sizeof(*imx214), GFP_KERNEL);
 	if (!imx214)
 		return -ENOMEM;
 
+	ret = imx214_parse_fwnode(dev, imx214);
+	if (ret)
+		return ret;
+
 	imx214->dev = dev;
 
 	imx214->xclk = devm_clk_get(dev, NULL);
-	if (IS_ERR(imx214->xclk)) {
-		dev_err(dev, "could not get xclk");
-		return PTR_ERR(imx214->xclk);
-	}
+	if (IS_ERR(imx214->xclk))
+		return dev_err_probe(dev, PTR_ERR(imx214->xclk),
+				     "failed to get xclk\n");
 
 	ret = clk_set_rate(imx214->xclk, IMX214_DEFAULT_CLK_FREQ);
-	if (ret) {
-		dev_err(dev, "could not set xclk frequency\n");
-		return ret;
-	}
+	if (ret)
+		return dev_err_probe(dev, ret, "failed to set xclk frequency\n");
 
 	ret = imx214_get_regulators(dev, imx214);
-	if (ret < 0) {
-		dev_err(dev, "cannot get regulators\n");
-		return ret;
-	}
+	if (ret < 0)
+		return dev_err_probe(dev, ret, "failed to get regulators\n");
 
 	imx214->enable_gpio = devm_gpiod_get(dev, "enable", GPIOD_OUT_LOW);
-	if (IS_ERR(imx214->enable_gpio)) {
-		dev_err(dev, "cannot get enable gpio\n");
-		return PTR_ERR(imx214->enable_gpio);
-	}
+	if (IS_ERR(imx214->enable_gpio))
+		return dev_err_probe(dev, PTR_ERR(imx214->enable_gpio),
+				     "failed to get enable gpio\n");
 
-	imx214->regmap = devm_regmap_init_i2c(client, &sensor_regmap_config);
-	if (IS_ERR(imx214->regmap)) {
-		dev_err(dev, "regmap init failed\n");
-		return PTR_ERR(imx214->regmap);
-	}
+	imx214->regmap = devm_cci_regmap_init_i2c(client, 16);
+	if (IS_ERR(imx214->regmap))
+		return dev_err_probe(dev, PTR_ERR(imx214->regmap),
+				     "failed to initialize CCI\n");
 
 	v4l2_i2c_subdev_init(&imx214->sd, client, &imx214_subdev_ops);
 	imx214->sd.internal_ops = &imx214_internal_ops;
@@ -1075,6 +1359,10 @@ static int imx214_probe(struct i2c_client *client)
 	 */
 	imx214_power_on(imx214->dev);
 
+	ret = imx214_identify_module(imx214);
+	if (ret)
+		goto error_power_off;
+
 	pm_runtime_set_active(imx214->dev);
 	pm_runtime_enable(imx214->dev);
 	pm_runtime_idle(imx214->dev);
@@ -1083,9 +1371,6 @@ static int imx214_probe(struct i2c_client *client)
 	if (ret < 0)
 		goto error_power_off;
 
-	mutex_init(&imx214->mutex);
-	imx214->ctrls.lock = &imx214->mutex;
-
 	imx214->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
 	imx214->pad.flags = MEDIA_PAD_FL_SOURCE;
 	imx214->sd.dev = &client->dev;
@@ -1093,24 +1378,31 @@ static int imx214_probe(struct i2c_client *client)
 
 	ret = media_entity_pads_init(&imx214->sd.entity, 1, &imx214->pad);
 	if (ret < 0) {
-		dev_err(dev, "could not register media entity\n");
+		dev_err_probe(dev, ret, "failed to init entity pads\n");
 		goto free_ctrl;
 	}
 
-	imx214_entity_init_state(&imx214->sd, NULL);
+	imx214->sd.state_lock = imx214->ctrls.lock;
+	ret = v4l2_subdev_init_finalize(&imx214->sd);
+	if (ret < 0) {
+		dev_err_probe(dev, ret, "subdev init error\n");
+		goto free_entity;
+	}
 
 	ret = v4l2_async_register_subdev_sensor(&imx214->sd);
 	if (ret < 0) {
-		dev_err(dev, "could not register v4l2 device\n");
-		goto free_entity;
+		dev_err_probe(dev, ret, "failed to register sensor sub-device\n");
+		goto error_subdev_cleanup;
 	}
 
 	return 0;
 
+error_subdev_cleanup:
+	v4l2_subdev_cleanup(&imx214->sd);
+
 free_entity:
 	media_entity_cleanup(&imx214->sd.entity);
 free_ctrl:
-	mutex_destroy(&imx214->mutex);
 	v4l2_ctrl_handler_free(&imx214->ctrls);
 error_power_off:
 	pm_runtime_disable(imx214->dev);
@@ -1125,13 +1417,12 @@ static void imx214_remove(struct i2c_client *client)
 	struct imx214 *imx214 = to_imx214(sd);
 
 	v4l2_async_unregister_subdev(&imx214->sd);
+	v4l2_subdev_cleanup(sd);
 	media_entity_cleanup(&imx214->sd.entity);
 	v4l2_ctrl_handler_free(&imx214->ctrls);
 
 	pm_runtime_disable(&client->dev);
 	pm_runtime_set_suspended(&client->dev);
-
-	mutex_destroy(&imx214->mutex);
 }
 
 static const struct of_device_id imx214_of_match[] = {
