@@ -1,0 +1,58 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-ufi.dtsi"
+
+/ {
+ 	model = "SP970v8 4G Modem Stick";
+ 	compatible = "cj,sp970", "qcom,msm8916";
+	chassis-type = "handset";
+};
+
+&button_restart {
+	gpios = <&tlmm 107 GPIO_ACTIVE_LOW>;
+};
+
+&led_b {
+	gpios = <&tlmm 28 GPIO_ACTIVE_HIGH>;
+};
+
+&led_g {
+	gpios = <&tlmm 10 GPIO_ACTIVE_HIGH>;
+};
+
+&led_r {
+	gpios = <&tlmm 9 GPIO_ACTIVE_HIGH>;
+};
+
+&mpss {
+	pinctrl-0 = <&sim_ctrl_default>;
+	pinctrl-names = "default";
+};
+
+&wcnss_iris {
+	compatible = "qcom,wcn3660b";
+};
+
+&button_default {
+	pins = "gpio107";
+	bias-pull-up;
+    function = "gpio";
+};
+
+&gpio_leds_default {
+	pins = "gpio28", "gpio10", "gpio9";
+};
+
+/* This selects the external SIM card slot by default */
+&tlmm {
+	sim_ctrl_default: sim-ctrl-default-state {
+		esim-sel-pins {
+			pins = "gpio26", "gpio114";
+			function = "gpio";
+			bias-disable;
+			output-high;
+		};
+	};
+};
