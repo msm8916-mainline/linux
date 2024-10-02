@@ -30,6 +30,7 @@ struct s6e88a0_ams427ap24 {
 	struct mipi_dsi_device *dsi;
 	struct regulator_bulk_data supplies[2];
 	struct gpio_desc *reset_gpio;
+	bool flip_horizontal;
 	bool prepared;
 };
 
@@ -526,6 +527,10 @@ static int s6e88a0_ams427ap24_on(struct s6e88a0_ams427ap24 *ctx)
 	mipi_dsi_dcs_write_seq(dsi, 0xcc, 0x4c);
 	mipi_dsi_dcs_write_seq(dsi, 0xf2, 0x03, 0x0d);
 	mipi_dsi_dcs_write_seq(dsi, 0xf1, 0xa5, 0xa5);
+
+	if (ctx->flip_horizontal)
+		mipi_dsi_dcs_write_seq(dsi, 0xcb, 0x0e);
+
 	mipi_dsi_dcs_write_seq(dsi, 0xf0, 0xa5, 0xa5);
 	mipi_dsi_dcs_write_seq(dsi, 0xfc, 0xa5, 0xa5);
 
@@ -682,6 +687,15 @@ static int s6e88a0_ams427ap24_register_backlight(struct s6e88a0_ams427ap24 *ctx)
 	return ret;
 }
 
+static void s6e88a0_ams427ap24_parse_dt(struct s6e88a0_ams427ap24 *ctx)
+{
+	struct mipi_dsi_device *dsi = ctx->dsi;
+	struct device *dev = &dsi->dev;
+	struct device_node *np = dev->of_node;
+
+	ctx->flip_horizontal = of_property_read_bool(np, "flip-horizontal");
+}
+
 static int s6e88a0_ams427ap24_probe(struct mipi_dsi_device *dsi)
 {
 	struct device *dev = &dsi->dev;
@@ -715,6 +729,8 @@ static int s6e88a0_ams427ap24_probe(struct mipi_dsi_device *dsi)
 	drm_panel_init(&ctx->panel, dev, &s6e88a0_ams427ap24_panel_funcs,
 		       DRM_MODE_CONNECTOR_DSI);
 	ctx->panel.prepare_prev_first = true;
+
+	s6e88a0_ams427ap24_parse_dt(ctx);
 
 	ret = s6e88a0_ams427ap24_register_backlight(ctx);
 	if (ret < 0)
