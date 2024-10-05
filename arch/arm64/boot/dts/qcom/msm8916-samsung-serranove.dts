@@ -341,6 +341,7 @@
 		vdd3-supply = <&pm8916_l17>;
 		vci-supply = <&pm8916_l6>;
 		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+		flip-horizontal;
 
 		port {
 			panel_in: endpoint {
