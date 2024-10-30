@@ -1,0 +1,380 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "qcom-msm8909-pm8909.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
+
+/ {
+	model = "Lenovo Yoga Tab 3 10 LTE";
+	compatible = "lenovo,lxf-p5100", "qcom,msm8909";
+	chassis-type = "tablet";
+
+	aliases {
+		serial0 = &blsp_uart1;
+	};
+
+	chosen {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		stdout-path = "serial0";
+
+		framebuffer@83200000 {
+			compatible = "simple-framebuffer";
+			reg = <0x83200000 (800 * 1280 * 3)>;
+
+			width = <800>;
+			height = <1280>;
+			stride = <(1280 * 3)>;
+			format = "r8g8b8";
+
+			power-domains = <&gcc MDSS_GDSC>;
+
+			clocks = <&gcc GCC_MDSS_AHB_CLK>,
+				 <&gcc GCC_MDSS_AXI_CLK>,
+				 <&gcc GCC_MDSS_VSYNC_CLK>,
+				 <&gcc GCC_MDSS_MDP_CLK>,
+				 <&gcc GCC_MDSS_BYTE0_CLK>,
+				 <&gcc GCC_MDSS_PCLK0_CLK>,
+				 <&gcc GCC_MDSS_ESC0_CLK>;
+		};
+	};
+
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pm8909_pwm 0 100000>;
+
+		brightness-levels = <0 255>;
+		num-interpolated-steps = <255>;
+		default-brightness-level = <255>;
+	};
+
+	battery: battery {
+		compatible = "simple-battery";
+		voltage-min-design-microvolt = <3400000>;
+		voltage-max-design-microvolt = <4350000>;
+		energy-full-design-microwatt-hours = <7600000>;
+		charge-full-design-microamp-hours = <2000000>;
+
+		ocv-capacity-celsius = <25>;
+		ocv-capacity-table-0 = <4335000 100>, <4265000 95>,
+			<4207000 90>, <4152000 85>, <4101000 80>, <4051000 75>,
+			<3995000 70>, <3958000 65>, <3921000 60>, <3874000 55>,
+			<3838000 50>, <3815000 45>, <3797000 40>, <3783000 35>,
+			<3772000 30>, <3763000 25>, <3744000 20>, <3718000 16>,
+			<3692000 13>, <3689000 11>, <3688000 10>, <3687000 9>,
+			<3685000 8>, <3683000 7>, <3679000 6>, <3663000 5>,
+			<3620000 4>, <3555000 3>, <3461000 2>, <3312000 1>,
+			<3000000 0>;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		pinctrl-0 = <&gpio_keys_default>;
+		pinctrl-names = "default";
+
+		label = "GPIO Buttons";
+
+		button-volume-up {
+			label = "Volume Up";
+			gpios = <&tlmm 90 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEUP>;
+		};
+	};
+
+	gpio-hall-sensor {
+		compatible = "gpio-keys";
+
+		pinctrl-0 = <&gpio_hall_sensor_default>;
+		pinctrl-names = "default";
+
+		label = "GPIO Hall Effect Sensor";
+
+		event-hall-sensor {
+			label = "Hall Effect Sensor";
+			gpios = <&tlmm 36 GPIO_ACTIVE_LOW>;
+			linux,input-type = <EV_SW>;
+			linux,code = <SW_LID>;
+			linux,can-disable;
+		};
+	};
+
+	reg_ts_vdd: regulator-ts {
+		compatible = "regulator-fixed";
+		regulator-name = "reg_ts_vdd";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+
+		gpios = <&tlmm 92 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-0 = <&ts_vdd_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&blsp_i2c1 {
+	status = "okay";
+	/* TODO: add Bochs BMA223 accelerometer/ELAN EPL2102 light sensor here */
+	magnetometer@c {
+		compatible = "asahi-kasei,ak09911";
+		reg = <0x0c>;
+
+		vdd-supply = <&pm8909_l17>;
+		vid-supply = <&pm8909_l6>;
+
+		reset-gpios = <&tlmm 94 GPIO_ACTIVE_LOW>;
+
+		pinctrl-0 = <&magnetometer_default>;
+		pinctrl-names = "default";
+	};
+
+	led-controller@68 {
+		compatible = "si-en,sn3191";
+		reg = <0x68>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		shutdown-gpios = <&tlmm 27 GPIO_ACTIVE_HIGH>;
+
+		led@1 {
+			reg = <1>;
+			function = LED_FUNCTION_INDICATOR;
+			color = <LED_COLOR_ID_WHITE>;
+			led-max-microamp = <5000>;
+		};
+	};
+};
+
+&blsp_i2c5 {
+	status = "okay";
+
+	touchscreen@6c {
+		compatible = "hideep,hideep-ts";
+		reg = <0x6c>;
+
+		interrupts-extended = <&tlmm 13 IRQ_TYPE_EDGE_FALLING>;
+
+		reset-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
+
+		vdd-supply = <&reg_ts_vdd>;
+		vid-supply = <&pm8909_l6>;
+
+		touchscreen-size-x = <800>;
+		touchscreen-size-y = <1280>;
+
+		pinctrl-0 = <&touchscreen_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&blsp_uart1 {
+	status = "okay";
+};
+
+/* FIXME: Missing the real fuel gauge's node */
+&pm8909_bms {
+	monitored-battery = <&battery>;
+	status = "okay";
+};
+
+&pm8909_mpps {
+	pwm_out: mpp2-state {
+		pins = "mpp2";
+		function = "digital";
+		power-source = <PM8916_MPP_VPH>;
+		output-low;
+		qcom,dtest = <1>;
+	};
+};
+
+&pm8909_pwm {
+	pinctrl-0 = <&pwm_out>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pm8909_resin {
+	linux,code = <KEY_VOLUMEDOWN>;
+	status = "okay";
+};
+
+/* FIXME: Set up smb358 properly for the usb */
+&pm8909_usbin {
+	status = "okay";
+};
+
+&pm8909_vib {
+	status = "okay";
+};
+
+&sdhc_1 {
+	status = "okay";
+};
+
+&sdhc_2 {
+	status = "okay";
+};
+
+&smd_rpm_regulators {
+	s2 {
+		regulator-min-microvolt = <1850000>;
+		regulator-max-microvolt = <1850000>;
+	};
+
+	l1 {
+		regulator-min-microvolt = <1000000>;
+		regulator-max-microvolt = <1000000>;
+	};
+
+	l2 {
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1200000>;
+	};
+
+	l4 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	l5 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	l6 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	l7 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	l8 {
+		regulator-min-microvolt = <2850000>;
+		regulator-max-microvolt = <2900000>;
+	};
+
+	l9 {
+		regulator-min-microvolt = <3000000>;
+		regulator-max-microvolt = <3300000>;
+	};
+
+	l10 {
+		regulator-min-microvolt = <1225000>;
+		regulator-max-microvolt = <1300000>;
+	};
+
+	l11 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <2950000>;
+		regulator-system-load = <200000>;
+		regulator-allow-set-load;
+	};
+
+	l12 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <2950000>;
+	};
+
+	l13 {
+		regulator-min-microvolt = <3075000>;
+		regulator-max-microvolt = <3075000>;
+	};
+
+	l14 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3000000>;
+	};
+
+	l15 {
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3000000>;
+	};
+
+	l17 {
+		regulator-min-microvolt = <2850000>;
+		regulator-max-microvolt = <2850000>;
+	};
+
+	l18 {
+		regulator-min-microvolt = <2700000>;
+		regulator-max-microvolt = <2700000>;
+	};
+};
+
+&usb {
+	dr_mode = "peripheral";
+	extcon = <&pm8909_usbin>;
+	status = "okay";
+};
+
+&usb_hs_phy {
+	extcon = <&pm8909_usbin>;
+	status = "okay";
+};
+
+&wcnss {
+	status = "okay";
+};
+
+&wcnss_iris {
+	compatible = "qcom,wcn3620";
+};
+
+&tlmm {
+	gpio_keys_default: gpio-keys-default-state {
+		pins = "gpio90";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	gpio_hall_sensor_default: gpio-hall-sensor-default-state {
+		pins = "gpio36";
+		function = "gpio";
+		drive-strength = <10>;
+		bias-disable;
+	};
+
+	magnetometer_default: magnetometer-default-state {
+		pins = "gpio94";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	touchscreen_default: touchscreen-default-state {
+		reset-pins {
+			pins = "gpio12";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-disable;
+		};
+
+		touchscreen-pins {
+			pins = "gpio13";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	ts_vdd_default: ts_vdd_default-state {
+		vdd-pins {
+			pins = "gpio92";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+};
