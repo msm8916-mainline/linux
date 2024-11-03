@@ -214,7 +214,7 @@ static int ktd2692_parse_dt(struct ktd2692_context *led, struct device *dev,
 	if (!np)
 		return -ENXIO;
 
-	led->props.ctrl_gpio = devm_gpiod_get(dev, "ctrl", GPIOD_ASIS);
+	led->props.ctrl_gpio = devm_gpiod_get(dev, "ctrl", GPIOD_OUT_HIGH);
 	ret = PTR_ERR_OR_ZERO(led->props.ctrl_gpio);
 	if (ret)
 		return dev_err_probe(dev, ret, "cannot get ctrl-gpios\n");
