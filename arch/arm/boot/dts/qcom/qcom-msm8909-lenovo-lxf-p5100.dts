@@ -9,6 +9,7 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
+#include <dt-bindings/power/summit,smb347-charger.h>
 
 / {
 	model = "Lenovo Yoga Tab 3 10 LTE";
@@ -119,6 +120,28 @@
 		pinctrl-0 = <&ts_vdd_default>;
 		pinctrl-names = "default";
 	};
+
+/* 
+In this device (and some other Longcheer made device),
+there is mux chip.
+It is for controling where the micro usb's id pinout is conected to.
+
+By default , the mux chip conected gpio 37 (FORCE_USB_BOOT pin) to the usb id
+but ideally, we need to send signal to the mux chip
+for making the mux chip connect the micro usb's id pin
+to the changer as well as msm8909's usb id pin 
+so we can set up the usb properly by
+setting the changer and the msm8909's usb id pin as the extcon for usb.
+
+However due to msm8909's usb id pin is useable in mainline as of now,
+we workaround that by setting gpio37 as extcon for the usb.
+*/
+	usb_id: usb-id {
+		compatible = "linux,extcon-usb-gpio";
+		id-gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&usb_id_default &usb_id_mux_default>;
+		pinctrl-names = "default";
+	};
 };
 
 &blsp_i2c1 {
@@ -141,7 +164,7 @@
 		compatible = "si-en,sn3191";
 		reg = <0x68>;
 		#address-cells = <1>;
-		#size-cells = <0>;
+		#size-cells = <1>;
 		shutdown-gpios = <&tlmm 27 GPIO_ACTIVE_HIGH>;
 
 		led@1 {
@@ -151,6 +174,28 @@
 			led-max-microamp = <5000>;
 		};
 	};
+};
+
+&blsp_i2c4 {
+	status = "okay";
+		changer: charger@57 {
+			compatible = "summit,smb358";
+			reg = <0x57>;
+			summit,enable-usb-charging;
+			summit,enable-charge-control = <SMB3XX_CHG_ENABLE_SW>;
+			summit,fast-voltage-threshold-microvolt = <2600000>;
+			summit,chip-temperature-threshold-celsius = <130>;
+			summit,usb-current-limit-microamp = <1800000>;
+
+			monitored-battery = <&battery>;
+			usb_vbus: usb-vbus {
+				regulator-name = "usb_vbus";
+				regulator-min-microvolt = <5000000>;
+				regulator-max-microvolt = <5000000>;
+				regulator-min-microamp = <750000>;
+				regulator-max-microamp = <750000>;
+			};
+		};
 };
 
 &blsp_i2c5 {
@@ -313,13 +358,14 @@
 };
 
 &usb {
-	dr_mode = "peripheral";
-	extcon = <&pm8909_usbin>;
+	dr_mode = "otg";
+	vbus-supply = <&usb_vbus>;
+	extcon = <&usb_id>, <&usb_id>;
 	status = "okay";
 };
 
 &usb_hs_phy {
-	extcon = <&pm8909_usbin>;
+	extcon = <&usb_id>;
 	status = "okay";
 };
 
@@ -376,5 +422,20 @@
 			drive-strength = <2>;
 			bias-disable;
 		};
+	};
+
+	usb_id_default: usb-id-default-state {
+		pins = "gpio37";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	/* Keeping the mux chip in default state */
+	usb_id_mux_default: usb-id-mux-default-state {
+		pins = "gpio0";
+		function = "gpio";
+		drive-strength = <2>;
+		output-low;
 	};
 };
