@@ -1673,6 +1673,8 @@ patternProperties:
     description: Extreme Engineering Solutions (X-ES)
   "^xiaomi,.*":
     description: Xiaomi Technology Co., Ltd.
+  "^xiaoxun,.*":
+    description: XiaoXun BiCheng Technology
   "^xillybus,.*":
     description: Xillybus Ltd.
   "^xingbangda,.*":
