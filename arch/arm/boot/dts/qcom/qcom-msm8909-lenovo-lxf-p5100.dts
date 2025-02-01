@@ -175,13 +175,17 @@
 	};
 };
 
-&blsp_uart1 {
+&blsp_i2c6 {
 	status = "okay";
+
+	fuel-gauge@55 {
+		monitored-battery = <&battery>;
+		compatible = "ti,bq27500";
+		reg = <0x55>;
+	};
 };
 
-/* FIXME: Missing the real fuel gauge's node */
-&pm8909_bms {
-	monitored-battery = <&battery>;
+&blsp_uart1 {
 	status = "okay";
 };
 
