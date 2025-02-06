@@ -342,6 +342,12 @@
 };
 
 &cci_i2c0 {
+	dw9761: actuator@c {
+		compatible = "dongwoon,dw9761";
+		reg = <0x0c>;
+		vdd-supply = <&pm8916_l10>;
+	};
+
 	camera-rear@10 {
 		compatible = "sony,imx214";
 		reg = <0x10>;
@@ -361,6 +367,8 @@
 
 		orientation = <1>;
 		rotation = <270>;
+
+		lens-focus = <&dw9761>;
 
 		port {
 			imx214_ep: endpoint {
@@ -448,6 +456,11 @@
 };
 
 &pm8916_rpm_regulators {
+	pm8916_l10: l10 {
+		regulator-min-microvolt = <2700000>;
+		regulator-max-microvolt = <2800000>;
+	};
+
 	pm8916_l17: l17 {
 		regulator-min-microvolt = <2850000>;
 		regulator-max-microvolt = <2850000>;
