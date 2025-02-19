@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/* Also applies to MF601S_V2 */
+
+/dts-v1/;
+
+#include "msm8916-thwc-mf601xx.dtsi"
+
+/ {
+	model = "Tong Heng Wei Chuang 4G Modem Stick MF601SL_CT_V07";
+	compatible = "thwc,mf601sl-v7", "qcom,msm8916";
+};
+
+&led_mobile_g {
+	gpios = <&tlmm 116 GPIO_ACTIVE_HIGH>;
+};
+
+&led_mobile_r {
+	gpios = <&tlmm 115 GPIO_ACTIVE_HIGH>;
+};
+
+&led_bat_g {
+	gpios = <&tlmm 112 GPIO_ACTIVE_HIGH>;
+};
+
+&led_bat_r {
+	gpios = <&tlmm 110 GPIO_ACTIVE_HIGH>;
+};
+
+&led_mail_g {
+	gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
+};
+
+&led_mail_r {
+	gpios = <&tlmm 121 GPIO_ACTIVE_HIGH>;
+};
+
+&led_wlan_g {
+	gpios = <&tlmm 120 GPIO_ACTIVE_HIGH>;
+};
+
+&led_wlan_r {
+	gpios = <&tlmm 119 GPIO_ACTIVE_HIGH>;
+};

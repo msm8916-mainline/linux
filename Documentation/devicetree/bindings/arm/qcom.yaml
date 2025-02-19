@@ -259,6 +259,7 @@ properties:
               - samsung,j5x
               - samsung,rossa
               - samsung,serranove
+              - thwc,mf601sl-ct-v07
               - thwc,uf896
               - thwc,ufi001c
               - wingtech,wt86518
