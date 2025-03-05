@@ -3,6 +3,20 @@ on:
   push:
     tags:
       - "*"
+  workflow_dispatch:
+    inputs:
+      arch:
+        description: 'Target architecture'
+        required: true
+        default: 'arm64'
+        type: choice
+        options:
+          - arm64
+          - x86_64
+      config:
+        description: 'Kernel config file'
+        required: true
+        default: 'ufi003_defconfig'
 
 jobs:
   build:
@@ -24,8 +38,8 @@ jobs:
       - name: Build
         run: |
           export CROSS_COMPILE=aarch64-linux-gnu-
-          export ARCH=arm64
-          make ufi003_defconfig
+          export ARCH=${{ github.event.inputs.arch || 'arm64' }}
+          make ${{ github.event.inputs.config || 'ufi003_defconfig' }}
           make deb-pkg -j"$(($(grep -c processor < /proc/cpuinfo)*2))"
 
       - name: Prepare artifacts
@@ -41,6 +55,7 @@ jobs:
     name: Make boot images
     needs: build
     runs-on: ubuntu-latest
+    if: always() && needs.build.result == 'success'
     steps:
       - name: Prepare
         run: |
@@ -70,3 +85,6 @@ jobs:
         with:
           body_path: changes.txt
           files: artifacts/*
+
+      - name: Cleanup artifacts
+        run: rm -rf artifacts
