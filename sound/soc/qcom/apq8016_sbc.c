@@ -22,6 +22,9 @@
 
 #define MI2S_COUNT  (MI2S_QUATERNARY + 1)
 
+#define ARIZONA_CLK_SYSCLK	1
+#define ARIZONA_CLK_SRC_MCLK1	0
+
 struct apq8016_sbc_data {
 	struct snd_soc_card card;
 	void __iomem *mic_iomux;
@@ -127,11 +130,21 @@ static int apq8016_dai_init(struct snd_soc_pcm_runtime *rtd, int mi2s)
 	}
 
 	for_each_rtd_codec_dais(rtd, i, codec_dai) {
+		int clk_id, pll_out, source;
 
+		if (!strcmp(codec_dai->name, "wm8998-aif1")) {
+			clk_id = ARIZONA_CLK_SYSCLK;
+			pll_out = 12288000;
+			source = ARIZONA_CLK_SRC_MCLK1;
+		} else {
+			clk_id = 0;
+			pll_out = DEFAULT_MCLK_RATE;
+			source = 0;
+		}
 		component = codec_dai->component;
 		/* Set default mclk for internal codec */
-		rval = snd_soc_component_set_sysclk(component, 0, 0, DEFAULT_MCLK_RATE,
-				       SND_SOC_CLOCK_IN);
+		rval = snd_soc_component_set_sysclk(component, clk_id, source,
+						    pll_out, SND_SOC_CLOCK_IN);
 		if (rval != 0 && rval != -ENOTSUPP) {
 			dev_warn(card->dev, "Failed to set mclk: %d\n", rval);
 			return rval;
