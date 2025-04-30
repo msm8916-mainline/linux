@@ -14,6 +14,9 @@
 #include "camss-vfe.h"
 #include "camss-vfe-vbif.h"
 
+#define VBIF_FIXED_SORT_EN	0x30
+#define VBIF_FIXED_SORT_SEL0	0x34
+
 void vfe_vbif_reg_write(struct vfe_device *vfe, u32 reg, u32 val)
 {
 	writel_relaxed(val, vfe->vbif_base + reg);
@@ -22,6 +25,10 @@ void vfe_vbif_reg_write(struct vfe_device *vfe, u32 reg, u32 val)
 int vfe_vbif_apply_settings(struct vfe_device *vfe)
 {
 	switch (vfe->camss->res->version) {
+	case CAMSS_8x39:
+		vfe_vbif_reg_write(vfe, VBIF_FIXED_SORT_EN, 0xfff);
+		vfe_vbif_reg_write(vfe, VBIF_FIXED_SORT_SEL0, 0x555000);
+		break;
 	default:
 		break;
 	}
