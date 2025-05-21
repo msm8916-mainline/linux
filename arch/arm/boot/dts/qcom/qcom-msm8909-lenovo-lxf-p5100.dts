@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "qcom-msm8909-lenovo-lxf-p5x00.dtsi"
+
+/ {
+	model = "Lenovo Yoga Tab 3 10 LTE";
+	compatible = "lenovo,lxf-p5100", "qcom,msm8909";
+	chassis-type = "tablet";
+};
