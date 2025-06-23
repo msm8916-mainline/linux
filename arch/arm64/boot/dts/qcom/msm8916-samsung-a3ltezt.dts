@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-samsung-a3u-eur.dts"
+
+/ {
+	model = "Samsung Galaxy A3 (SM-A300YZ)";
+	compatible = "samsung,a3ltezt", "samsung,a3u-eur", "qcom,msm8916";
+	chassis-type = "handset";
+
+	/* NOTE: a3ltezt doesn't actually have an NFC chip. */
+	i2c-nfc {
+		status = "disabled";
+	};
+};
