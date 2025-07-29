@@ -9,6 +9,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/media/video-interfaces.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
 
@@ -42,6 +43,17 @@
 			linux,code = <SW_LID>;
 			linux,can-disable;
 		};
+	};
+
+	cam_vdig_front_vreg: cam-vdig-front-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "cam_vdig_front_vreg";
+		startup-delay-us = <0>;
+		enable-active-high;
+		gpio = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&s5k5e2_vdig_default>;
+		pinctrl-names = "default";
+		regulator-always-on;
 	};
 
 	cam_vana_rear_vreg: cam-vana-rear-regulator {
@@ -138,6 +150,15 @@
 		id-gpios = <&tlmm 110 GPIO_ACTIVE_HIGH>;
 		pinctrl-0 = <&usb_id_default &usb_id_switch_default>;
 		pinctrl-names = "default";
+	};
+
+	fake-reg-mclk1 {
+		compatible = "regulator-fixed-clock";
+		regulator-name = "mclk1-force-on";
+		pinctrl-names = "default";
+		pinctrl-0 = <&camera_front_default>;
+		clocks = <&gcc GCC_CAMSS_MCLK1_CLK>;
+		regulator-always-on;
 	};
 
 };
@@ -550,7 +571,6 @@
 		bias-disable;
 	};
 
-
 	lcd_bl_en_default: lcd-bl-en-default-state {
 		pins = "gpio98";
 		function = "gpio";
@@ -584,6 +604,22 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-down;
+	};
+
+/*	s5k5e2_vana_default: s5k5e2-vana-default-state {
+		pins = "gpio34";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	}; */
+
+	s5k5e2_vdig_default: s5k5e2-vdig-default-state {
+		pins = "gpio32";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
 	};
 
 	sdc2_cd_default: sdc2-cd-default-state {
@@ -626,6 +662,17 @@
 		function = "gpio";
 		drive-strength = <2>;
 		output-high;
+	};
+};
+
+&camera_front_default {
+	/delete-node/ rst-pins;
+
+	rst-pins {
+		pins = "gpio100";
+		function = "gpio";
+		drive-strength = <16>;
+		bias-disable;
 	};
 };
 
