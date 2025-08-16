@@ -707,6 +707,12 @@ config VIDEO_S5K5BAF
 	  This is a V4L2 sensor driver for Samsung S5K5BAF 2M
 	  camera sensor with an embedded SoC image signal processor.
 
+config VIDEO_S5K5E2
+	tristate "Samsung S5K5E2 sensor support"
+	help
+	  This is a V4L2 sensor driver for Samsung S5K5E2 5M
+	  camera sensor with an embedded SoC image signal processor. (TODO)
+
 config VIDEO_S5K6A3
 	tristate "Samsung S5K6A3 sensor support"
 	help
