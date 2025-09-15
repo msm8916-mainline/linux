@@ -4,6 +4,9 @@
 
 #include "msm8916-samsung-rossa-common.dtsi"
 
+/* CYTTSP4 instead of IST3038 */
+/delete-node/ &touchscreen;
+
 /*
  * NOTE: The original firmware from Samsung can only boot ARM32 kernels.
  * Unfortunately, the firmware is signed and cannot be replaced easily.
@@ -26,4 +29,17 @@
 	charge-term-current-microamp = <150000>;
 	constant-charge-current-max-microamp = <700000>;
 	constant-charge-voltage-max-microvolt = <4350000>;
+};
+
+&muic_sm5504 {
+	status = "okay";
+};
+
+&usb {
+	extcon = <&muic_sm5504>, <&muic_sm5504>;
+	status = "okay";
+};
+
+&usb_hs_phy {
+	extcon = <&muic_sm5504>;
 };
