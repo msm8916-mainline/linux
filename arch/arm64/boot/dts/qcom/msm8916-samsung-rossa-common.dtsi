@@ -36,6 +36,7 @@
 
 &panel {
 	/delete-property/ backlight;
+	compatible = "samsung,cprime-panel";
 };
 
 &s3fwrn5_nfc {
