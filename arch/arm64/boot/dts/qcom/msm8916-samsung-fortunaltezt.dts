@@ -28,6 +28,11 @@
 	constant-charge-voltage-max-microvolt = <4350000>;
 };
 
+&charger {
+	richtek,usb-connector = <&usb_con_sm5502>;
+	status = "okay";
+};
+
 /* On fortunaltezt backlight is controlled with MIPI DCS commands */
 &clk_pwm {
 	status = "disabled";
