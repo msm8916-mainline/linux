@@ -37,6 +37,10 @@
 	status = "disabled";
 };
 
+&muic_sm5502 {
+	status = "okay";
+};
+
 &pn547_nfc {
 	status = "okay";
 };
@@ -47,4 +51,13 @@
 		       "0", "-1", "0",
 		       "0",  "0", "1";
 	status = "okay";
+};
+
+&usb {
+	extcon = <&muic_sm5502>, <&muic_sm5502>;
+	status = "okay";
+};
+
+&usb_hs_phy {
+	extcon = <&muic_sm5502>;
 };
