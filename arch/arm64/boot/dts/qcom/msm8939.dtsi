@@ -2282,8 +2282,6 @@
 			clocks = <&a53pll_c1>, <&gcc GPLL0_VOTE>, <&rpmcc RPM_SMD_XO_CLK_SRC>;
 			clock-names = "pll", "aux", "ref";
 			#clock-cells = <0>;
-			assigned-clocks = <&apcs2>;
-			assigned-clock-rates = <297600000>;
 			#mbox-cells = <1>;
 		};
 
