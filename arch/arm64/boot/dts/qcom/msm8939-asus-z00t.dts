@@ -62,6 +62,15 @@
 			linux,code = <KEY_VOLUMEDOWN>;
 			debounce-interval = <15>;
 		};
+
+		event-hall-sensor {
+			label = "Hall Effect Sensor";
+			gpios = <&tlmm 108 GPIO_ACTIVE_LOW>;
+			linux,input-type = <EV_SW>;
+			linux,code = <SW_LID>;
+			linux,can-disable;
+			debounce-interval = <150>;
+		};
 	};
 
 	reg_sd_vmmc: regulator-sdcard-vmmc {
@@ -325,7 +334,7 @@
 	};
 
 	gpio_keys_default: gpio-keys-default-state {
-		pins = "gpio107", "gpio117";
+		pins = "gpio107", "gpio108", "gpio117";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-up;
