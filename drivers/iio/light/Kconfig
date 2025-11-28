@@ -209,6 +209,17 @@ config CM3605
 	  To compile this driver as a module, choose M here: the module will
 	  be called cm3605.
 
+config CM36283
+	depends on I2C
+	tristate "CM36283 driver"
+	help
+	  Say Y here if you use cm36283.
+	  This option enables proximity & ambient light sensor using
+	  Capella cm36283 device driver.
+
+	  To compile this driver as a module, choose M here:
+	  the module will be called cm36283.
+
 config CM36651
 	depends on I2C
 	tristate "CM36651 driver"
