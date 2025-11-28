@@ -1,0 +1,88 @@
+# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/iio/light/capella,cm36283.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Capella CM36283 I2C Ambient Light and Proximity sensor
+
+maintainers:
+  - Erikas Bitovtas <xerikasxx@gmail.com>
+
+properties:
+  compatible:
+    enum:
+      - capella,cm36283
+      - capella,cm36686
+      - capella,cm36672p
+
+  reg:
+    maxItems: 1
+
+  interrupts:
+    maxItems: 1
+
+  vdd-supply:
+    description:
+      Regulator that provides power to the sensor.
+
+  vddio-supply:
+    description:
+      Regulator used to power IO and I2C bus.
+
+  vled-supply:
+    description:
+      Regulator used to power proximity LED for cm36686 and cm36672p
+
+  proximity-near-level: true
+
+  capella,proximity-led-current:
+    description:
+      Current for proximity IR LED used in cm36686 and cm36672p (in uA)
+
+allOf:
+  - $ref: ../common.yaml#
+  - if:
+      properties:
+        compatible:
+          enum:
+            - capella,cm36686
+            - capella,cm36672p
+
+    then:
+      properties:
+        capella,proximity-led-current:
+          enum: [ 50, 75, 100, 120, 140, 160, 180, 200 ]
+
+    else:
+      properties:
+        vled-supply: false
+        capella,proximity-led-current: false
+
+additionalProperties: false
+
+required:
+  - compatible
+  - reg
+
+examples:
+  - |
+    #include <dt-bindings/interrupt-controller/irq.h>
+
+    i2c {
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      light-sensor@60 {
+        compatible = "capella,cm36686";
+        reg = <0x60>;
+
+        vdd-supply = <&pm8916_l8>;
+        vddio-supply = <&pm8916_l6>;
+
+        interrupts-extended = <&tlmm 113 IRQ_TYPE_LEVEL_LOW>;
+
+        proximity-near-level = <30>;
+        capella,proximity-far-level = <16>;
+      };
+    };
