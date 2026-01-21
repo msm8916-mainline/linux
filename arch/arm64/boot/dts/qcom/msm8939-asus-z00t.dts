@@ -8,6 +8,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/power/summit,smb347-charger.h>
 
 / {
 	model = "Asus ZenFone 2 Laser/Selfie (1080p)";
@@ -25,8 +26,12 @@
 		device-chemistry = "lithium-ion-polymer";
 		voltage-min-design-microvolt = <3400000>;
 		voltage-max-design-microvolt = <4400000>;
+		constant-charge-voltage-max-microvolt = <4400000>;
+		constant-charge-current-max-microamp = <2000000>;
+		charge-term-current-microamp = <80000>;
 		energy-full-design-microwatt-hours = <11500000>;
 		charge-full-design-microamp-hours = <3000000>;
+		operating-range-celsius = <10 65>;
 
 		ocv-capacity-celsius = <(-20) 0 25 40 60>;
 		ocv-capacity-table-0 = <4378000 100>, <4220000 95>, <4125000 90>,
@@ -165,6 +170,36 @@
 	};
 };
 
+&blsp_i2c4 {
+	status = "okay";
+
+	charger: charger@6a {
+		compatible = "summit,smb358";
+		reg = <0x6a>;
+
+		interrupts-extended = <&tlmm 20 IRQ_TYPE_EDGE_FALLING>;
+
+		pinctrl-0 = <&charger_int_default>;
+		pinctrl-names = "default";
+
+		summit,charge-current-compensation-microamp = <600000>;
+		summit,enable-charge-control = <SMB3XX_CHG_ENABLE_SW>;
+		summit,soft-compensation-mode = <SMB3XX_SOFT_TEMP_COMPENSATE_VOLTAGE>;
+		summit,enable-usb-charging;
+		summit,usb-current-limit-microamp = <1000000>;
+
+		monitored-battery = <&battery>;
+
+		usb_vbus: usb-vbus {
+			regulator-name = "usb_vbus";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			regulator-min-microamp = <500000>;
+			regulator-max-microamp = <500000>;
+		};
+	};
+};
+
 &blsp_i2c5 {
 	status = "okay";
 
@@ -246,6 +281,7 @@
 
 &pm8916_bms {
 	monitored-battery = <&battery>;
+	power-supplies = <&charger>;
 
 	status = "okay";
 };
@@ -290,6 +326,7 @@
 
 &usb {
 	extcon = <&usb_id>, <&usb_id>;
+	vbus-supply = <&usb_vbus>;
 
 	status = "okay";
 };
@@ -325,6 +362,13 @@
 			drive-strength = <2>;
 			bias-pull-up;
 		};
+	};
+
+	charger_int_default: charger-int-default-state {
+		pins = "gpio20";
+		function = "gpio";
+		drive-strength = <6>;
+		bias-pull-up;
 	};
 
 	lcd_bl_en_default: lcd-bl-en-default-state {
@@ -395,5 +439,12 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+	usb_id_switch_default: usb-id-switch-default-state {
+		pins = "gpio121";
+		function = "gpio";
+		drive-strength = <6>;
+		output-high;
 	};
 };
