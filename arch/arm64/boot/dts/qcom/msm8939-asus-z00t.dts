@@ -23,14 +23,15 @@
 
 	battery: battery {
 		compatible = "simple-battery";
+
 		device-chemistry = "lithium-ion-polymer";
 		voltage-min-design-microvolt = <3400000>;
 		voltage-max-design-microvolt = <4400000>;
 		constant-charge-voltage-max-microvolt = <4400000>;
 		constant-charge-current-max-microamp = <2000000>;
-		charge-term-current-microamp = <80000>;
 		energy-full-design-microwatt-hours = <11500000>;
 		charge-full-design-microamp-hours = <3000000>;
+		charge-term-current-microamp = <80000>;
 		operating-range-celsius = <10 65>;
 
 		ocv-capacity-celsius = <(-20) 0 25 40 60>;
@@ -132,7 +133,7 @@
 	usb_id: usb-id {
 		compatible = "linux,extcon-usb-gpio";
 		id-gpios = <&tlmm 110 GPIO_ACTIVE_HIGH>;
-		pinctrl-0 = <&usb_id_default>;
+		pinctrl-0 = <&usb_id_default>, <&usb_id_switch_default>;
 		pinctrl-names = "default";
 	};
 };
