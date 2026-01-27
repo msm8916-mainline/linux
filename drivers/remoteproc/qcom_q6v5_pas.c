@@ -547,37 +547,53 @@ static void qcom_pas_pds_detach(struct qcom_pas *pas, struct device **pds, size_
 
 static int qcom_pas_alloc_memory_region(struct qcom_pas *pas)
 {
-	struct resource res;
-	int ret;
+	struct reserved_mem *rmem;
+	struct device_node *node;
 
-	ret = of_reserved_mem_region_to_resource(pas->dev->of_node, 0, &res);
-	if (ret) {
-		dev_err(pas->dev, "unable to resolve memory-region\n");
-		return ret;
+	node = of_parse_phandle(pas->dev->of_node, "memory-region", 0);
+	if (!node) {
+		dev_err(pas->dev, "no memory-region specified\n");
+		return -EINVAL;
 	}
 
-	pas->mem_phys = pas->mem_reloc = res.start;
-	pas->mem_size = resource_size(&res);
-	pas->mem_region = devm_ioremap_resource_wc(pas->dev, &res);
+	rmem = of_reserved_mem_lookup(node);
+	of_node_put(node);
+	if (!rmem) {
+		dev_err(pas->dev, "unable to resolve memory-region\n");
+		return -EINVAL;
+	}
+
+	pas->mem_phys = pas->mem_reloc = rmem->base;
+	pas->mem_size = rmem->size;
+	pas->mem_region = devm_ioremap_wc(pas->dev, pas->mem_phys, pas->mem_size);
 	if (!pas->mem_region) {
-		dev_err(pas->dev, "unable to map memory region: %pR\n", &res);
+		dev_err(pas->dev, "unable to map memory region: %pa+%zx\n",
+			&rmem->base, pas->mem_size);
 		return -EBUSY;
 	}
 
 	if (!pas->dtb_pas_id)
 		return 0;
 
-	ret = of_reserved_mem_region_to_resource(pas->dev->of_node, 1, &res);
-	if (ret) {
-		dev_err(pas->dev, "unable to resolve dtb memory-region\n");
-		return ret;
+	node = of_parse_phandle(pas->dev->of_node, "memory-region", 1);
+	if (!node) {
+		dev_err(pas->dev, "no dtb memory-region specified\n");
+		return -EINVAL;
 	}
 
-	pas->dtb_mem_phys = pas->dtb_mem_reloc = res.start;
-	pas->dtb_mem_size = resource_size(&res);
-	pas->dtb_mem_region = devm_ioremap_resource_wc(pas->dev, &res);
+	rmem = of_reserved_mem_lookup(node);
+	of_node_put(node);
+	if (!rmem) {
+		dev_err(pas->dev, "unable to resolve dtb memory-region\n");
+		return -EINVAL;
+	}
+
+	pas->dtb_mem_phys = pas->dtb_mem_reloc = rmem->base;
+	pas->dtb_mem_size = rmem->size;
+	pas->dtb_mem_region = devm_ioremap_wc(pas->dev, pas->dtb_mem_phys, pas->dtb_mem_size);
 	if (!pas->dtb_mem_region) {
-		dev_err(pas->dev, "unable to map dtb memory region: %pR\n", &res);
+		dev_err(pas->dev, "unable to map dtb memory region: %pa+%zx\n",
+			&rmem->base, pas->dtb_mem_size);
 		return -EBUSY;
 	}
 
@@ -587,6 +603,7 @@ static int qcom_pas_alloc_memory_region(struct qcom_pas *pas)
 static int qcom_pas_assign_memory_region(struct qcom_pas *pas)
 {
 	struct qcom_scm_vmperm perm[MAX_ASSIGN_COUNT];
+	struct device_node *node;
 	unsigned int perm_size;
 	int offset;
 	int ret;
@@ -595,15 +612,17 @@ static int qcom_pas_assign_memory_region(struct qcom_pas *pas)
 		return 0;
 
 	for (offset = 0; offset < pas->region_assign_count; ++offset) {
-		struct resource res;
+		struct reserved_mem *rmem = NULL;
 
-		ret = of_reserved_mem_region_to_resource(pas->dev->of_node,
-							 pas->region_assign_idx + offset,
-							 &res);
-		if (ret) {
+		node = of_parse_phandle(pas->dev->of_node, "memory-region",
+					pas->region_assign_idx + offset);
+		if (node)
+			rmem = of_reserved_mem_lookup(node);
+		of_node_put(node);
+		if (!rmem) {
 			dev_err(pas->dev, "unable to resolve shareable memory-region index %d\n",
 				offset);
-			return ret;
+			return -EINVAL;
 		}
 
 		if (pas->region_assign_shared)  {
@@ -618,8 +637,8 @@ static int qcom_pas_assign_memory_region(struct qcom_pas *pas)
 			perm_size = 1;
 		}
 
-		pas->region_assign_phys[offset] = res.start;
-		pas->region_assign_size[offset] = resource_size(&res);
+		pas->region_assign_phys[offset] = rmem->base;
+		pas->region_assign_size[offset] = rmem->size;
 		pas->region_assign_owners[offset] = BIT(QCOM_SCM_VMID_HLOS);
 
 		ret = qcom_scm_assign_mem(pas->region_assign_phys[offset],

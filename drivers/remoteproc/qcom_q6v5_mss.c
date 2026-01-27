@@ -1970,8 +1970,8 @@ static int q6v5_init_reset(struct q6v5 *qproc)
 static int q6v5_alloc_memory_region(struct q6v5 *qproc)
 {
 	struct device_node *child;
-	struct resource res;
-	int ret;
+	struct reserved_mem *rmem;
+	struct device_node *node;
 
 	/*
 	 * In the absence of mba/mpss sub-child, extract the mba and mpss
@@ -1979,49 +1979,71 @@ static int q6v5_alloc_memory_region(struct q6v5 *qproc)
 	 */
 	child = of_get_child_by_name(qproc->dev->of_node, "mba");
 	if (!child) {
-		ret = of_reserved_mem_region_to_resource(qproc->dev->of_node, 0, &res);
+		node = of_parse_phandle(qproc->dev->of_node,
+					"memory-region", 0);
 	} else {
-		ret = of_reserved_mem_region_to_resource(child, 0, &res);
+		node = of_parse_phandle(child, "memory-region", 0);
 		of_node_put(child);
 	}
 
-	if (ret) {
-		dev_err(qproc->dev, "unable to resolve mba region\n");
-		return ret;
+	if (!node) {
+		dev_err(qproc->dev, "no mba memory-region specified\n");
+		return -EINVAL;
 	}
 
-	qproc->mba_phys = res.start;
-	qproc->mba_size = resource_size(&res);
+	rmem = of_reserved_mem_lookup(node);
+	of_node_put(node);
+	if (!rmem) {
+		dev_err(qproc->dev, "unable to resolve mba region\n");
+		return -EINVAL;
+	}
+
+	qproc->mba_phys = rmem->base;
+	qproc->mba_size = rmem->size;
 
 	if (!child) {
-		ret = of_reserved_mem_region_to_resource(qproc->dev->of_node, 1, &res);
+		node = of_parse_phandle(qproc->dev->of_node,
+					"memory-region", 1);
 	} else {
 		child = of_get_child_by_name(qproc->dev->of_node, "mpss");
-		ret = of_reserved_mem_region_to_resource(child, 0, &res);
+		node = of_parse_phandle(child, "memory-region", 0);
 		of_node_put(child);
 	}
 
-	if (ret) {
-		dev_err(qproc->dev, "unable to resolve mpss region\n");
-		return ret;
+	if (!node) {
+		dev_err(qproc->dev, "no mpss memory-region specified\n");
+		return -EINVAL;
 	}
 
-	qproc->mpss_phys = qproc->mpss_reloc = res.start;
-	qproc->mpss_size = resource_size(&res);
+	rmem = of_reserved_mem_lookup(node);
+	of_node_put(node);
+	if (!rmem) {
+		dev_err(qproc->dev, "unable to resolve mpss region\n");
+		return -EINVAL;
+	}
+
+	qproc->mpss_phys = qproc->mpss_reloc = rmem->base;
+	qproc->mpss_size = rmem->size;
 
 	if (!child) {
-		ret = of_reserved_mem_region_to_resource(qproc->dev->of_node, 2, &res);
+		node = of_parse_phandle(qproc->dev->of_node, "memory-region", 2);
 	} else {
 		child = of_get_child_by_name(qproc->dev->of_node, "metadata");
-		ret = of_reserved_mem_region_to_resource(child, 0, &res);
+		node = of_parse_phandle(child, "memory-region", 0);
 		of_node_put(child);
 	}
 
-	if (ret)
+	if (!node)
 		return 0;
 
-	qproc->mdata_phys = res.start;
-	qproc->mdata_size = resource_size(&res);
+	rmem = of_reserved_mem_lookup(node);
+	if (!rmem) {
+		dev_err(qproc->dev, "unable to resolve metadata region\n");
+		return -EINVAL;
+	}
+
+	qproc->mdata_phys = rmem->base;
+	qproc->mdata_size = rmem->size;
 
 	return 0;
 }

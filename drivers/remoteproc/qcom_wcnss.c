@@ -526,20 +526,25 @@ static int wcnss_request_irq(struct qcom_wcnss *wcnss,
 
 static int wcnss_alloc_memory_region(struct qcom_wcnss *wcnss)
 {
-	struct resource res;
-	int ret;
+	struct reserved_mem *rmem = NULL;
+	struct device_node *node;
 
-	ret = of_reserved_mem_region_to_resource(wcnss->dev->of_node, 0, &res);
-	if (ret) {
+	node = of_parse_phandle(wcnss->dev->of_node, "memory-region", 0);
+	if (node)
+		rmem = of_reserved_mem_lookup(node);
+	of_node_put(node);
+
+	if (!rmem) {
 		dev_err(wcnss->dev, "unable to resolve memory-region\n");
-		return ret;
+		return -EINVAL;
 	}
 
-	wcnss->mem_phys = wcnss->mem_reloc = res.start;
-	wcnss->mem_size = resource_size(&res);
-	wcnss->mem_region = devm_ioremap_resource_wc(wcnss->dev, &res);
+	wcnss->mem_phys = wcnss->mem_reloc = rmem->base;
+	wcnss->mem_size = rmem->size;
+	wcnss->mem_region = devm_ioremap_wc(wcnss->dev, wcnss->mem_phys, wcnss->mem_size);
 	if (!wcnss->mem_region) {
-		dev_err(wcnss->dev, "unable to map memory region: %pR\n", &res);
+		dev_err(wcnss->dev, "unable to map memory region: %pa+%zx\n",
+			&rmem->base, wcnss->mem_size);
 		return -EBUSY;
 	}
 
