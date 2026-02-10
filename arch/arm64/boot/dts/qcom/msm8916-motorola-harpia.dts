@@ -1,0 +1,257 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-motorola-common.dtsi"
+
+/ {
+	model = "Motorola Moto G4 Play";
+	compatible = "motorola,harpia", "qcom,msm8916";
+	chassis-type = "handset";
+
+	/*
+	 * harpia uses a NT50358 regulator to drive the display panel.
+	 * This regulator is apparently compatible with the TPS65132, except for
+	 * some differences with the enable lines, according to the downstream
+	 * kernel.
+	 * (https://github.com/MotorolaMobilityLLC/kernel-msm/blob/nougat-7.1.1-release-harpia/arch/arm/boot/dts/qcom/msm8916-harpia.dtsi#L202)
+	 * TODO: figure out what needs to be done to get a proper driver working
+	 * for this regulator. For now, we can just use fixed-regulator, as the
+	 * regulator reads voltages on startup from an onboard EEPROM, and we
+	 * don't need to adjust the regulator's values.
+	 */
+	nt50358_pos: nt50358-pos {
+		compatible = "regulator-fixed";
+		regulator-name = "nt50358-pos";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&tlmm 97 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-0 = <&lcd_p_en_default>;
+		pinctrl-names = "default";
+	};
+
+	nt50358_neg: nt50358-neg {
+		compatible = "regulator-fixed";
+		regulator-name = "nt50358-neg";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&tlmm 98 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-0 = <&lcd_n_en_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&blsp_i2c1 {
+	status = "okay";
+
+	battery@36 {
+		compatible = "maxim,max17050";
+		reg = <0x36>;
+
+		interrupts-extended = <&tlmm 62 IRQ_TYPE_EDGE_FALLING>;
+
+		pinctrl-0 = <&battery_alert_default>;
+		pinctrl-names = "default";
+
+		maxim,rsns-microohm = <10000>;
+		maxim,over-heat-temp = <600>;
+		maxim,cold-temp = <(-200)>;
+		maxim,dead-volt = <3200>;
+		maxim,over-volt = <4500>;
+	};
+
+	/* charger@6b */
+};
+
+&blsp_i2c4 {
+	status = "okay";
+
+	accelerometer@19 {
+		compatible = "bosch,bma253";
+		reg = <0x19>;
+
+		interrupts-extended = <&tlmm 115 IRQ_TYPE_EDGE_RISING>,
+				      <&tlmm 119 IRQ_TYPE_EDGE_RISING>;
+
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l6>;
+
+		mount-matrix = "1",  "0", "0",
+			       "0", "-1", "0",
+			       "0",  "0", "1";
+
+		pinctrl-0 = <&accel_int_default>;
+		pinctrl-names = "default";
+	};
+
+	/* proximity@49 */
+};
+
+&gpu {
+	status = "okay";
+};
+
+&mdss {
+	status = "okay";
+};
+
+&mdss_dsi0 {
+	pinctrl-0 = <&mdss_default>;
+	pinctrl-1 = <&mdss_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	panel@0 {
+		compatible = "motorola,harpia-panel";
+		reg = <0>;
+
+		vsp-supply = <&nt50358_pos>;
+		vsn-supply = <&nt50358_neg>;
+		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+		backlight-gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
+
+		pinctrl-0 = <&lcd_bl_en_default>;
+		pinctrl-names = "default";
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&mdss_dsi0_out>;
+			};
+		};
+	};
+};
+
+&mdss_dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&mdss_dsi0_phy {
+	qcom,dsi-phy-regulator-ldo-mode;
+};
+
+&pm8916_codec {
+	qcom,micbias-lvl = <2800>;
+	qcom,mbhc-vthreshold-low = <75 150 237 450 500>;
+	qcom,mbhc-vthreshold-high = <75 150 237 450 500>;
+	qcom,micbias1-ext-cap;
+};
+
+&pm8916_rpm_regulators {
+	pm8916_l17: l17 {
+		regulator-min-microvolt = <2850000>;
+		regulator-max-microvolt = <2850000>;
+	};
+};
+
+&sdhc_2 {
+	pinctrl-0 = <&sdc2_default &sdc2_cd_default>;
+	pinctrl-1 = <&sdc2_sleep &sdc2_cd_default>;
+	pinctrl-names = "default", "sleep";
+
+	cd-gpios = <&tlmm 118 GPIO_ACTIVE_LOW>;
+};
+
+&sound {
+	audio-routing =
+		"AMIC1", "MIC BIAS External1",
+		"AMIC2", "MIC BIAS Internal2",
+		"AMIC3", "MIC BIAS External1";
+
+	pinctrl-0 = <&cdc_pdm_default &headset_switch_supply_en
+		     &headset_switch_in>;
+	pinctrl-1 = <&cdc_pdm_sleep &headset_switch_supply_en
+		     &headset_switch_in>;
+	pinctrl-names = "default", "sleep";
+};
+
+&touchscreen {
+	interrupts-extended = <&tlmm 13 IRQ_TYPE_EDGE_FALLING>;
+
+	vdd-supply = <&pm8916_l16>;
+
+	pinctrl-0 = <&ts_int_default>;
+	pinctrl-names = "default";
+};
+
+&tlmm {
+	accel_int_default: accel-int-default-state {
+		pins = "gpio115", "gpio119";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	battery_alert_default: battery-alert-default-state {
+		pins = "gpio62";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	headset_switch_in: headset-switch-in-state {
+		pins = "gpio112";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+		output-low;
+	};
+
+	headset_switch_supply_en: headset-switch-supply-en-state {
+		pins = "gpio111";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+		output-high;
+	};
+
+	lcd_bl_en_default: lcd-bl-en-default-state {
+		pins = "gpio37";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	lcd_p_en_default: lcd-p-en-default-state {
+		pins = "gpio97";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	lcd_n_en_default: lcd-n-en-default-state {
+		pins = "gpio98";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	mdss_default: mdss-default-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	mdss_sleep: mdss-sleep-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
+	};
+
+	sdc2_cd_default: sdc2-cd-default-state {
+		pins = "gpio118";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	ts_int_default: ts-int-default-state {
+		pins = "gpio13";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+};

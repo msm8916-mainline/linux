@@ -1,0 +1,141 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-motorola-common.dtsi"
+
+/ {
+	model = "Motorola Moto E 2015 LTE";
+	compatible = "motorola,surnia", "qcom,msm8916";
+	chassis-type = "handset";
+};
+
+&blsp_i2c4 {
+	status = "okay";
+
+	battery@36 {
+		compatible = "maxim,max17050";
+		reg = <0x36>;
+
+		interrupts-extended = <&tlmm 12 IRQ_TYPE_EDGE_FALLING>;
+
+		pinctrl-0 = <&battery_alert_default>;
+		pinctrl-names = "default";
+
+		maxim,rsns-microohm = <10000>;
+		maxim,over-heat-temp = <600>;
+		maxim,cold-temp = <(-200)>;
+		maxim,dead-volt = <3200>;
+		maxim,over-volt = <4500>;
+
+	};
+};
+
+&gpu {
+	status = "okay";
+};
+
+&mdss {
+	status = "okay";
+};
+
+&mdss_dsi0 {
+	pinctrl-0 = <&mdss_default>;
+	pinctrl-1 = <&mdss_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	panel@0 {
+		compatible = "motorola,surnia-panel";
+		reg = <0>;
+
+		power-supply = <&pm8916_l17>;
+		reset-gpios = <&tlmm 78 GPIO_ACTIVE_LOW>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&mdss_dsi0_out>;
+			};
+		};
+	};
+};
+
+&mdss_dsi0_out {
+	data-lanes = <0 1>;
+	remote-endpoint = <&panel_in>;
+};
+
+&mdss_dsi0_phy {
+	qcom,dsi-phy-regulator-ldo-mode;
+};
+
+&pm8916_codec {
+	qcom,micbias1-ext-cap;
+	qcom,micbias2-ext-cap;
+};
+
+&pm8916_rpm_regulators {
+	pm8916_l17: l17 {
+		regulator-min-microvolt = <2850000>;
+		regulator-max-microvolt = <2850000>;
+	};
+};
+
+&sdhc_2 {
+	pinctrl-0 = <&sdc2_default &sdc2_cd_default>;
+	pinctrl-1 = <&sdc2_sleep &sdc2_cd_default>;
+	pinctrl-names = "default", "sleep";
+
+	cd-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+};
+
+&sound {
+	audio-routing =
+		"AMIC1", "MIC BIAS External1",
+		"AMIC3", "MIC BIAS External1";
+};
+
+&touchscreen {
+	interrupts-extended = <&tlmm 21 IRQ_TYPE_EDGE_FALLING>;
+
+	vdd-supply = <&pm8916_l16>;
+
+	pinctrl-0 = <&ts_int_default>;
+	pinctrl-names = "default";
+};
+
+&tlmm {
+	battery_alert_default: battery-alert-default-state {
+		pins = "gpio12";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	mdss_default: mdss-default-state {
+		pins = "gpio78";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	mdss_sleep: mdss-sleep-state {
+		pins = "gpio78";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
+	};
+
+	sdc2_cd_default: sdc2-cd-default-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	ts_int_default: ts-int-default-state {
+		pins = "gpio21";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+};

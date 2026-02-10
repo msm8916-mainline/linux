@@ -1,0 +1,1 @@
+perf-util-y += arm-spe-pkt-decoder.o arm-spe-decoder.o

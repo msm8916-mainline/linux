@@ -1,0 +1,101 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+#include "msm8916-samsung-j5-common.dtsi"
+
+/ {
+	reserved-memory {
+		/delete-node/ tz-apps@85500000;
+
+		/* Additional memory used by Samsung firmware modifications */
+		tz-apps@85800000 {
+			reg = <0x0 0x85800000 0x0 0x800000>;
+			no-map;
+		};
+	};
+
+	reg_vdd_lcd_3p0: regulator-vdd-lcd-3p0 {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_lcd_3p0";
+		regulator-min-microvolt = <3000000>;
+		regulator-max-microvolt = <3000000>;
+		vin-supply = <&pm8916_l17>;
+
+		gpio = <&tlmm 102 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-0 = <&lcd_3p0_ldo_en_default>;
+		pinctrl-names = "default";
+	};
+
+	reg_vdd_tsp_a: regulator-vdd-tsp-a {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_tsp_a";
+		regulator-min-microvolt = <3000000>;
+		regulator-max-microvolt = <3000000>;
+
+		gpio = <&tlmm 16 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-0 = <&tsp_ldo_en_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&accelerometer {
+	vdd-supply = <&pm8916_l5>;
+	vddio-supply = <&pm8916_l5>;
+
+	mount-matrix = "0", "-1", "0",
+		       "1", "0", "0",
+		       "0", "0", "-1";
+};
+
+&front_flash_led {
+	status = "disabled";
+};
+
+&gpio_hall_sensor {
+	status = "disabled";
+};
+
+&i2c_muic {
+	/* GPIO pins vary depending on model variant */
+};
+
+&i2c_sensors {
+	/* GPIO pins vary depending on model variant */
+};
+
+&panel {
+	vdd3-supply = <&pm8916_l6>;
+	vci-supply = <&reg_vdd_lcd_3p0>;
+};
+
+&reg_vdd_lcd_1p8 {
+	status = "disabled";
+};
+
+&reg_vdd_lcd_3p0 {
+	vin-supply = <&pm8916_l17>;
+	gpio = <&tlmm 102 GPIO_ACTIVE_HIGH>;
+};
+
+&touchscreen {
+	vdd-supply = <&reg_vdd_tsp_a>;
+};
+
+&tlmm {
+	lcd_3p0_ldo_en_default: lcd-3p0-ldo-en-default-state {
+		pins = "gpio102";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	tsp_ldo_en_default: tsp-ldo-en-default-state {
+		pins = "gpio16";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+};
