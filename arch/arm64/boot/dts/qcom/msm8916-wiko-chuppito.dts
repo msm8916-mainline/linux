@@ -23,6 +23,7 @@
 	chosen {
 		stdout-path = "serial0";
 	};
+
 	backlight: backlight {
 		compatible = "pwm-backlight";
 		pwms = <&pm8916_pwm 0 100000>;
@@ -146,17 +147,40 @@
 	};
 };
 
-// make sure gcc is probed with display disabled.
-&gcc {
-	clocks = <&xo_board>, <&sleep_clk>, <0>, <0>, <0>, <0>, <0>;
-};
-
 &gpu {
 	status = "okay";
 };
 
 &mdss {
 	status = "okay";
+};
+
+&mdss_dsi0 {
+	panel@0 {
+		compatible = "wiko,chuppito-ili9881c";
+		reg = <0x0>;
+		backlight = <&backlight>;
+		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+		pinctrl-0 = <&panel_default>;
+		pinctrl-1 = <&panel_suspend>;
+		pinctrl-names = "default", "suspend";
+		status = "okay";
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&mdss_dsi0_out>;
+			};
+		};
+	};
+};
+
+&mdss_dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&mdss_dsi0_phy {
+	qcom,dsi-phy-regulator-ldo-mode;
 };
 
 &mpss_mem {
@@ -293,6 +317,22 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-down;
+	};
+
+	panel_default: panel-default-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
+		output-high;
+	};
+
+	panel_suspend: panel-suspend-state {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
+		output-low;
 	};
 
 	proximity_int_default: proximity-int-default-state {
