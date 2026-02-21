@@ -29,6 +29,7 @@ struct apq8016_sbc_data {
 	struct snd_soc_jack jack;
 	bool jack_setup;
 	int mi2s_clk_count[MI2S_COUNT];
+	struct clk_bulk_data *clks;
 };
 
 #define MIC_CTRL_TER_WS_SLAVE_SEL	BIT(21)
@@ -319,6 +320,11 @@ static int apq8016_sbc_platform_probe(struct platform_device *pdev)
 	data->spkr_iomux = devm_platform_ioremap_resource_byname(pdev, "spkr-iomux");
 	if (IS_ERR(data->spkr_iomux))
 		return PTR_ERR(data->spkr_iomux);
+
+	/* If there are extra clocks defined, enable them */
+	ret = devm_clk_bulk_get_all_enabled(dev, &data->clks);
+	if (ret < 0)
+		return dev_err_probe(dev, ret, "Failed to enable LPASS clocks\n");
 
 	snd_soc_card_set_drvdata(card, data);
 
