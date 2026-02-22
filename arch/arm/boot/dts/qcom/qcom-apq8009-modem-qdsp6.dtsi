@@ -1,0 +1,166 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-3-Clause)
+/*
+ * Copied from msm8916-modem-qdsp6.dtsi.
+ *
+ * qcom-apq8009-modem-qdsp6.dtsi describes the typical modem setup on APQ8009 devices
+ * (or similar SoCs) with audio routed via the QDSP6 services provided by the
+ * modem firmware. The digital/analog codec in the SoC/PMIC is used by default,
+ * but boards can define additional codecs by adding additional backend DAI links.
+ *
+ * This is APQ8009-specific because this assumes a PM8916, which MSM8909s don't
+ * seem to usually be paired with.
+ */
+
+#include <dt-bindings/clock/qcom,gcc-msm8909.h>
+#include <dt-bindings/sound/qcom,q6afe.h>
+#include <dt-bindings/sound/qcom,q6asm.h>
+#include <dt-bindings/sound/qcom,q6voice.h>
+
+&apr {
+	status = "okay";
+};
+
+&bam_dmux {
+	status = "okay";
+};
+
+&bam_dmux_dma {
+	status = "okay";
+};
+
+&lpass {
+	status = "reserved"; /* Controlled by QDSP6 */
+};
+
+&lpass_codec {
+	status = "okay";
+};
+
+&mba_mem {
+	status = "okay";
+};
+
+&mpss {
+	status = "okay";
+};
+
+&mpss_mem {
+	status = "okay";
+};
+
+&q6afedai {
+	dai@16 {
+		reg = <PRIMARY_MI2S_RX>;
+		qcom,sd-lines = <0 1>;
+	};
+	dai@20 {
+		reg = <TERTIARY_MI2S_TX>;
+		qcom,sd-lines = <0 1>;
+	};
+};
+
+&q6asmdai {
+	dai@0 {
+		reg = <MSM_FRONTEND_DAI_MULTIMEDIA1>;
+		direction = <Q6ASM_DAI_RX>;
+	};
+	dai@1 {
+		reg = <MSM_FRONTEND_DAI_MULTIMEDIA2>;
+		direction = <Q6ASM_DAI_TX>;
+	};
+	dai@2 {
+		reg = <MSM_FRONTEND_DAI_MULTIMEDIA3>;
+		direction = <Q6ASM_DAI_RX>;
+	};
+	dai@3 {
+		reg = <MSM_FRONTEND_DAI_MULTIMEDIA4>;
+		direction = <Q6ASM_DAI_RX>;
+		is-compress-dai;
+	};
+};
+
+&sound {
+	compatible = "qcom,msm8916-qdsp6-sndcard";
+	model = "msm8909";
+
+	pinctrl-0 = <&cdc_pdm_default>;
+	pinctrl-1 = <&cdc_pdm_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	clocks = <&gcc GCC_ULTAUDIO_LPAIF_PRI_I2S_CLK>,
+	<&gcc GCC_ULTAUDIO_PCNOC_MPORT_CLK>,
+	<&gcc GCC_ULTAUDIO_PCNOC_SWAY_CLK>;
+	clock-names = "lpaif-pri-i2s", "pcnoc-mport", "pcnoc-sway";
+	assigned-clocks = <&gcc GCC_ULTAUDIO_LPAIF_PRI_I2S_CLK>;
+	assigned-clock-rates = <1536000>;
+
+	status = "okay";
+
+	frontend0-dai-link {
+		link-name = "MultiMedia1";
+
+		cpu {
+			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
+		};
+	};
+
+	frontend1-dai-link {
+		link-name = "MultiMedia2";
+
+		cpu {
+			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA2>;
+		};
+	};
+
+	frontend2-dai-link {
+		link-name = "MultiMedia3";
+
+		cpu {
+			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA3>;
+		};
+	};
+
+	frontend3-dai-link {
+		link-name = "MultiMedia4";
+
+		cpu {
+			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA4>;
+		};
+	};
+
+	frontend4-dai-link {
+		link-name = "CS-Voice";
+
+		cpu {
+			sound-dai = <&q6voicedai CS_VOICE>;
+		};
+	};
+
+	sound_link_backend0: backend0-dai-link {
+		link-name = "Primary MI2S";
+
+		cpu {
+			sound-dai = <&q6afedai PRIMARY_MI2S_RX>;
+		};
+		platform {
+			sound-dai = <&q6routing>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 0>, <&pm8916_codec 0>;
+		};
+	};
+
+	sound_link_backend1: backend1-dai-link {
+		link-name = "Tertiary MI2S";
+
+		cpu {
+			sound-dai = <&q6afedai TERTIARY_MI2S_TX>;
+		};
+		platform {
+			sound-dai = <&q6routing>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 1>, <&pm8916_codec 1>;
+		};
+	};
+};
