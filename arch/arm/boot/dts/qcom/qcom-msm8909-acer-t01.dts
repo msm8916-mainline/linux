@@ -16,6 +16,7 @@
 	chassis-type = "handset";
 
 	aliases {
+		display0 = &framebuffer0;
 		serial0 = &blsp_uart1;
 	};
 
@@ -24,9 +25,9 @@
 		#size-cells = <1>;
 		ranges;
 
-		stdout-path = "serial0";
+		stdout-path = "display0";
 
-		framebuffer@83201000 {
+		framebuffer0: framebuffer@83200000 {
 			compatible = "simple-framebuffer";
 			reg = <0x83201000 (480 * 854 * 3)>;
 
@@ -52,8 +53,8 @@
 		#size-cells = <1>;
 		ranges;
 
-		framebuffer@83201000 {
-			reg = <0x83201000 (480 * 854 * 3)>;
+		framebuffer@83200000 {
+			reg = <0x83200000 (480 * 854 * 3)>;
 			no-map;
 		};
 	};
@@ -283,6 +284,7 @@
 	l6 {
 		regulator-min-microvolt = <1800000>;
 		regulator-max-microvolt = <1800000>;
+		regulator-always-on;
 	};
 
 	l7 {
@@ -335,6 +337,7 @@
 	l17 {
 		regulator-min-microvolt = <2850000>;
 		regulator-max-microvolt = <2850000>;
+		regulator-always-on;
 	};
 
 	l18 {
