@@ -347,19 +347,19 @@ static int pd1505l_otm9605a_540p_probe(struct mipi_dsi_device *dsi)
 		return -ENOMEM;
 
 	drm_panel_init(&ctx->panel, dev, &pd1505l_otm9605a_540p_panel_funcs,
-			DRM_MODE_CONNECTOR_DSI);
+		       DRM_MODE_CONNECTOR_DSI);
 
 	ret = devm_regulator_bulk_get_const(dev,
-				ARRAY_SIZE(pd1505l_otm9605a_540p_supplies),
-				pd1505l_otm9605a_540p_supplies,
-				&ctx->supplies);
+					    ARRAY_SIZE(pd1505l_otm9605a_540p_supplies),
+					    pd1505l_otm9605a_540p_supplies,
+					    &ctx->supplies);
 	if (ret < 0)
-	return ret;
+		return ret;
 
 	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->reset_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
-			"Failed to get reset-gpios\n");
+				     "Failed to get reset-gpios\n");
 
 	ctx->dsi = dsi;
 	mipi_dsi_set_drvdata(dsi, ctx);
@@ -367,9 +367,9 @@ static int pd1505l_otm9605a_540p_probe(struct mipi_dsi_device *dsi)
 	dsi->lanes = 2;
 	dsi->format = MIPI_DSI_FMT_RGB888;
 	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
-			MIPI_DSI_MODE_VIDEO_HSE |
-			MIPI_DSI_CLOCK_NON_CONTINUOUS |
-			MIPI_DSI_MODE_VIDEO_NO_HBP;
+			  MIPI_DSI_MODE_VIDEO_HSE |
+			  MIPI_DSI_CLOCK_NON_CONTINUOUS |
+			  MIPI_DSI_MODE_VIDEO_NO_HBP;
 
 	ctx->panel.prepare_prev_first = true;
 
