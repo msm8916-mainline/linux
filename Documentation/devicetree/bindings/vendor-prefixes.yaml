@@ -1769,6 +1769,8 @@ patternProperties:
     description: Vivante Corporation
   "^vivax,.*":
     description: Vivax brand by M SAN Grupa d.o.o.
+  "^vivo,.*":
+    description: Vivo Communication Technology Co. Ltd.
   "^vocore,.*":
     description: VoCore Studio
   "^voipac,.*":
