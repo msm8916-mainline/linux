@@ -275,7 +275,7 @@ static int pd1505l_otm9605a_540p_baoming_prepare(struct drm_panel *panel)
 	int ret;
 
 	ret = regulator_bulk_enable(ARRAY_SIZE(pd1505l_otm9605a_540p_baoming_supplies),
-				    ctx->supplies);
+  		      ctx->supplies);
 	if (ret < 0) {
 		dev_err(dev, "Failed to enable regulators: %d\n", ret);
 		return ret;
@@ -288,7 +288,7 @@ static int pd1505l_otm9605a_540p_baoming_prepare(struct drm_panel *panel)
 		dev_err(dev, "Failed to initialize panel: %d\n", ret);
 		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 		regulator_bulk_disable(ARRAY_SIZE(pd1505l_otm9605a_540p_baoming_supplies),
-			       ctx->supplies);
+  		      	ctx->supplies);
 		return ret;
 	}
 
