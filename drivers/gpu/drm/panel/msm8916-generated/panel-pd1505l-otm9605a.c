@@ -338,54 +338,54 @@ static const struct drm_panel_funcs pd1505l_otm9605a_540p_panel_funcs = {
 
 static int pd1505l_otm9605a_540p_probe(struct mipi_dsi_device *dsi)
 {
-    struct device *dev = &dsi->dev;
-    struct pd1505l_otm9605a_540p *ctx;
-    int ret;
+	struct device *dev = &dsi->dev;
+	struct pd1505l_otm9605a_540p *ctx;
+	int ret;
 
-    ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
-    if (!ctx)
-        return -ENOMEM;
+	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
+	if (!ctx)
+		return -ENOMEM;
 
-    drm_panel_init(&ctx->panel, dev, &pd1505l_otm9605a_540p_panel_funcs,
-                   DRM_MODE_CONNECTOR_DSI);
+	drm_panel_init(&ctx->panel, dev, &pd1505l_otm9605a_540p_panel_funcs,
+		       DRM_MODE_CONNECTOR_DSI);
 
-    ret = devm_regulator_bulk_get_const(dev,
-                                        ARRAY_SIZE(pd1505l_otm9605a_540p_supplies),
-                                        pd1505l_otm9605a_540p_supplies,
-                                        &ctx->supplies);
-    if (ret < 0)
-        return ret;
+	ret = devm_regulator_bulk_get_const(dev,
+					    ARRAY_SIZE(pd1505l_otm9605a_540p_supplies),
+					    pd1505l_otm9605a_540p_supplies,
+					    &ctx->supplies);
+	if (ret < 0)
+		return ret;
 
-    ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
-    if (IS_ERR(ctx->reset_gpio))
-        return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
-                             "Failed to get reset-gpios\n");
+	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
+	if (IS_ERR(ctx->reset_gpio))
+		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
+				     "Failed to get reset-gpios\n");
 
-    ctx->dsi = dsi;
-    mipi_dsi_set_drvdata(dsi, ctx);
+	ctx->dsi = dsi;
+	mipi_dsi_set_drvdata(dsi, ctx);
 
-    dsi->lanes = 2;
-    dsi->format = MIPI_DSI_FMT_RGB888;
-    dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
-                      MIPI_DSI_MODE_VIDEO_HSE |
-                      MIPI_DSI_CLOCK_NON_CONTINUOUS |
-                      MIPI_DSI_MODE_VIDEO_NO_HBP;
+	dsi->lanes = 2;
+	dsi->format = MIPI_DSI_FMT_RGB888;
+	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
+			  MIPI_DSI_MODE_VIDEO_HSE |
+			  MIPI_DSI_CLOCK_NON_CONTINUOUS |
+			  MIPI_DSI_MODE_VIDEO_NO_HBP;
 
-    ctx->panel.prepare_prev_first = true;
+	ctx->panel.prepare_prev_first = true;
 
-    ret = drm_panel_of_backlight(&ctx->panel);
-    if (ret)
-	return dev_err_probe(dev, ret, "Failed to get backlight\n");
+	ret = drm_panel_of_backlight(&ctx->panel);
+	if (ret)
+		return dev_err_probe(dev, ret, "Failed to get backlight\n");
 
-    drm_panel_add(&ctx->panel);
+	drm_panel_add(&ctx->panel);
 
-    ret = mipi_dsi_attach(dsi);
-    if (ret < 0) {
-        drm_panel_remove(&ctx->panel);
-        return dev_err_probe(dev, ret, "Failed to attach to DSI host\n");
-    }
+	ret = mipi_dsi_attach(dsi);
+	if (ret < 0) {
+		drm_panel_remove(&ctx->panel);
+		return dev_err_probe(dev, ret, "Failed to attach to DSI host\n");
+	}
 
-    return 0;
+	return 0;
 }
 
 static void pd1505l_otm9605a_540p_remove(struct mipi_dsi_device *dsi)
