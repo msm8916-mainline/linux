@@ -148,14 +148,36 @@ config DRM_PANEL_SAMSUNG_SC7798A_BV045WVM
 config DRM_PANEL_PD1505L_OTM9605A
 	tristate "PD1505L OTM9605A"
         default DRM_PANEL_MSM8916_GENERATED
+	help
+	  This driver supports the OTM9605A panel used in vivo PD1505F
+	  series devices. The panel uses a 2-lane DSI interface and
+	  RGB888 format. Enable this option if you have such a device
+	  and want to use it as a display panel.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called panel-pd1505l-otm9605a.
 
 config DRM_PANEL_PD1505L_OTM9605A_BAOMING
 	tristate "PD1505L OTM9605A BAOMING"
         default DRM_PANEL_MSM8916_GENERATED
+	help
+	  This driver supports the OTM9605A panel variant "baoming" used
+	  in vivo PD1505F series devices. It uses a 2-lane DSI interface
+	  and RGB888 format. Enable this option if you have such a device.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called panel-pd1505l-otm9605a-baoming.
 
 config DRM_PANEL_PD1505L_OTM9605A_BOENEW
 	tristate "PD1505L OTM9605A BOEMEW"
         default DRM_PANEL_MSM8916_GENERATED
+	help
+	  This driver supports the OTM9605A panel variant "boenew" used
+	  in vivo PD1505F series devices. It uses a 2-lane DSI interface
+	  and RGB888 format. Enable this option if you have such a device.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called panel-pd1505l-otm9605a-boenew.
 
 config DRM_PANEL_WINGTECH_AUO_NT35521
 	tristate "Wingtech AUO NT35521"
