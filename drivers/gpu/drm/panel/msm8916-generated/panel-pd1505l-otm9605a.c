@@ -375,7 +375,7 @@ static int pd1505l_otm9605a_540p_probe(struct mipi_dsi_device *dsi)
 
     ret = drm_panel_of_backlight(&ctx->panel);
     if (ret)
-        return dev_err_probe(dev, ret, "Failed to get backlight\n");
+	return dev_err_probe(dev, ret, "Failed to get backlight\n");
 
     drm_panel_add(&ctx->panel);
 
