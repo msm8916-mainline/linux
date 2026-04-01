@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-samsung-fortuna-common.dtsi"
+
+/*
+ * NOTE: The original firmware from Samsung can only boot ARM32 kernels.
+ * Unfortunately, the firmware is signed and cannot be replaced easily.
+ * There seems to be no way to boot ARM64 kernels on this device at the moment,
+ * even though the hardware would support it.
+ *
+ * However, it is possible to use this device tree by compiling an ARM32 kernel
+ * instead. For clarity and build testing this device tree is maintained next
+ * to the other MSM8916 device trees. However, it is actually used through
+ * arch/arm/boot/dts/qcom-msm8916-samsung-fortunaltezt.dts
+ */
+
+/ {
+	model = "Samsung Galaxy Grand Prime (SM-G530Y)";
+	compatible = "samsung,fortunaltezt", "samsung,fortuna", "qcom,msm8916";
+	chassis-type = "handset";
+};
+
+&battery {
+	charge-term-current-microamp = <200000>;
+	constant-charge-current-max-microamp = <1000000>;
+	constant-charge-voltage-max-microvolt = <4350000>;
+};
+
+/* On fortunaltezt backlight is controlled with MIPI DCS commands */
+&clk_pwm {
+	status = "disabled";
+};
+
+&clk_pwm_backlight {
+	status = "disabled";
+};
+
+&panel {
+	/* Actually hx8389c without PWM. There is no other variant */
+	compatible = "samsung,hx8389c-gh9607501a";
+
+	/delete-property/ backlight;
+};
+
+&pn547_nfc {
+	status = "okay";
+};
+
+&st_accel {
+	compatible = "st,lis2hh12";
+	mount-matrix = "1",  "0", "0",
+		       "0", "-1", "0",
+		       "0",  "0", "1";
+	status = "okay";
+};

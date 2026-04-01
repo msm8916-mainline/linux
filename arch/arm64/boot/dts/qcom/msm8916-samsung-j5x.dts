@@ -1,0 +1,102 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-samsung-j5-common.dtsi"
+
+/ {
+	model = "Samsung Galaxy J5 (2016)";
+	compatible = "samsung,j5x", "qcom,msm8916";
+	chassis-type = "handset";
+
+	reg_vdd_lcd_3p0: regulator-vdd-lcd-3p0 {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_lcd_3p0";
+		regulator-min-microvolt = <3000000>;
+		regulator-max-microvolt = <3000000>;
+
+		gpio = <&tlmm 115 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-0 = <&lcd_3p0_ldo_en_default>;
+		pinctrl-names = "default";
+	};
+
+	reg_vdd_tsp_a: regulator-vdd-tsp-a {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_tsp_a";
+		regulator-min-microvolt = <3000000>;
+		regulator-max-microvolt = <3000000>;
+
+		gpio = <&tlmm 108 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-0 = <&tsp_ldo_en_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&accelerometer {
+	interrupts-extended = <&tlmm 49 IRQ_TYPE_LEVEL_HIGH>;
+
+	vdd-supply = <&pm8916_l6>;
+	vddio-supply = <&pm8916_l6>;
+
+	mount-matrix = "0", "-1", "0",
+		       "1", "0", "0",
+		       "0", "0", "-1";
+};
+
+&front_flash_led {
+	ctrl-gpios = <&tlmm 85 GPIO_ACTIVE_HIGH>;
+};
+
+&muic {
+	interrupts = <121 IRQ_TYPE_EDGE_FALLING>;
+};
+
+&panel {
+	compatible = "samsung,s6e8aa5x01-ams520kt01";
+	vdd3-supply = <&reg_vdd_lcd_1p8>;
+	vci-supply = <&reg_vdd_lcd_3p0>;
+};
+
+&reg_vdd_lcd_1p8 {
+	gpio = <&tlmm 69 GPIO_ACTIVE_HIGH>;
+};
+
+&touchscreen {
+	vdd-supply = <&reg_vdd_tsp_a>;
+};
+
+&tlmm {
+	lcd_3p0_ldo_en_default: lcd-3p0-ldo-en-default-state {
+		pins = "gpio115";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	tsp_ldo_en_default: tsp-ldo-en-default-state {
+		pins = "gpio108";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+};
+
+&accel_int_default {
+	pins = "gpio49";
+};
+
+&lcd_1p8_ldo_en_default {
+	pins = "gpio69";
+};
+
+&muic_int_default {
+	pins = "gpio121";
+};
+
+&vtcam_flash_en_default {
+	pins = "gpio85";
+};
