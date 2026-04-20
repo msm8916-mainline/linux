@@ -187,6 +187,7 @@ properties:
               - samsung,serranove
               - thwc,uf896
               - thwc,ufi001c
+              - vivo,pd1505f
               - wiko,chuppito
               - wingtech,wt86518
               - wingtech,wt86528
