@@ -5,15 +5,14 @@
 #include "msm8916-pm8916.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
-#include <dt-bindings/interrupt-controller/irq.h>
-#include <dt-bindings/pwm/pwm.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
-#include <dt-bindings/leds/common.h>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	model = "Vivo Y31A (PD1505F)";
-	compatible = "pd1505f", "qcom,msm8916";
+	compatible = "vivo,pd1505f", "qcom,msm8916";
 	chassis-type = "handset";
 
 	aliases {
@@ -24,26 +23,6 @@
 
 	chosen {
 		stdout-path = "serial0";
-	};
-
-	gpio-keys {
-		compatible = "gpio-keys";
-		pinctrl-0 = <&gpio_keys_default>;
-		pinctrl-names = "default";
-		label = "GPIO Buttons";
-
-		button-volume-up {
-			label = "Volume Up";
-			gpios = <&tlmm 107 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_VOLUMEUP>;
-		};
-	};
-
-	usb_id: usb-id {
-		compatible = "linux,extcon-usb-gpio";
-		id-gpios = <&tlmm 110 GPIO_ACTIVE_HIGH>;
-		pinctrl-0 = <&usb_id_default>;
-		pinctrl-names = "default";
 	};
 
 	backlight: backlight {
@@ -78,6 +57,26 @@
 				       <3600000 6>,  <3550000 5>,  <3500000 4>,
 				       <3450000 3>,  <3400000 2>,  <3300000 1>,
 				       <3000000 0>;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&gpio_keys_default>;
+		pinctrl-names = "default";
+		label = "GPIO Buttons";
+
+		button-volume-up {
+			label = "Volume Up";
+			gpios = <&tlmm 107 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEUP>;
+		};
+	};
+
+	usb_id: usb-id {
+		compatible = "linux,extcon-usb-gpio";
+		id-gpios = <&tlmm 110 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&usb_id_default>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -141,11 +140,13 @@
 
 &pm8916_bms {
 	monitored-battery = <&battery>;
+
 	status = "okay";
 };
 
 &pm8916_resin {
 	linux,code = <KEY_VOLUMEDOWN>;
+
 	status = "okay";
 };
 
@@ -166,11 +167,13 @@
 
 &sdhc_2 {
 	non-removable;
+
 	status = "okay";
 };
 
 &usb {
 	extcon = <&usb_id>, <&usb_id>;
+
 	status = "okay";
 };
 
