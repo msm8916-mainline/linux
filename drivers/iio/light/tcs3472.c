@@ -51,6 +51,30 @@
 #define TCS3472_GDATA (TCS3472_COMMAND | TCS3472_AUTO_INCR | 0x18)
 #define TCS3472_BDATA (TCS3472_COMMAND | TCS3472_AUTO_INCR | 0x1a)
 
+/* TMD3782 proximity registers */
+#define TCS3472_PILT		(TCS3472_COMMAND | TCS3472_AUTO_INCR | 0x08)
+#define TCS3472_PIHT		(TCS3472_COMMAND | TCS3472_AUTO_INCR | 0x0a)
+#define TCS3472_PPULSE		(TCS3472_COMMAND | 0x0e)
+#define TCS3472_PDATA		(TCS3472_COMMAND | TCS3472_AUTO_INCR | 0x1c)
+#define TCS3472_REVID		(TCS3472_COMMAND | 0x11)
+
+/* ENABLE register: proximity bits */
+#define TCS3472_ENABLE_PIEN	BIT(5)
+#define TCS3472_ENABLE_WEN	BIT(3)
+#define TCS3472_ENABLE_PEN	BIT(2)
+
+/* CONTROL register: proximity bits (TMD3782) */
+#define TCS3472_CONTROL_PDRIVE_MASK	GENMASK(7, 6)
+/* TMD3782 datasheet page 25, Figure 34: bit 5 must be written as 1 */
+#define TCS3472_CONTROL_RSVD5		BIT(5)
+
+/* STATUS register: proximity bits */
+#define TCS3472_STATUS_PINT	BIT(5)
+#define TCS3472_STATUS_PVALID	BIT(1)
+
+/* Interrupt clear: proximity */
+#define TCS3472_PROX_INTR_CLEAR	(TCS3472_COMMAND | TCS3472_SPECIAL_FUNC | 0x05)
+
 #define TCS3472_STATUS_AINT BIT(4)
 #define TCS3472_STATUS_AVALID BIT(0)
 #define TCS3472_ENABLE_AIEN BIT(4)
@@ -79,16 +103,23 @@ struct tcs3472_data {
 	struct i2c_client *client;
 	const struct tcs3472_chip_info *chip_info;
 	struct mutex lock;
+	bool prox_event_enabled;
+	bool prox_buf_enabled;
 	u16 low_thresh;
 	u16 high_thresh;
+	u16 prox_low_thresh;
+	u16 prox_high_thresh;
 	u8 enable;
 	u8 enable_saved;
 	u8 control;
 	u8 atime;
 	u8 apers;
+	u8 ppers;
+	u8 ppulse;
 	/* Ensure timestamp is naturally aligned */
 	struct {
-		u16 chans[4];
+		/* 5 channels: RGBC (4) + proximity (1, TMD3782 only) */
+		u16 chans[5];
 		s64 timestamp __aligned(8);
 	} scan;
 };
@@ -131,6 +162,14 @@ static const struct iio_event_spec tcs3472_events[] = {
 
 static const int tcs3472_agains[] = { 1, 4, 16, 60 };
 
+static const int tcs3472_led_currents[][2] = {
+	{ 100000, 0x00 },
+	{  50000, 0x01 },
+	{  25000, 0x02 },
+	{  12500, 0x03 },
+	{      0, 0x00 },  /* sentinel, also default = 100mA */
+};
+
 static const struct iio_chan_spec tcs3472_channels[] = {
 	TCS3472_CHANNEL(CLEAR, 0, TCS3472_CDATA),
 	TCS3472_CHANNEL(RED, 1, TCS3472_RDATA),
@@ -145,6 +184,12 @@ static const struct tcs3472_chip_info tcs3472_chip_info_tbl[] = {
 		.num_channels = ARRAY_SIZE(tcs3472_channels),
 		.has_proximity = false,
 		.name = "tcs3472",
+	},
+	[TCS3472_CHIP_TMD3782] = {
+		.channels = tcs3472_channels,
+		.num_channels = ARRAY_SIZE(tcs3472_channels),
+		.has_proximity = true,
+		.name = "tmd3782",
 	},
 };
 
@@ -503,15 +548,19 @@ static int tcs3472_probe(struct i2c_client *client)
 	if (ret < 0)
 		return ret;
 
-	if (match_info)
+	if (match_info) {
 		data->chip_info = match_info;
-	else if (ret == 0x44 || ret == 0x4d)
+	} else if (ret == 0x44 || ret == 0x4d) {
 		data->chip_info = &tcs3472_chip_info_tbl[TCS3472_CHIP_TCS3472];
-	else
+	} else if (ret == 0x60 || ret == 0x69) {
+		data->chip_info = &tcs3472_chip_info_tbl[TCS3472_CHIP_TMD3782];
+	} else {
 		return -ENODEV;
+	}
 
-	dev_info(&client->dev, "%s (id 0x%02x) found\n",
-		 data->chip_info->name, ret);
+	dev_info(&client->dev, "%s (id 0x%02x, rev 0x%02x) found\n",
+		 data->chip_info->name, ret,
+		 i2c_smbus_read_byte_data(client, TCS3472_REVID));
 
 	indio_dev->info = &tcs3472_info;
 	indio_dev->name = data->chip_info->name;
@@ -523,6 +572,31 @@ static int tcs3472_probe(struct i2c_client *client)
 	if (ret < 0)
 		return ret;
 	data->control = ret;
+
+	if (data->chip_info->has_proximity) {
+		u32 led_ua;
+		int i, pdrive = 0x00; /* default 100mA */
+
+		/* TMD3782 datasheet page 25, Figure 34: bit 5 must be 1 */
+		data->control |= TCS3472_CONTROL_RSVD5;
+
+		if (!device_property_read_u32(&client->dev, "led-max-microamp",
+					      &led_ua)) {
+			for (i = 0; tcs3472_led_currents[i][0]; i++) {
+				if (led_ua == tcs3472_led_currents[i][0]) {
+					pdrive = tcs3472_led_currents[i][1];
+					break;
+				}
+			}
+		}
+		data->control &= ~TCS3472_CONTROL_PDRIVE_MASK;
+		data->control |= (pdrive << 6);
+
+		ret = i2c_smbus_write_byte_data(data->client, TCS3472_CONTROL,
+						data->control);
+		if (ret < 0)
+			return ret;
+	}
 
 	ret = i2c_smbus_read_byte_data(data->client, TCS3472_ATIME);
 	if (ret < 0)
@@ -539,9 +613,47 @@ static int tcs3472_probe(struct i2c_client *client)
 		return ret;
 	data->high_thresh = ret;
 
+	if (data->chip_info->has_proximity) {
+		u32 ppulse_val = 8; /* default: datasheet Figure 11 test conditions */
+
+		device_property_read_u32(&client->dev,
+					 "amstaos,proximity-pulse-count",
+					 &ppulse_val);
+		data->ppulse = clamp_val(ppulse_val, 1, 255);
+		ret = i2c_smbus_write_byte_data(data->client, TCS3472_PPULSE,
+						data->ppulse);
+		if (ret < 0)
+			return ret;
+
+		/*
+		 * PPERS=3 matches downstream (intr_filter=0x33): interrupt fires
+		 * after 3 consecutive out-of-range readings, filtering transient
+		 * reflections. Downstream uses APERS=3 too, but we keep APERS=1
+		 * (existing tcs3472 default) for backward compatibility.
+		 */
+		data->ppers = 3;
+
+		/* Read proximity thresholds from hardware */
+		ret = i2c_smbus_read_word_data(data->client, TCS3472_PILT);
+		if (ret < 0)
+			return ret;
+		data->prox_low_thresh = ret;
+
+		ret = i2c_smbus_read_word_data(data->client, TCS3472_PIHT);
+		if (ret < 0)
+			return ret;
+		data->prox_high_thresh = ret;
+
+		/* vled regulator for IR LED — optional */
+		ret = devm_regulator_get_enable_optional(&client->dev, "vled");
+		if (ret && ret != -ENODEV)
+			return dev_err_probe(&client->dev, ret,
+					     "failed to get vled regulator\n");
+	}
+
 	data->apers = 1;
 	ret = i2c_smbus_write_byte_data(data->client, TCS3472_PERS,
-					data->apers);
+					(data->ppers << 4) | data->apers);
 	if (ret < 0)
 		return ret;
 
@@ -642,7 +754,16 @@ static int tcs3472_resume(struct device *dev)
 	i2c_smbus_write_byte_data(data->client, TCS3472_WTIME, 0xff);
 	i2c_smbus_write_word_data(data->client, TCS3472_AILT, data->low_thresh);
 	i2c_smbus_write_word_data(data->client, TCS3472_AIHT, data->high_thresh);
-	i2c_smbus_write_byte_data(data->client, TCS3472_PERS, data->apers);
+	if (data->chip_info->has_proximity) {
+		i2c_smbus_write_word_data(data->client, TCS3472_PILT,
+					  data->prox_low_thresh);
+		i2c_smbus_write_word_data(data->client, TCS3472_PIHT,
+					  data->prox_high_thresh);
+		i2c_smbus_write_byte_data(data->client, TCS3472_PPULSE,
+					  data->ppulse);
+	}
+	i2c_smbus_write_byte_data(data->client, TCS3472_PERS,
+				  (data->ppers << 4) | data->apers);
 	i2c_smbus_write_byte_data(data->client, TCS3472_CONFIG, 0x00);
 	i2c_smbus_write_byte_data(data->client, TCS3472_CONTROL, data->control);
 
