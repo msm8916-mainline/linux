@@ -16,7 +16,9 @@
 #include <linux/module.h>
 #include <linux/i2c.h>
 #include <linux/delay.h>
+#include <linux/of.h>
 #include <linux/pm.h>
+#include <linux/regulator/consumer.h>
 
 #include <linux/iio/iio.h>
 #include <linux/iio/sysfs.h>
@@ -32,6 +34,7 @@
 #define TCS3472_SPECIAL_FUNC (BIT(5) | BIT(6))
 
 #define TCS3472_INTR_CLEAR (TCS3472_COMMAND | TCS3472_SPECIAL_FUNC | 0x06)
+#define TCS3472_ALL_INTR_CLEAR	(TCS3472_COMMAND | TCS3472_SPECIAL_FUNC | 0x07)
 
 #define TCS3472_ENABLE (TCS3472_COMMAND | 0x00)
 #define TCS3472_ATIME (TCS3472_COMMAND | 0x01)
@@ -55,12 +58,18 @@
 #define TCS3472_ENABLE_PON BIT(0)
 #define TCS3472_CONTROL_AGAIN_MASK (BIT(0) | BIT(1))
 
+static const char *const tcs3472_supply_names[] = {
+	"vdd",
+	"vddio",
+};
+
 struct tcs3472_data {
 	struct i2c_client *client;
 	struct mutex lock;
 	u16 low_thresh;
 	u16 high_thresh;
 	u8 enable;
+	u8 enable_saved;
 	u8 control;
 	u8 atime;
 	u8 apers;
@@ -462,6 +471,16 @@ static int tcs3472_probe(struct i2c_client *client)
 	indio_dev->num_channels = ARRAY_SIZE(tcs3472_channels);
 	indio_dev->modes = INDIO_DIRECT_MODE;
 
+	ret = devm_regulator_bulk_get_enable(&client->dev,
+					     ARRAY_SIZE(tcs3472_supply_names),
+					     tcs3472_supply_names);
+	if (ret)
+		return dev_err_probe(&client->dev, ret,
+				     "failed to get regulators\n");
+
+	/* 2.4ms PON warm-up after regulator enable */
+	usleep_range(2500, 3000);
+
 	ret = i2c_smbus_read_byte_data(data->client, TCS3472_ID);
 	if (ret < 0)
 		return ret;
@@ -511,6 +530,8 @@ static int tcs3472_probe(struct i2c_client *client)
 	if (ret < 0)
 		return ret;
 
+	data->enable_saved = data->enable;
+
 	ret = iio_triggered_buffer_setup(indio_dev, NULL,
 		tcs3472_trigger_handler, NULL);
 	if (ret < 0)
@@ -519,8 +540,7 @@ static int tcs3472_probe(struct i2c_client *client)
 	if (client->irq) {
 		ret = request_threaded_irq(client->irq, NULL,
 					   tcs3472_event_handler,
-					   IRQF_TRIGGER_FALLING | IRQF_SHARED |
-					   IRQF_ONESHOT,
+					   IRQF_SHARED | IRQF_ONESHOT,
 					   client->name, indio_dev);
 		if (ret)
 			goto buffer_cleanup;
@@ -543,14 +563,13 @@ buffer_cleanup:
 static int tcs3472_powerdown(struct tcs3472_data *data)
 {
 	int ret;
-	u8 enable_mask = TCS3472_ENABLE_AEN | TCS3472_ENABLE_PON;
 
 	mutex_lock(&data->lock);
 
-	ret = i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE,
-		data->enable & ~enable_mask);
+	data->enable_saved = data->enable;
+	ret = i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE, 0x00);
 	if (!ret)
-		data->enable &= ~enable_mask;
+		data->enable = 0;
 
 	mutex_unlock(&data->lock);
 
@@ -580,15 +599,40 @@ static int tcs3472_resume(struct device *dev)
 	struct tcs3472_data *data = iio_priv(i2c_get_clientdata(
 		to_i2c_client(dev)));
 	int ret;
-	u8 enable_mask = TCS3472_ENABLE_AEN | TCS3472_ENABLE_PON;
 
 	mutex_lock(&data->lock);
 
+	/* Write PON first, then wait for oscillator warm-up */
 	ret = i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE,
-		data->enable | enable_mask);
-	if (!ret)
-		data->enable |= enable_mask;
+					TCS3472_ENABLE_PON);
+	if (ret)
+		goto unlock;
 
+	usleep_range(2500, 3000);
+
+	/* Restore all configuration registers */
+	i2c_smbus_write_byte_data(data->client, TCS3472_ATIME, data->atime);
+	i2c_smbus_write_byte_data(data->client, TCS3472_WTIME, 0xff);
+	i2c_smbus_write_word_data(data->client, TCS3472_AILT, data->low_thresh);
+	i2c_smbus_write_word_data(data->client, TCS3472_AIHT, data->high_thresh);
+	i2c_smbus_write_byte_data(data->client, TCS3472_PERS, data->apers);
+	i2c_smbus_write_byte_data(data->client, TCS3472_CONFIG, 0x00);
+	i2c_smbus_write_byte_data(data->client, TCS3472_CONTROL, data->control);
+
+	/* Clear stale interrupt flags before re-enabling interrupt sources.
+	 * Use ALL_INTR_CLEAR (0xE7) rather than INTR_CLEAR (0xE6) so
+	 * proximity interrupts are also cleared for TMD3782. Harmless
+	 * for TCS3472 — PINT is never set on that chip.
+	 */
+	i2c_smbus_read_byte_data(data->client, TCS3472_ALL_INTR_CLEAR);
+
+	/* Restore ENABLE last — re-activates AEN, interrupt enables, etc. */
+	ret = i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE,
+					data->enable_saved);
+	if (!ret)
+		data->enable = data->enable_saved;
+
+unlock:
 	mutex_unlock(&data->lock);
 
 	return ret;
@@ -597,8 +641,16 @@ static int tcs3472_resume(struct device *dev)
 static DEFINE_SIMPLE_DEV_PM_OPS(tcs3472_pm_ops, tcs3472_suspend,
 				tcs3472_resume);
 
+static const struct of_device_id tcs3472_of_match[] = {
+	{ .compatible = "amstaos,tcs3472" },
+	{ .compatible = "amstaos,tmd3782" },
+	{ }
+};
+MODULE_DEVICE_TABLE(of, tcs3472_of_match);
+
 static const struct i2c_device_id tcs3472_id[] = {
 	{ "tcs3472" },
+	{ "tmd3782" },
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, tcs3472_id);
@@ -607,6 +659,7 @@ static struct i2c_driver tcs3472_driver = {
 	.driver = {
 		.name	= TCS3472_DRV_NAME,
 		.pm	= pm_sleep_ptr(&tcs3472_pm_ops),
+		.of_match_table = tcs3472_of_match,
 	},
 	.probe		= tcs3472_probe,
 	.remove		= tcs3472_remove,
@@ -615,5 +668,5 @@ static struct i2c_driver tcs3472_driver = {
 module_i2c_driver(tcs3472_driver);
 
 MODULE_AUTHOR("Peter Meerwald <pmeerw@pmeerw.net>");
-MODULE_DESCRIPTION("TCS3472 color light sensors driver");
+MODULE_DESCRIPTION("TCS3472/TMD3782 color light and proximity sensors driver");
 MODULE_LICENSE("GPL");
