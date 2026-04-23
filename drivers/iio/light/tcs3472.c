@@ -236,7 +236,7 @@ static const struct tcs3472_chip_info tcs3472_chip_info_tbl[] = {
 	},
 };
 
-static int tcs3472_req_data(struct tcs3472_data *data)
+static int tcs3472_req_data(struct tcs3472_data *data, unsigned int status_mask)
 {
 	int tries = 50;
 	int ret;
@@ -245,7 +245,7 @@ static int tcs3472_req_data(struct tcs3472_data *data)
 		ret = i2c_smbus_read_byte_data(data->client, TCS3472_STATUS);
 		if (ret < 0)
 			return ret;
-		if (ret & TCS3472_STATUS_AVALID)
+		if ((ret & status_mask) == status_mask)
 			break;
 		msleep(20);
 	}
@@ -270,12 +270,52 @@ static int tcs3472_read_raw(struct iio_dev *indio_dev,
 		ret = iio_device_claim_direct_mode(indio_dev);
 		if (ret)
 			return ret;
-		ret = tcs3472_req_data(data);
-		if (ret < 0) {
-			iio_device_release_direct_mode(indio_dev);
-			return ret;
+
+		if (chan->type == IIO_PROXIMITY) {
+			bool cold;
+
+			mutex_lock(&data->lock);
+			cold = !data->prox_event_enabled && !data->prox_buf_enabled;
+			if (cold) {
+				data->enable |= TCS3472_ENABLE_PEN |
+						TCS3472_ENABLE_WEN;
+				ret = i2c_smbus_write_byte_data(data->client,
+							  TCS3472_ENABLE,
+							  data->enable);
+				if (ret) {
+					data->enable &= ~(TCS3472_ENABLE_PEN |
+							  TCS3472_ENABLE_WEN);
+					mutex_unlock(&data->lock);
+					iio_device_release_direct_mode(indio_dev);
+					return ret;
+				}
+			}
+			mutex_unlock(&data->lock);
+
+			ret = tcs3472_req_data(data, TCS3472_STATUS_PVALID);
+			if (ret >= 0)
+				ret = i2c_smbus_read_word_data(data->client,
+							       chan->address);
+
+			if (cold) {
+				mutex_lock(&data->lock);
+				if (!data->prox_event_enabled &&
+				    !data->prox_buf_enabled) {
+					data->enable &= ~(TCS3472_ENABLE_PEN |
+							  TCS3472_ENABLE_WEN);
+					i2c_smbus_write_byte_data(data->client,
+								  TCS3472_ENABLE,
+								  data->enable);
+				}
+				mutex_unlock(&data->lock);
+			}
+		} else {
+			ret = tcs3472_req_data(data, TCS3472_STATUS_AVALID);
+			if (ret >= 0)
+				ret = i2c_smbus_read_word_data(data->client,
+							       chan->address);
 		}
-		ret = i2c_smbus_read_word_data(data->client, chan->address);
+
 		iio_device_release_direct_mode(indio_dev);
 		if (ret < 0)
 			return ret;
@@ -568,15 +608,20 @@ static irqreturn_t tcs3472_trigger_handler(int irq, void *p)
 	struct iio_poll_func *pf = p;
 	struct iio_dev *indio_dev = pf->indio_dev;
 	struct tcs3472_data *data = iio_priv(indio_dev);
+	unsigned int status_mask = TCS3472_STATUS_AVALID;
 	int i, j = 0;
+	int ret;
 
-	int ret = tcs3472_req_data(data);
+	if (data->prox_event_enabled || data->prox_buf_enabled)
+		status_mask |= TCS3472_STATUS_PVALID;
+
+	ret = tcs3472_req_data(data, status_mask);
 	if (ret < 0)
 		goto done;
 
 	iio_for_each_active_channel(indio_dev, i) {
 		ret = i2c_smbus_read_word_data(data->client,
-			TCS3472_CDATA + 2*i);
+			TCS3472_CDATA + 2 * i);
 		if (ret < 0)
 			goto done;
 
@@ -591,6 +636,56 @@ done:
 
 	return IRQ_HANDLED;
 }
+
+static int tcs3472_buffer_preenable(struct iio_dev *indio_dev)
+{
+	struct tcs3472_data *data = iio_priv(indio_dev);
+	int ret;
+
+	if (!data->chip_info->has_proximity)
+		return 0;
+
+	/* Check if proximity channel (scan_index 4) is in the scan mask */
+	if (!test_bit(4, indio_dev->active_scan_mask))
+		return 0;
+
+	mutex_lock(&data->lock);
+	data->prox_buf_enabled = true;
+	data->enable |= TCS3472_ENABLE_PEN | TCS3472_ENABLE_WEN;
+	ret = i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE, data->enable);
+	if (ret) {
+		data->prox_buf_enabled = false;
+		if (!data->prox_event_enabled)
+			data->enable &= ~(TCS3472_ENABLE_PEN | TCS3472_ENABLE_WEN);
+	}
+	mutex_unlock(&data->lock);
+
+	return ret;
+}
+
+static int tcs3472_buffer_postdisable(struct iio_dev *indio_dev)
+{
+	struct tcs3472_data *data = iio_priv(indio_dev);
+
+	if (!data->prox_buf_enabled)
+		return 0;
+
+	mutex_lock(&data->lock);
+	data->prox_buf_enabled = false;
+	if (!data->prox_event_enabled) {
+		data->enable &= ~(TCS3472_ENABLE_PEN | TCS3472_ENABLE_WEN);
+		i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE,
+					  data->enable);
+	}
+	mutex_unlock(&data->lock);
+
+	return 0;
+}
+
+static const struct iio_buffer_setup_ops tcs3472_buffer_setup_ops = {
+	.preenable = tcs3472_buffer_preenable,
+	.postdisable = tcs3472_buffer_postdisable,
+};
 
 static ssize_t tcs3472_show_int_time_available(struct device *dev,
 					struct device_attribute *attr,
@@ -787,7 +882,7 @@ static int tcs3472_probe(struct i2c_client *client)
 	data->enable_saved = data->enable;
 
 	ret = iio_triggered_buffer_setup(indio_dev, NULL,
-		tcs3472_trigger_handler, NULL);
+		tcs3472_trigger_handler, &tcs3472_buffer_setup_ops);
 	if (ret < 0)
 		return ret;
 
