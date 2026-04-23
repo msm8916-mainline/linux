@@ -141,6 +141,27 @@ static const struct iio_event_spec tcs3472_events[] = {
 	},
 };
 
+/*
+ * Proximity events: threshold rising/falling + enable.
+ * No IIO_EV_INFO_PERIOD — PPERS is a linear 0-15 count, not the non-linear
+ * APERS mapping. Fixed at 3 in v1 (not configurable by userspace).
+ */
+static const struct iio_event_spec tmd3782_prox_events[] = {
+	{
+		.type = IIO_EV_TYPE_THRESH,
+		.dir = IIO_EV_DIR_RISING,
+		.mask_separate = BIT(IIO_EV_INFO_VALUE),
+	}, {
+		.type = IIO_EV_TYPE_THRESH,
+		.dir = IIO_EV_DIR_FALLING,
+		.mask_separate = BIT(IIO_EV_INFO_VALUE),
+	}, {
+		.type = IIO_EV_TYPE_THRESH,
+		.dir = IIO_EV_DIR_EITHER,
+		.mask_separate = BIT(IIO_EV_INFO_ENABLE),
+	},
+};
+
 #define TCS3472_CHANNEL(_color, _si, _addr) { \
 	.type = IIO_INTENSITY, \
 	.modified = 1, \
@@ -178,6 +199,28 @@ static const struct iio_chan_spec tcs3472_channels[] = {
 	IIO_CHAN_SOFT_TIMESTAMP(4),
 };
 
+static const struct iio_chan_spec tmd3782_channels[] = {
+	TCS3472_CHANNEL(CLEAR, 0, TCS3472_CDATA),
+	TCS3472_CHANNEL(RED, 1, TCS3472_RDATA),
+	TCS3472_CHANNEL(GREEN, 2, TCS3472_GDATA),
+	TCS3472_CHANNEL(BLUE, 3, TCS3472_BDATA),
+	{
+		.type = IIO_PROXIMITY,
+		.address = TCS3472_PDATA,
+		.info_mask_separate = BIT(IIO_CHAN_INFO_RAW),
+		.scan_index = 4,
+		.scan_type = {
+			.sign = 'u',
+			.realbits = 16,
+			.storagebits = 16,
+			.endianness = IIO_CPU,
+		},
+		.event_spec = tmd3782_prox_events,
+		.num_event_specs = ARRAY_SIZE(tmd3782_prox_events),
+	},
+	IIO_CHAN_SOFT_TIMESTAMP(5),
+};
+
 static const struct tcs3472_chip_info tcs3472_chip_info_tbl[] = {
 	[TCS3472_CHIP_TCS3472] = {
 		.channels = tcs3472_channels,
@@ -186,8 +229,8 @@ static const struct tcs3472_chip_info tcs3472_chip_info_tbl[] = {
 		.name = "tcs3472",
 	},
 	[TCS3472_CHIP_TMD3782] = {
-		.channels = tcs3472_channels,
-		.num_channels = ARRAY_SIZE(tcs3472_channels),
+		.channels = tmd3782_channels,
+		.num_channels = ARRAY_SIZE(tmd3782_channels),
 		.has_proximity = true,
 		.name = "tmd3782",
 	},
@@ -309,8 +352,12 @@ static int tcs3472_read_event(struct iio_dev *indio_dev,
 
 	switch (info) {
 	case IIO_EV_INFO_VALUE:
-		*val = (dir == IIO_EV_DIR_RISING) ?
-			data->high_thresh : data->low_thresh;
+		if (chan->type == IIO_PROXIMITY)
+			*val = (dir == IIO_EV_DIR_RISING) ?
+				data->prox_high_thresh : data->prox_low_thresh;
+		else
+			*val = (dir == IIO_EV_DIR_RISING) ?
+				data->high_thresh : data->low_thresh;
 		ret = IIO_VAL_INT;
 		break;
 	case IIO_EV_INFO_PERIOD:
@@ -344,34 +391,61 @@ static int tcs3472_write_event(struct iio_dev *indio_dev,
 	mutex_lock(&data->lock);
 	switch (info) {
 	case IIO_EV_INFO_VALUE:
-		switch (dir) {
-		case IIO_EV_DIR_RISING:
-			command = TCS3472_AIHT;
-			break;
-		case IIO_EV_DIR_FALLING:
-			command = TCS3472_AILT;
-			break;
-		default:
-			ret = -EINVAL;
-			goto error;
+		if (chan->type == IIO_PROXIMITY) {
+			switch (dir) {
+			case IIO_EV_DIR_RISING:
+				command = TCS3472_PIHT;
+				break;
+			case IIO_EV_DIR_FALLING:
+				command = TCS3472_PILT;
+				break;
+			default:
+				ret = -EINVAL;
+				goto error;
+			}
+		} else {
+			switch (dir) {
+			case IIO_EV_DIR_RISING:
+				command = TCS3472_AIHT;
+				break;
+			case IIO_EV_DIR_FALLING:
+				command = TCS3472_AILT;
+				break;
+			default:
+				ret = -EINVAL;
+				goto error;
+			}
 		}
 		ret = i2c_smbus_write_word_data(data->client, command, val);
 		if (ret)
 			goto error;
 
-		if (dir == IIO_EV_DIR_RISING)
-			data->high_thresh = val;
-		else
-			data->low_thresh = val;
+		if (chan->type == IIO_PROXIMITY) {
+			if (dir == IIO_EV_DIR_RISING)
+				data->prox_high_thresh = val;
+			else
+				data->prox_low_thresh = val;
+		} else {
+			if (dir == IIO_EV_DIR_RISING)
+				data->high_thresh = val;
+			else
+				data->low_thresh = val;
+		}
 		break;
 	case IIO_EV_INFO_PERIOD:
+		/* Period only applies to ALS events (APERS non-linear mapping) */
+		if (chan->type == IIO_PROXIMITY) {
+			ret = -EINVAL;
+			goto error;
+		}
 		period = val * USEC_PER_SEC + val2;
 		for (i = 1; i < ARRAY_SIZE(tcs3472_intr_pers) - 1; i++) {
 			if (period <= (256 - data->atime) * 2400 *
 					tcs3472_intr_pers[i])
 				break;
 		}
-		ret = i2c_smbus_write_byte_data(data->client, TCS3472_PERS, i);
+		ret = i2c_smbus_write_byte_data(data->client, TCS3472_PERS,
+						(data->ppers << 4) | i);
 		if (ret)
 			goto error;
 
@@ -395,7 +469,10 @@ static int tcs3472_read_event_config(struct iio_dev *indio_dev,
 	int ret;
 
 	mutex_lock(&data->lock);
-	ret = !!(data->enable & TCS3472_ENABLE_AIEN);
+	if (chan->type == IIO_PROXIMITY)
+		ret = data->prox_event_enabled;
+	else
+		ret = !!(data->enable & TCS3472_ENABLE_AIEN);
 	mutex_unlock(&data->lock);
 
 	return ret;
@@ -409,20 +486,42 @@ static int tcs3472_write_event_config(struct iio_dev *indio_dev,
 	int ret = 0;
 	u8 enable_old;
 
+	/* No IRQ handler → enabling interrupts would leave INT stuck low */
+	if (!data->client->irq)
+		return -EINVAL;
+
 	mutex_lock(&data->lock);
 
 	enable_old = data->enable;
 
-	if (state)
-		data->enable |= TCS3472_ENABLE_AIEN;
-	else
-		data->enable &= ~TCS3472_ENABLE_AIEN;
+	if (chan->type == IIO_PROXIMITY) {
+		data->prox_event_enabled = !!state;
+		if (state) {
+			data->enable |= TCS3472_ENABLE_PIEN |
+					TCS3472_ENABLE_PEN |
+					TCS3472_ENABLE_WEN;
+		} else {
+			data->enable &= ~TCS3472_ENABLE_PIEN;
+			/* Only drop PEN+WEN if buffer isn't using proximity */
+			if (!data->prox_buf_enabled)
+				data->enable &= ~(TCS3472_ENABLE_PEN |
+						  TCS3472_ENABLE_WEN);
+		}
+	} else {
+		if (state)
+			data->enable |= TCS3472_ENABLE_AIEN;
+		else
+			data->enable &= ~TCS3472_ENABLE_AIEN;
+	}
 
 	if (enable_old != data->enable) {
 		ret = i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE,
 						data->enable);
-		if (ret)
+		if (ret) {
 			data->enable = enable_old;
+			if (chan->type == IIO_PROXIMITY)
+				data->prox_event_enabled = !state;
+		}
 	}
 	mutex_unlock(&data->lock);
 
@@ -436,14 +535,30 @@ static irqreturn_t tcs3472_event_handler(int irq, void *priv)
 	int ret;
 
 	ret = i2c_smbus_read_byte_data(data->client, TCS3472_STATUS);
-	if (ret >= 0 && (ret & TCS3472_STATUS_AINT)) {
-		iio_push_event(indio_dev, IIO_UNMOD_EVENT_CODE(IIO_INTENSITY, 0,
-						IIO_EV_TYPE_THRESH,
-						IIO_EV_DIR_EITHER),
-				iio_get_time_ns(indio_dev));
+	if (ret < 0)
+		return IRQ_HANDLED;
 
+	if (ret & TCS3472_STATUS_AINT)
+		iio_push_event(indio_dev,
+			       IIO_UNMOD_EVENT_CODE(IIO_INTENSITY, 0,
+						    IIO_EV_TYPE_THRESH,
+						    IIO_EV_DIR_EITHER),
+			       iio_get_time_ns(indio_dev));
+
+	if (ret & TCS3472_STATUS_PINT)
+		iio_push_event(indio_dev,
+			       IIO_UNMOD_EVENT_CODE(IIO_PROXIMITY, 0,
+						    IIO_EV_TYPE_THRESH,
+						    IIO_EV_DIR_EITHER),
+			       iio_get_time_ns(indio_dev));
+
+	/* Clear only the interrupts we observed */
+	if ((ret & TCS3472_STATUS_AINT) && (ret & TCS3472_STATUS_PINT))
+		i2c_smbus_read_byte_data(data->client, TCS3472_ALL_INTR_CLEAR);
+	else if (ret & TCS3472_STATUS_AINT)
 		i2c_smbus_read_byte_data(data->client, TCS3472_INTR_CLEAR);
-	}
+	else if (ret & TCS3472_STATUS_PINT)
+		i2c_smbus_read_byte_data(data->client, TCS3472_PROX_INTR_CLEAR);
 
 	return IRQ_HANDLED;
 }
@@ -792,7 +907,8 @@ static DEFINE_SIMPLE_DEV_PM_OPS(tcs3472_pm_ops, tcs3472_suspend,
 static const struct of_device_id tcs3472_of_match[] = {
 	{ .compatible = "amstaos,tcs3472",
 	  .data = &tcs3472_chip_info_tbl[TCS3472_CHIP_TCS3472] },
-	{ .compatible = "amstaos,tmd3782" },
+	{ .compatible = "amstaos,tmd3782",
+	  .data = &tcs3472_chip_info_tbl[TCS3472_CHIP_TMD3782] },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, tcs3472_of_match);
