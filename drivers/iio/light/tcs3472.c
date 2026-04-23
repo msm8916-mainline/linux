@@ -58,6 +58,18 @@
 #define TCS3472_ENABLE_PON BIT(0)
 #define TCS3472_CONTROL_AGAIN_MASK (BIT(0) | BIT(1))
 
+enum {
+	TCS3472_CHIP_TCS3472,
+	TCS3472_CHIP_TMD3782,
+};
+
+struct tcs3472_chip_info {
+	const struct iio_chan_spec *channels;
+	int num_channels;
+	bool has_proximity;
+	const char *name;
+};
+
 static const char *const tcs3472_supply_names[] = {
 	"vdd",
 	"vddio",
@@ -65,6 +77,7 @@ static const char *const tcs3472_supply_names[] = {
 
 struct tcs3472_data {
 	struct i2c_client *client;
+	const struct tcs3472_chip_info *chip_info;
 	struct mutex lock;
 	u16 low_thresh;
 	u16 high_thresh;
@@ -124,6 +137,15 @@ static const struct iio_chan_spec tcs3472_channels[] = {
 	TCS3472_CHANNEL(GREEN, 2, TCS3472_GDATA),
 	TCS3472_CHANNEL(BLUE, 3, TCS3472_BDATA),
 	IIO_CHAN_SOFT_TIMESTAMP(4),
+};
+
+static const struct tcs3472_chip_info tcs3472_chip_info_tbl[] = {
+	[TCS3472_CHIP_TCS3472] = {
+		.channels = tcs3472_channels,
+		.num_channels = ARRAY_SIZE(tcs3472_channels),
+		.has_proximity = false,
+		.name = "tcs3472",
+	},
 };
 
 static int tcs3472_req_data(struct tcs3472_data *data)
@@ -454,6 +476,7 @@ static int tcs3472_probe(struct i2c_client *client)
 {
 	struct tcs3472_data *data;
 	struct iio_dev *indio_dev;
+	const struct tcs3472_chip_info *match_info;
 	int ret;
 
 	indio_dev = devm_iio_device_alloc(&client->dev, sizeof(*data));
@@ -464,12 +487,7 @@ static int tcs3472_probe(struct i2c_client *client)
 	i2c_set_clientdata(client, indio_dev);
 	data->client = client;
 	mutex_init(&data->lock);
-
-	indio_dev->info = &tcs3472_info;
-	indio_dev->name = TCS3472_DRV_NAME;
-	indio_dev->channels = tcs3472_channels;
-	indio_dev->num_channels = ARRAY_SIZE(tcs3472_channels);
-	indio_dev->modes = INDIO_DIRECT_MODE;
+	match_info = i2c_get_match_data(client);
 
 	ret = devm_regulator_bulk_get_enable(&client->dev,
 					     ARRAY_SIZE(tcs3472_supply_names),
@@ -485,12 +503,21 @@ static int tcs3472_probe(struct i2c_client *client)
 	if (ret < 0)
 		return ret;
 
-	if (ret == 0x44)
-		dev_info(&client->dev, "TCS34721/34725 found\n");
-	else if (ret == 0x4d)
-		dev_info(&client->dev, "TCS34723/34727 found\n");
+	if (match_info)
+		data->chip_info = match_info;
+	else if (ret == 0x44 || ret == 0x4d)
+		data->chip_info = &tcs3472_chip_info_tbl[TCS3472_CHIP_TCS3472];
 	else
 		return -ENODEV;
+
+	dev_info(&client->dev, "%s (id 0x%02x) found\n",
+		 data->chip_info->name, ret);
+
+	indio_dev->info = &tcs3472_info;
+	indio_dev->name = data->chip_info->name;
+	indio_dev->channels = data->chip_info->channels;
+	indio_dev->num_channels = data->chip_info->num_channels;
+	indio_dev->modes = INDIO_DIRECT_MODE;
 
 	ret = i2c_smbus_read_byte_data(data->client, TCS3472_CONTROL);
 	if (ret < 0)
@@ -642,7 +669,8 @@ static DEFINE_SIMPLE_DEV_PM_OPS(tcs3472_pm_ops, tcs3472_suspend,
 				tcs3472_resume);
 
 static const struct of_device_id tcs3472_of_match[] = {
-	{ .compatible = "amstaos,tcs3472" },
+	{ .compatible = "amstaos,tcs3472",
+	  .data = &tcs3472_chip_info_tbl[TCS3472_CHIP_TCS3472] },
 	{ .compatible = "amstaos,tmd3782" },
 	{ }
 };
