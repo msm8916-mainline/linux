@@ -121,11 +121,14 @@
 		compatible = "goodix,gt928";
 		reg = <0x14>;
 
-		interrup-extended = <&tlmm 13 IRQ_TYPE_EDGE_FALLING>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+
 		irq-gpios = <&tlmm 13 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
 
 		AVDD28-supply = <&pm8916_l16>;
+		VDDIO-supply = <&pm8916_l6>;
 		touchscreen-size-x = <540>;
 		touchscreen-size-y = <960>;
 
