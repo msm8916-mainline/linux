@@ -186,6 +186,7 @@ static const struct iio_event_spec tmd3782_prox_events[] = {
 static const int tcs3472_agains[] = { 1, 4, 16, 60 };
 
 static const int tmd3782_pdrive_uamp[] = { 100000, 50000, 25000, 12500 };
+static const int tmd3782_ppulse_range[] = { 1, 1, 255 };
 
 static const struct iio_chan_spec tcs3472_channels[] = {
 	TCS3472_CHANNEL(CLEAR, 0, TCS3472_CDATA),
@@ -204,9 +205,11 @@ static const struct iio_chan_spec tmd3782_channels[] = {
 		.type = IIO_PROXIMITY,
 		.address = TCS3472_PDATA,
 		.info_mask_separate = BIT(IIO_CHAN_INFO_RAW) |
-				      BIT(IIO_CHAN_INFO_CALIBBIAS),
+				      BIT(IIO_CHAN_INFO_CALIBBIAS) |
+				      BIT(IIO_CHAN_INFO_OVERSAMPLING_RATIO),
 		.info_mask_separate_available =
-				      BIT(IIO_CHAN_INFO_CALIBBIAS),
+				      BIT(IIO_CHAN_INFO_CALIBBIAS) |
+				      BIT(IIO_CHAN_INFO_OVERSAMPLING_RATIO),
 		.scan_index = 4,
 		.scan_type = {
 			.sign = 'u',
@@ -333,6 +336,9 @@ static int tcs3472_read_raw(struct iio_dev *indio_dev,
 		*val = tmd3782_pdrive_uamp[FIELD_GET(TMD3782_CONTROL_PDRIVE_MASK,
 						     data->control)];
 		return IIO_VAL_INT;
+	case IIO_CHAN_INFO_OVERSAMPLING_RATIO:
+		*val = data->ppulse;
+		return IIO_VAL_INT;
 	}
 	return -EINVAL;
 }
@@ -386,6 +392,13 @@ static int tcs3472_write_raw(struct iio_dev *indio_dev,
 			}
 		}
 		return -EINVAL;
+	case IIO_CHAN_INFO_OVERSAMPLING_RATIO:
+		if (val < 1 || val > 255 || val2 != 0)
+			return -EINVAL;
+		guard(mutex)(&data->lock);
+		data->ppulse = val;
+		return i2c_smbus_write_byte_data(data->client,
+						 TCS3472_PPULSE, data->ppulse);
 	}
 	return -EINVAL;
 }
@@ -721,6 +734,11 @@ static int tcs3472_read_avail(struct iio_dev *indio_dev,
 		*type = IIO_VAL_INT;
 		*length = ARRAY_SIZE(tmd3782_pdrive_uamp);
 		return IIO_AVAIL_LIST;
+	case IIO_CHAN_INFO_OVERSAMPLING_RATIO:
+		*vals = tmd3782_ppulse_range;
+		*type = IIO_VAL_INT;
+		*length = ARRAY_SIZE(tmd3782_ppulse_range);
+		return IIO_AVAIL_RANGE;
 	default:
 		return -EINVAL;
 	}
@@ -818,12 +836,7 @@ static int tcs3472_probe(struct i2c_client *client)
 	data->high_thresh = ret;
 
 	if (data->chip_info->has_proximity) {
-		u32 ppulse_val = 8; /* default: datasheet Figure 11 test conditions */
-
-		device_property_read_u32(&client->dev,
-					 "amstaos,proximity-pulse-count",
-					 &ppulse_val);
-		data->ppulse = clamp_val(ppulse_val, 1, 255);
+		data->ppulse = 6;
 		ret = i2c_smbus_write_byte_data(data->client, TCS3472_PPULSE,
 						data->ppulse);
 		if (ret < 0)

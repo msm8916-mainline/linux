@@ -42,15 +42,6 @@ properties:
   vled-supply:
     description: Regulator that provides power to the proximity IR LED
 
-  amstaos,proximity-pulse-count:
-    description:
-      Number of proximity IR LED pulses per measurement cycle.
-      Higher values increase signal strength at the cost of power.
-    $ref: /schemas/types.yaml#/definitions/uint32
-    minimum: 1
-    maximum: 255
-    default: 8
-
 required:
   - compatible
   - reg
@@ -72,7 +63,6 @@ examples:
                 vdd-supply = <&reg_prox_vdd>;
                 vddio-supply = <&pm8916_l5>;
                 vled-supply = <&reg_prox_led>;
-                amstaos,proximity-pulse-count = <6>;
         };
     };
 ...

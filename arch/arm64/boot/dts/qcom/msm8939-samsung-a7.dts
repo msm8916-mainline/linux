@@ -176,8 +176,6 @@
 			vddio-supply = <&pm8916_l5>;
 			vled-supply = <&pm8916_l17>;
 
-			amstaos,proximity-pulse-count = <6>;
-
 			pinctrl-0 = <&prox_int_default>;
 			pinctrl-names = "default";
 		};
