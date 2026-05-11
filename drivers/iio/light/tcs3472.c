@@ -63,8 +63,7 @@
 #define TCS3472_ENABLE_WEN	BIT(3)
 #define TCS3472_ENABLE_PEN	BIT(2)
 
-/* CONTROL register: proximity bits (TMD3782) */
-#define TCS3472_CONTROL_PDRIVE_MASK	GENMASK(7, 6)
+#define TMD3782_CONTROL_PDRIVE_MASK	GENMASK(7, 6)
 /* TMD3782 datasheet page 25, Figure 34: bit 5 must be written as 1 */
 #define TCS3472_CONTROL_RSVD5		BIT(5)
 
@@ -799,7 +798,7 @@ static int tcs3472_probe(struct i2c_client *client)
 				}
 			}
 		}
-		data->control &= ~TCS3472_CONTROL_PDRIVE_MASK;
+		data->control &= ~TMD3782_CONTROL_PDRIVE_MASK;
 		data->control |= (pdrive << 6);
 
 		ret = i2c_smbus_write_byte_data(data->client, TCS3472_CONTROL,
