@@ -81,10 +81,11 @@
 #define TCS3472_ENABLE_PON BIT(0)
 #define TCS3472_CONTROL_AGAIN_MASK (BIT(0) | BIT(1))
 
-enum {
-	TCS3472_CHIP_TCS3472,
-	TCS3472_CHIP_TMD3782,
-};
+/* Chip ID register values */
+#define TCS34721_CHIP_ID	0x44
+#define TCS34723_CHIP_ID	0x4d
+#define TMD37821_CHIP_ID	0x60
+#define TMD37823_CHIP_ID	0x69
 
 struct tcs3472_chip_info {
 	const struct iio_chan_spec *channels;
@@ -220,19 +221,18 @@ static const struct iio_chan_spec tmd3782_channels[] = {
 	IIO_CHAN_SOFT_TIMESTAMP(5),
 };
 
-static const struct tcs3472_chip_info tcs3472_chip_info_tbl[] = {
-	[TCS3472_CHIP_TCS3472] = {
-		.channels = tcs3472_channels,
-		.num_channels = ARRAY_SIZE(tcs3472_channels),
-		.has_proximity = false,
-		.name = "tcs3472",
-	},
-	[TCS3472_CHIP_TMD3782] = {
-		.channels = tmd3782_channels,
-		.num_channels = ARRAY_SIZE(tmd3782_channels),
-		.has_proximity = true,
-		.name = "tmd3782",
-	},
+static const struct tcs3472_chip_info tcs3472_chip_info = {
+	.channels = tcs3472_channels,
+	.num_channels = ARRAY_SIZE(tcs3472_channels),
+	.has_proximity = false,
+	.name = "tcs3472",
+};
+
+static const struct tcs3472_chip_info tmd3782_chip_info = {
+	.channels = tmd3782_channels,
+	.num_channels = ARRAY_SIZE(tmd3782_channels),
+	.has_proximity = true,
+	.name = "tmd3782",
 };
 
 static int tcs3472_req_data(struct tcs3472_data *data, unsigned int status_mask)
@@ -759,10 +759,10 @@ static int tcs3472_probe(struct i2c_client *client)
 
 	if (match_info) {
 		data->chip_info = match_info;
-	} else if (ret == 0x44 || ret == 0x4d) {
-		data->chip_info = &tcs3472_chip_info_tbl[TCS3472_CHIP_TCS3472];
-	} else if (ret == 0x60 || ret == 0x69) {
-		data->chip_info = &tcs3472_chip_info_tbl[TCS3472_CHIP_TMD3782];
+	} else if (ret == TCS34721_CHIP_ID || ret == TCS34723_CHIP_ID) {
+		data->chip_info = &tcs3472_chip_info;
+	} else if (ret == TMD37821_CHIP_ID || ret == TMD37823_CHIP_ID) {
+		data->chip_info = &tmd3782_chip_info;
 	} else {
 		return -ENODEV;
 	}
@@ -1000,16 +1000,16 @@ static DEFINE_SIMPLE_DEV_PM_OPS(tcs3472_pm_ops, tcs3472_suspend,
 
 static const struct of_device_id tcs3472_of_match[] = {
 	{ .compatible = "amstaos,tcs3472",
-	  .data = &tcs3472_chip_info_tbl[TCS3472_CHIP_TCS3472] },
+	  .data = &tcs3472_chip_info },
 	{ .compatible = "amstaos,tmd3782",
-	  .data = &tcs3472_chip_info_tbl[TCS3472_CHIP_TMD3782] },
+	  .data = &tmd3782_chip_info },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, tcs3472_of_match);
 
 static const struct i2c_device_id tcs3472_id[] = {
-	{ "tcs3472" },
-	{ "tmd3782" },
+	{ "tcs3472", (kernel_ulong_t)&tcs3472_chip_info },
+	{ "tmd3782", (kernel_ulong_t)&tmd3782_chip_info },
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, tcs3472_id);
