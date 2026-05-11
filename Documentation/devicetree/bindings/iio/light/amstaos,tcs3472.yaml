@@ -18,6 +18,9 @@ description: |
   TCS3472 datasheet:
     https://ams.com/documents/20143/36005/TCS3472_DS000190_1-00.pdf
 
+  TMD3782 datasheet:
+    https://media.digikey.com/pdf/Data%20Sheets/Austriamicrosystems%20PDFs/TMD3782_v2.pdf
+
 properties:
   compatible:
     enum:
