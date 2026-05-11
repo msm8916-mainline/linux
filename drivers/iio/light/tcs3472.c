@@ -591,12 +591,9 @@ static irqreturn_t tcs3472_event_handler(int irq, void *priv)
 						    IIO_EV_DIR_EITHER),
 			       iio_get_time_ns(indio_dev));
 
-	/* Clear only the interrupts we observed */
-	if ((ret & TCS3472_STATUS_AINT) && (ret & TCS3472_STATUS_PINT))
-		i2c_smbus_read_byte_data(data->client, TCS3472_ALL_INTR_CLEAR);
-	else if (ret & TCS3472_STATUS_AINT)
+	if (ret & TCS3472_STATUS_AINT)
 		i2c_smbus_read_byte_data(data->client, TCS3472_INTR_CLEAR);
-	else if (ret & TCS3472_STATUS_PINT)
+	if (ret & TCS3472_STATUS_PINT)
 		i2c_smbus_read_byte_data(data->client, TCS3472_PROX_INTR_CLEAR);
 
 	return IRQ_HANDLED;
