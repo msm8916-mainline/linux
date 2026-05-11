@@ -47,6 +47,16 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&tkey_en_default>;
 	};
+
+	reg_prox_vled: regulator-prox-vled {
+		compatible = "regulator-fixed";
+		regulator-name = "prox_vled";
+		gpios = <&tlmm 8 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-0 = <&prox_led_default>;
+		pinctrl-names = "default";
+	};
 };
 
 &accelerometer {
@@ -59,6 +69,20 @@
 	charge-term-current-microamp = <200000>;
 	constant-charge-current-max-microamp = <1500000>;
 	constant-charge-voltage-max-microvolt = <4350000>;
+};
+
+&blsp_i2c2 {
+	light-sensor@39 {
+		compatible = "amstaos,tmd3782";
+		reg = <0x39>;
+		interrupts-extended = <&tlmm 113 IRQ_TYPE_LEVEL_LOW>;
+
+		vddio-supply = <&pm8916_l5>;
+		vled-supply = <&reg_prox_vled>;
+
+		pinctrl-0 = <&prox_int_default>;
+		pinctrl-names = "default";
+	};
 };
 
 &blsp_i2c5 {
@@ -142,6 +166,20 @@
 		pins = "gpio97";
 		function = "gpio";
 
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	prox_int_default: prox-int-default-state {
+		pins = "gpio113";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	prox_led_default: prox-led-default-state {
+		pins = "gpio8";
+		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
 	};

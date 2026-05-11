@@ -15,8 +15,12 @@
 
 #include <linux/module.h>
 #include <linux/i2c.h>
+#include <linux/bitfield.h>
+#include <linux/cleanup.h>
 #include <linux/delay.h>
+#include <linux/of.h>
 #include <linux/pm.h>
+#include <linux/regulator/consumer.h>
 
 #include <linux/iio/iio.h>
 #include <linux/iio/sysfs.h>
@@ -32,6 +36,7 @@
 #define TCS3472_SPECIAL_FUNC (BIT(5) | BIT(6))
 
 #define TCS3472_INTR_CLEAR (TCS3472_COMMAND | TCS3472_SPECIAL_FUNC | 0x06)
+#define TCS3472_ALL_INTR_CLEAR	(TCS3472_COMMAND | TCS3472_SPECIAL_FUNC | 0x07)
 
 #define TCS3472_ENABLE (TCS3472_COMMAND | 0x00)
 #define TCS3472_ATIME (TCS3472_COMMAND | 0x01)
@@ -48,6 +53,29 @@
 #define TCS3472_GDATA (TCS3472_COMMAND | TCS3472_AUTO_INCR | 0x18)
 #define TCS3472_BDATA (TCS3472_COMMAND | TCS3472_AUTO_INCR | 0x1a)
 
+/* TMD3782 proximity registers */
+#define TCS3472_PILT		(TCS3472_COMMAND | TCS3472_AUTO_INCR | 0x08)
+#define TCS3472_PIHT		(TCS3472_COMMAND | TCS3472_AUTO_INCR | 0x0a)
+#define TCS3472_PPULSE		(TCS3472_COMMAND | 0x0e)
+#define TCS3472_PDATA		(TCS3472_COMMAND | TCS3472_AUTO_INCR | 0x1c)
+#define TCS3472_REVID		(TCS3472_COMMAND | 0x11)
+
+/* ENABLE register: proximity bits */
+#define TCS3472_ENABLE_PIEN	BIT(5)
+#define TCS3472_ENABLE_WEN	BIT(3)
+#define TCS3472_ENABLE_PEN	BIT(2)
+
+#define TMD3782_CONTROL_PDRIVE_MASK	GENMASK(7, 6)
+/* TMD3782 datasheet page 25, Figure 34: bit 5 must be written as 1 */
+#define TCS3472_CONTROL_RSVD5		BIT(5)
+
+/* STATUS register: proximity bits */
+#define TCS3472_STATUS_PINT	BIT(5)
+#define TCS3472_STATUS_PVALID	BIT(1)
+
+/* Interrupt clear: proximity */
+#define TCS3472_PROX_INTR_CLEAR	(TCS3472_COMMAND | TCS3472_SPECIAL_FUNC | 0x05)
+
 #define TCS3472_STATUS_AINT BIT(4)
 #define TCS3472_STATUS_AVALID BIT(0)
 #define TCS3472_ENABLE_AIEN BIT(4)
@@ -55,18 +83,45 @@
 #define TCS3472_ENABLE_PON BIT(0)
 #define TCS3472_CONTROL_AGAIN_MASK (BIT(0) | BIT(1))
 
+/* Chip ID register values */
+#define TCS34721_CHIP_ID	0x44
+#define TCS34723_CHIP_ID	0x4d
+#define TMD37821_CHIP_ID	0x60
+#define TMD37823_CHIP_ID	0x69
+
+struct tcs3472_chip_info {
+	const struct iio_chan_spec *channels;
+	int num_channels;
+	bool has_proximity;
+	const char *name;
+};
+
+static const char *const tcs3472_supply_names[] = {
+	"vdd",
+	"vddio",
+};
+
 struct tcs3472_data {
 	struct i2c_client *client;
+	const struct tcs3472_chip_info *chip_info;
 	struct mutex lock;
+	bool prox_event_enabled;
+	bool prox_buf_enabled;
 	u16 low_thresh;
 	u16 high_thresh;
+	u16 prox_low_thresh;
+	u16 prox_high_thresh;
 	u8 enable;
+	u8 enable_saved;
 	u8 control;
 	u8 atime;
 	u8 apers;
+	u8 ppers;
+	u8 ppulse;
 	/* Ensure timestamp is naturally aligned */
 	struct {
-		u16 chans[4];
+		/* 5 channels: RGBC (4) + proximity (1, TMD3782 only) */
+		u16 chans[5];
 		s64 timestamp __aligned(8);
 	} scan;
 };
@@ -85,6 +140,27 @@ static const struct iio_event_spec tcs3472_events[] = {
 		.dir = IIO_EV_DIR_EITHER,
 		.mask_separate = BIT(IIO_EV_INFO_ENABLE) |
 				 BIT(IIO_EV_INFO_PERIOD),
+	},
+};
+
+/*
+ * Proximity events: threshold rising/falling + enable.
+ * No IIO_EV_INFO_PERIOD — PPERS is a linear 0-15 count, not the non-linear
+ * APERS mapping. Fixed at 3 in v1 (not configurable by userspace).
+ */
+static const struct iio_event_spec tmd3782_prox_events[] = {
+	{
+		.type = IIO_EV_TYPE_THRESH,
+		.dir = IIO_EV_DIR_RISING,
+		.mask_separate = BIT(IIO_EV_INFO_VALUE),
+	}, {
+		.type = IIO_EV_TYPE_THRESH,
+		.dir = IIO_EV_DIR_FALLING,
+		.mask_separate = BIT(IIO_EV_INFO_VALUE),
+	}, {
+		.type = IIO_EV_TYPE_THRESH,
+		.dir = IIO_EV_DIR_EITHER,
+		.mask_separate = BIT(IIO_EV_INFO_ENABLE),
 	},
 };
 
@@ -109,6 +185,9 @@ static const struct iio_event_spec tcs3472_events[] = {
 
 static const int tcs3472_agains[] = { 1, 4, 16, 60 };
 
+static const int tmd3782_pdrive_uamp[] = { 100000, 50000, 25000, 12500 };
+static const int tmd3782_ppulse_range[] = { 1, 1, 255 };
+
 static const struct iio_chan_spec tcs3472_channels[] = {
 	TCS3472_CHANNEL(CLEAR, 0, TCS3472_CDATA),
 	TCS3472_CHANNEL(RED, 1, TCS3472_RDATA),
@@ -117,7 +196,48 @@ static const struct iio_chan_spec tcs3472_channels[] = {
 	IIO_CHAN_SOFT_TIMESTAMP(4),
 };
 
-static int tcs3472_req_data(struct tcs3472_data *data)
+static const struct iio_chan_spec tmd3782_channels[] = {
+	TCS3472_CHANNEL(CLEAR, 0, TCS3472_CDATA),
+	TCS3472_CHANNEL(RED, 1, TCS3472_RDATA),
+	TCS3472_CHANNEL(GREEN, 2, TCS3472_GDATA),
+	TCS3472_CHANNEL(BLUE, 3, TCS3472_BDATA),
+	{
+		.type = IIO_PROXIMITY,
+		.address = TCS3472_PDATA,
+		.info_mask_separate = BIT(IIO_CHAN_INFO_RAW) |
+				      BIT(IIO_CHAN_INFO_CALIBBIAS) |
+				      BIT(IIO_CHAN_INFO_OVERSAMPLING_RATIO),
+		.info_mask_separate_available =
+				      BIT(IIO_CHAN_INFO_CALIBBIAS) |
+				      BIT(IIO_CHAN_INFO_OVERSAMPLING_RATIO),
+		.scan_index = 4,
+		.scan_type = {
+			.sign = 'u',
+			.realbits = 16,
+			.storagebits = 16,
+			.endianness = IIO_CPU,
+		},
+		.event_spec = tmd3782_prox_events,
+		.num_event_specs = ARRAY_SIZE(tmd3782_prox_events),
+	},
+	IIO_CHAN_SOFT_TIMESTAMP(5),
+};
+
+static const struct tcs3472_chip_info tcs3472_chip_info = {
+	.channels = tcs3472_channels,
+	.num_channels = ARRAY_SIZE(tcs3472_channels),
+	.has_proximity = false,
+	.name = "tcs3472",
+};
+
+static const struct tcs3472_chip_info tmd3782_chip_info = {
+	.channels = tmd3782_channels,
+	.num_channels = ARRAY_SIZE(tmd3782_channels),
+	.has_proximity = true,
+	.name = "tmd3782",
+};
+
+static int tcs3472_req_data(struct tcs3472_data *data, unsigned int status_mask)
 {
 	int tries = 50;
 	int ret;
@@ -126,7 +246,7 @@ static int tcs3472_req_data(struct tcs3472_data *data)
 		ret = i2c_smbus_read_byte_data(data->client, TCS3472_STATUS);
 		if (ret < 0)
 			return ret;
-		if (ret & TCS3472_STATUS_AVALID)
+		if ((ret & status_mask) == status_mask)
 			break;
 		msleep(20);
 	}
@@ -151,12 +271,54 @@ static int tcs3472_read_raw(struct iio_dev *indio_dev,
 		ret = iio_device_claim_direct_mode(indio_dev);
 		if (ret)
 			return ret;
-		ret = tcs3472_req_data(data);
-		if (ret < 0) {
-			iio_device_release_direct_mode(indio_dev);
-			return ret;
+
+		if (chan->type == IIO_PROXIMITY) {
+			bool cold;
+
+			{
+				guard(mutex)(&data->lock);
+				cold = !data->prox_event_enabled &&
+				       !data->prox_buf_enabled;
+				if (cold) {
+					data->enable |= TCS3472_ENABLE_PEN |
+							TCS3472_ENABLE_WEN;
+					ret = i2c_smbus_write_byte_data(
+						data->client, TCS3472_ENABLE,
+						data->enable);
+					if (ret) {
+						data->enable &=
+							~(TCS3472_ENABLE_PEN |
+							  TCS3472_ENABLE_WEN);
+						iio_device_release_direct_mode(
+							indio_dev);
+						return ret;
+					}
+				}
+			}
+
+			ret = tcs3472_req_data(data, TCS3472_STATUS_PVALID);
+			if (ret >= 0)
+				ret = i2c_smbus_read_word_data(data->client,
+							       chan->address);
+
+			if (cold) {
+				guard(mutex)(&data->lock);
+				if (!data->prox_event_enabled &&
+				    !data->prox_buf_enabled) {
+					data->enable &= ~(TCS3472_ENABLE_PEN |
+							  TCS3472_ENABLE_WEN);
+					i2c_smbus_write_byte_data(data->client,
+								  TCS3472_ENABLE,
+								  data->enable);
+				}
+			}
+		} else {
+			ret = tcs3472_req_data(data, TCS3472_STATUS_AVALID);
+			if (ret >= 0)
+				ret = i2c_smbus_read_word_data(data->client,
+							       chan->address);
 		}
-		ret = i2c_smbus_read_word_data(data->client, chan->address);
+
 		iio_device_release_direct_mode(indio_dev);
 		if (ret < 0)
 			return ret;
@@ -170,6 +332,13 @@ static int tcs3472_read_raw(struct iio_dev *indio_dev,
 		*val = 0;
 		*val2 = (256 - data->atime) * 2400;
 		return IIO_VAL_INT_PLUS_MICRO;
+	case IIO_CHAN_INFO_CALIBBIAS:
+		*val = tmd3782_pdrive_uamp[FIELD_GET(TMD3782_CONTROL_PDRIVE_MASK,
+						     data->control)];
+		return IIO_VAL_INT;
+	case IIO_CHAN_INFO_OVERSAMPLING_RATIO:
+		*val = data->ppulse;
+		return IIO_VAL_INT;
 	}
 	return -EINVAL;
 }
@@ -187,6 +356,7 @@ static int tcs3472_write_raw(struct iio_dev *indio_dev,
 			return -EINVAL;
 		for (i = 0; i < ARRAY_SIZE(tcs3472_agains); i++) {
 			if (val == tcs3472_agains[i]) {
+				guard(mutex)(&data->lock);
 				data->control &= ~TCS3472_CONTROL_AGAIN_MASK;
 				data->control |= i;
 				return i2c_smbus_write_byte_data(
@@ -205,9 +375,30 @@ static int tcs3472_write_raw(struct iio_dev *indio_dev,
 					data->client, TCS3472_ATIME,
 					data->atime);
 			}
-
 		}
 		return -EINVAL;
+	case IIO_CHAN_INFO_CALIBBIAS:
+		if (val2 != 0)
+			return -EINVAL;
+		for (i = 0; i < ARRAY_SIZE(tmd3782_pdrive_uamp); i++) {
+			if (val == tmd3782_pdrive_uamp[i]) {
+				guard(mutex)(&data->lock);
+				data->control &= ~TMD3782_CONTROL_PDRIVE_MASK;
+				data->control |= FIELD_PREP(
+					TMD3782_CONTROL_PDRIVE_MASK, i);
+				return i2c_smbus_write_byte_data(
+					data->client, TCS3472_CONTROL,
+					data->control);
+			}
+		}
+		return -EINVAL;
+	case IIO_CHAN_INFO_OVERSAMPLING_RATIO:
+		if (val < 1 || val > 255 || val2 != 0)
+			return -EINVAL;
+		guard(mutex)(&data->lock);
+		data->ppulse = val;
+		return i2c_smbus_write_byte_data(data->client,
+						 TCS3472_PPULSE, data->ppulse);
 	}
 	return -EINVAL;
 }
@@ -226,32 +417,28 @@ static int tcs3472_read_event(struct iio_dev *indio_dev,
 	int *val2)
 {
 	struct tcs3472_data *data = iio_priv(indio_dev);
-	int ret;
 	unsigned int period;
 
-	mutex_lock(&data->lock);
+	guard(mutex)(&data->lock);
 
 	switch (info) {
 	case IIO_EV_INFO_VALUE:
-		*val = (dir == IIO_EV_DIR_RISING) ?
-			data->high_thresh : data->low_thresh;
-		ret = IIO_VAL_INT;
-		break;
+		if (chan->type == IIO_PROXIMITY)
+			*val = (dir == IIO_EV_DIR_RISING) ?
+				data->prox_high_thresh : data->prox_low_thresh;
+		else
+			*val = (dir == IIO_EV_DIR_RISING) ?
+				data->high_thresh : data->low_thresh;
+		return IIO_VAL_INT;
 	case IIO_EV_INFO_PERIOD:
 		period = (256 - data->atime) * 2400 *
 			tcs3472_intr_pers[data->apers];
 		*val = period / USEC_PER_SEC;
 		*val2 = period % USEC_PER_SEC;
-		ret = IIO_VAL_INT_PLUS_MICRO;
-		break;
+		return IIO_VAL_INT_PLUS_MICRO;
 	default:
-		ret = -EINVAL;
-		break;
+		return -EINVAL;
 	}
-
-	mutex_unlock(&data->lock);
-
-	return ret;
 }
 
 static int tcs3472_write_event(struct iio_dev *indio_dev,
@@ -265,50 +452,69 @@ static int tcs3472_write_event(struct iio_dev *indio_dev,
 	int period;
 	int i;
 
-	mutex_lock(&data->lock);
+	guard(mutex)(&data->lock);
+
 	switch (info) {
 	case IIO_EV_INFO_VALUE:
-		switch (dir) {
-		case IIO_EV_DIR_RISING:
-			command = TCS3472_AIHT;
-			break;
-		case IIO_EV_DIR_FALLING:
-			command = TCS3472_AILT;
-			break;
-		default:
-			ret = -EINVAL;
-			goto error;
+		if (chan->type == IIO_PROXIMITY) {
+			switch (dir) {
+			case IIO_EV_DIR_RISING:
+				command = TCS3472_PIHT;
+				break;
+			case IIO_EV_DIR_FALLING:
+				command = TCS3472_PILT;
+				break;
+			default:
+				return -EINVAL;
+			}
+		} else {
+			switch (dir) {
+			case IIO_EV_DIR_RISING:
+				command = TCS3472_AIHT;
+				break;
+			case IIO_EV_DIR_FALLING:
+				command = TCS3472_AILT;
+				break;
+			default:
+				return -EINVAL;
+			}
 		}
 		ret = i2c_smbus_write_word_data(data->client, command, val);
 		if (ret)
-			goto error;
+			return ret;
 
-		if (dir == IIO_EV_DIR_RISING)
-			data->high_thresh = val;
-		else
-			data->low_thresh = val;
-		break;
+		if (chan->type == IIO_PROXIMITY) {
+			if (dir == IIO_EV_DIR_RISING)
+				data->prox_high_thresh = val;
+			else
+				data->prox_low_thresh = val;
+		} else {
+			if (dir == IIO_EV_DIR_RISING)
+				data->high_thresh = val;
+			else
+				data->low_thresh = val;
+		}
+		return 0;
 	case IIO_EV_INFO_PERIOD:
+		if (chan->type == IIO_PROXIMITY)
+			return -EINVAL;
+
 		period = val * USEC_PER_SEC + val2;
 		for (i = 1; i < ARRAY_SIZE(tcs3472_intr_pers) - 1; i++) {
 			if (period <= (256 - data->atime) * 2400 *
 					tcs3472_intr_pers[i])
 				break;
 		}
-		ret = i2c_smbus_write_byte_data(data->client, TCS3472_PERS, i);
+		ret = i2c_smbus_write_byte_data(data->client, TCS3472_PERS,
+						(data->ppers << 4) | i);
 		if (ret)
-			goto error;
+			return ret;
 
 		data->apers = i;
-		break;
+		return 0;
 	default:
-		ret = -EINVAL;
-		break;
+		return -EINVAL;
 	}
-error:
-	mutex_unlock(&data->lock);
-
-	return ret;
 }
 
 static int tcs3472_read_event_config(struct iio_dev *indio_dev,
@@ -316,13 +522,13 @@ static int tcs3472_read_event_config(struct iio_dev *indio_dev,
 	enum iio_event_direction dir)
 {
 	struct tcs3472_data *data = iio_priv(indio_dev);
-	int ret;
 
-	mutex_lock(&data->lock);
-	ret = !!(data->enable & TCS3472_ENABLE_AIEN);
-	mutex_unlock(&data->lock);
+	guard(mutex)(&data->lock);
 
-	return ret;
+	if (chan->type == IIO_PROXIMITY)
+		return data->prox_event_enabled;
+
+	return !!(data->enable & TCS3472_ENABLE_AIEN);
 }
 
 static int tcs3472_write_event_config(struct iio_dev *indio_dev,
@@ -333,22 +539,42 @@ static int tcs3472_write_event_config(struct iio_dev *indio_dev,
 	int ret = 0;
 	u8 enable_old;
 
-	mutex_lock(&data->lock);
+	/* No IRQ handler → enabling interrupts would leave INT stuck low */
+	if (!data->client->irq)
+		return -EINVAL;
+
+	guard(mutex)(&data->lock);
 
 	enable_old = data->enable;
 
-	if (state)
-		data->enable |= TCS3472_ENABLE_AIEN;
-	else
-		data->enable &= ~TCS3472_ENABLE_AIEN;
+	if (chan->type == IIO_PROXIMITY) {
+		data->prox_event_enabled = !!state;
+		if (state) {
+			data->enable |= TCS3472_ENABLE_PIEN |
+					TCS3472_ENABLE_PEN |
+					TCS3472_ENABLE_WEN;
+		} else {
+			data->enable &= ~TCS3472_ENABLE_PIEN;
+			if (!data->prox_buf_enabled)
+				data->enable &= ~(TCS3472_ENABLE_PEN |
+						  TCS3472_ENABLE_WEN);
+		}
+	} else {
+		if (state)
+			data->enable |= TCS3472_ENABLE_AIEN;
+		else
+			data->enable &= ~TCS3472_ENABLE_AIEN;
+	}
 
 	if (enable_old != data->enable) {
 		ret = i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE,
 						data->enable);
-		if (ret)
+		if (ret) {
 			data->enable = enable_old;
+			if (chan->type == IIO_PROXIMITY)
+				data->prox_event_enabled = !state;
+		}
 	}
-	mutex_unlock(&data->lock);
 
 	return ret;
 }
@@ -360,14 +586,27 @@ static irqreturn_t tcs3472_event_handler(int irq, void *priv)
 	int ret;
 
 	ret = i2c_smbus_read_byte_data(data->client, TCS3472_STATUS);
-	if (ret >= 0 && (ret & TCS3472_STATUS_AINT)) {
-		iio_push_event(indio_dev, IIO_UNMOD_EVENT_CODE(IIO_INTENSITY, 0,
-						IIO_EV_TYPE_THRESH,
-						IIO_EV_DIR_EITHER),
-				iio_get_time_ns(indio_dev));
+	if (ret < 0)
+		return IRQ_HANDLED;
 
+	if (ret & TCS3472_STATUS_AINT)
+		iio_push_event(indio_dev,
+			       IIO_UNMOD_EVENT_CODE(IIO_INTENSITY, 0,
+						    IIO_EV_TYPE_THRESH,
+						    IIO_EV_DIR_EITHER),
+			       iio_get_time_ns(indio_dev));
+
+	if (ret & TCS3472_STATUS_PINT)
+		iio_push_event(indio_dev,
+			       IIO_UNMOD_EVENT_CODE(IIO_PROXIMITY, 0,
+						    IIO_EV_TYPE_THRESH,
+						    IIO_EV_DIR_EITHER),
+			       iio_get_time_ns(indio_dev));
+
+	if (ret & TCS3472_STATUS_AINT)
 		i2c_smbus_read_byte_data(data->client, TCS3472_INTR_CLEAR);
-	}
+	if (ret & TCS3472_STATUS_PINT)
+		i2c_smbus_read_byte_data(data->client, TCS3472_PROX_INTR_CLEAR);
 
 	return IRQ_HANDLED;
 }
@@ -377,15 +616,20 @@ static irqreturn_t tcs3472_trigger_handler(int irq, void *p)
 	struct iio_poll_func *pf = p;
 	struct iio_dev *indio_dev = pf->indio_dev;
 	struct tcs3472_data *data = iio_priv(indio_dev);
+	unsigned int status_mask = TCS3472_STATUS_AVALID;
 	int i, j = 0;
+	int ret;
 
-	int ret = tcs3472_req_data(data);
+	if (data->prox_event_enabled || data->prox_buf_enabled)
+		status_mask |= TCS3472_STATUS_PVALID;
+
+	ret = tcs3472_req_data(data, status_mask);
 	if (ret < 0)
 		goto done;
 
 	iio_for_each_active_channel(indio_dev, i) {
 		ret = i2c_smbus_read_word_data(data->client,
-			TCS3472_CDATA + 2*i);
+			TCS3472_CDATA + 2 * i);
 		if (ret < 0)
 			goto done;
 
@@ -400,6 +644,54 @@ done:
 
 	return IRQ_HANDLED;
 }
+
+static int tcs3472_buffer_preenable(struct iio_dev *indio_dev)
+{
+	struct tcs3472_data *data = iio_priv(indio_dev);
+	int ret;
+
+	if (!data->chip_info->has_proximity)
+		return 0;
+
+	/* Check if proximity channel (scan_index 4) is in the scan mask */
+	if (!test_bit(4, indio_dev->active_scan_mask))
+		return 0;
+
+	guard(mutex)(&data->lock);
+	data->prox_buf_enabled = true;
+	data->enable |= TCS3472_ENABLE_PEN | TCS3472_ENABLE_WEN;
+	ret = i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE, data->enable);
+	if (ret) {
+		data->prox_buf_enabled = false;
+		if (!data->prox_event_enabled)
+			data->enable &= ~(TCS3472_ENABLE_PEN | TCS3472_ENABLE_WEN);
+	}
+
+	return ret;
+}
+
+static int tcs3472_buffer_postdisable(struct iio_dev *indio_dev)
+{
+	struct tcs3472_data *data = iio_priv(indio_dev);
+
+	if (!data->prox_buf_enabled)
+		return 0;
+
+	guard(mutex)(&data->lock);
+	data->prox_buf_enabled = false;
+	if (!data->prox_event_enabled) {
+		data->enable &= ~(TCS3472_ENABLE_PEN | TCS3472_ENABLE_WEN);
+		i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE,
+					  data->enable);
+	}
+
+	return 0;
+}
+
+static const struct iio_buffer_setup_ops tcs3472_buffer_setup_ops = {
+	.preenable = tcs3472_buffer_preenable,
+	.postdisable = tcs3472_buffer_postdisable,
+};
 
 static ssize_t tcs3472_show_int_time_available(struct device *dev,
 					struct device_attribute *attr,
@@ -431,9 +723,31 @@ static const struct attribute_group tcs3472_attribute_group = {
 	.attrs = tcs3472_attributes,
 };
 
+static int tcs3472_read_avail(struct iio_dev *indio_dev,
+			      struct iio_chan_spec const *chan,
+			      const int **vals, int *type,
+			      int *length, long mask)
+{
+	switch (mask) {
+	case IIO_CHAN_INFO_CALIBBIAS:
+		*vals = tmd3782_pdrive_uamp;
+		*type = IIO_VAL_INT;
+		*length = ARRAY_SIZE(tmd3782_pdrive_uamp);
+		return IIO_AVAIL_LIST;
+	case IIO_CHAN_INFO_OVERSAMPLING_RATIO:
+		*vals = tmd3782_ppulse_range;
+		*type = IIO_VAL_INT;
+		*length = ARRAY_SIZE(tmd3782_ppulse_range);
+		return IIO_AVAIL_RANGE;
+	default:
+		return -EINVAL;
+	}
+}
+
 static const struct iio_info tcs3472_info = {
 	.read_raw = tcs3472_read_raw,
 	.write_raw = tcs3472_write_raw,
+	.read_avail = tcs3472_read_avail,
 	.read_event_value = tcs3472_read_event,
 	.write_event_value = tcs3472_write_event,
 	.read_event_config = tcs3472_read_event_config,
@@ -445,6 +759,7 @@ static int tcs3472_probe(struct i2c_client *client)
 {
 	struct tcs3472_data *data;
 	struct iio_dev *indio_dev;
+	const struct tcs3472_chip_info *match_info;
 	int ret;
 
 	indio_dev = devm_iio_device_alloc(&client->dev, sizeof(*data));
@@ -455,28 +770,55 @@ static int tcs3472_probe(struct i2c_client *client)
 	i2c_set_clientdata(client, indio_dev);
 	data->client = client;
 	mutex_init(&data->lock);
+	match_info = i2c_get_match_data(client);
 
-	indio_dev->info = &tcs3472_info;
-	indio_dev->name = TCS3472_DRV_NAME;
-	indio_dev->channels = tcs3472_channels;
-	indio_dev->num_channels = ARRAY_SIZE(tcs3472_channels);
-	indio_dev->modes = INDIO_DIRECT_MODE;
+	ret = devm_regulator_bulk_get_enable(&client->dev,
+					     ARRAY_SIZE(tcs3472_supply_names),
+					     tcs3472_supply_names);
+	if (ret)
+		return dev_err_probe(&client->dev, ret,
+				     "failed to get regulators\n");
+
+	/* 2.4ms PON warm-up after regulator enable */
+	usleep_range(2500, 3000);
 
 	ret = i2c_smbus_read_byte_data(data->client, TCS3472_ID);
 	if (ret < 0)
 		return ret;
 
-	if (ret == 0x44)
-		dev_info(&client->dev, "TCS34721/34725 found\n");
-	else if (ret == 0x4d)
-		dev_info(&client->dev, "TCS34723/34727 found\n");
-	else
+	if (match_info) {
+		data->chip_info = match_info;
+	} else if (ret == TCS34721_CHIP_ID || ret == TCS34723_CHIP_ID) {
+		data->chip_info = &tcs3472_chip_info;
+	} else if (ret == TMD37821_CHIP_ID || ret == TMD37823_CHIP_ID) {
+		data->chip_info = &tmd3782_chip_info;
+	} else {
 		return -ENODEV;
+	}
+
+	dev_info(&client->dev, "%s (id 0x%02x, rev 0x%02x) found\n",
+		 data->chip_info->name, ret,
+		 i2c_smbus_read_byte_data(client, TCS3472_REVID));
+
+	indio_dev->info = &tcs3472_info;
+	indio_dev->name = data->chip_info->name;
+	indio_dev->channels = data->chip_info->channels;
+	indio_dev->num_channels = data->chip_info->num_channels;
+	indio_dev->modes = INDIO_DIRECT_MODE;
 
 	ret = i2c_smbus_read_byte_data(data->client, TCS3472_CONTROL);
 	if (ret < 0)
 		return ret;
 	data->control = ret;
+
+	if (data->chip_info->has_proximity) {
+		data->control |= TCS3472_CONTROL_RSVD5;
+
+		ret = i2c_smbus_write_byte_data(data->client, TCS3472_CONTROL,
+						data->control);
+		if (ret < 0)
+			return ret;
+	}
 
 	ret = i2c_smbus_read_byte_data(data->client, TCS3472_ATIME);
 	if (ret < 0)
@@ -493,9 +835,42 @@ static int tcs3472_probe(struct i2c_client *client)
 		return ret;
 	data->high_thresh = ret;
 
+	if (data->chip_info->has_proximity) {
+		data->ppulse = 6;
+		ret = i2c_smbus_write_byte_data(data->client, TCS3472_PPULSE,
+						data->ppulse);
+		if (ret < 0)
+			return ret;
+
+		/*
+		 * PPERS=3 matches downstream (intr_filter=0x33): interrupt fires
+		 * after 3 consecutive out-of-range readings, filtering transient
+		 * reflections. Downstream uses APERS=3 too, but we keep APERS=1
+		 * (existing tcs3472 default) for backward compatibility.
+		 */
+		data->ppers = 3;
+
+		/* Read proximity thresholds from hardware */
+		ret = i2c_smbus_read_word_data(data->client, TCS3472_PILT);
+		if (ret < 0)
+			return ret;
+		data->prox_low_thresh = ret;
+
+		ret = i2c_smbus_read_word_data(data->client, TCS3472_PIHT);
+		if (ret < 0)
+			return ret;
+		data->prox_high_thresh = ret;
+
+		/* vled regulator for IR LED — optional */
+		ret = devm_regulator_get_enable_optional(&client->dev, "vled");
+		if (ret && ret != -ENODEV)
+			return dev_err_probe(&client->dev, ret,
+					     "failed to get vled regulator\n");
+	}
+
 	data->apers = 1;
 	ret = i2c_smbus_write_byte_data(data->client, TCS3472_PERS,
-					data->apers);
+					(data->ppers << 4) | data->apers);
 	if (ret < 0)
 		return ret;
 
@@ -511,16 +886,17 @@ static int tcs3472_probe(struct i2c_client *client)
 	if (ret < 0)
 		return ret;
 
+	data->enable_saved = data->enable;
+
 	ret = iio_triggered_buffer_setup(indio_dev, NULL,
-		tcs3472_trigger_handler, NULL);
+		tcs3472_trigger_handler, &tcs3472_buffer_setup_ops);
 	if (ret < 0)
 		return ret;
 
 	if (client->irq) {
 		ret = request_threaded_irq(client->irq, NULL,
 					   tcs3472_event_handler,
-					   IRQF_TRIGGER_FALLING | IRQF_SHARED |
-					   IRQF_ONESHOT,
+					   IRQF_SHARED | IRQF_ONESHOT,
 					   client->name, indio_dev);
 		if (ret)
 			goto buffer_cleanup;
@@ -543,16 +919,13 @@ buffer_cleanup:
 static int tcs3472_powerdown(struct tcs3472_data *data)
 {
 	int ret;
-	u8 enable_mask = TCS3472_ENABLE_AEN | TCS3472_ENABLE_PON;
 
-	mutex_lock(&data->lock);
+	guard(mutex)(&data->lock);
 
-	ret = i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE,
-		data->enable & ~enable_mask);
+	data->enable_saved = data->enable;
+	ret = i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE, 0x00);
 	if (!ret)
-		data->enable &= ~enable_mask;
-
-	mutex_unlock(&data->lock);
+		data->enable = 0;
 
 	return ret;
 }
@@ -580,16 +953,43 @@ static int tcs3472_resume(struct device *dev)
 	struct tcs3472_data *data = iio_priv(i2c_get_clientdata(
 		to_i2c_client(dev)));
 	int ret;
-	u8 enable_mask = TCS3472_ENABLE_AEN | TCS3472_ENABLE_PON;
 
-	mutex_lock(&data->lock);
+	guard(mutex)(&data->lock);
 
+	/* Write PON first, then wait for oscillator warm-up */
 	ret = i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE,
-		data->enable | enable_mask);
-	if (!ret)
-		data->enable |= enable_mask;
+					TCS3472_ENABLE_PON);
+	if (ret)
+		return ret;
 
-	mutex_unlock(&data->lock);
+	usleep_range(2500, 3000);
+
+	/* Restore all configuration registers */
+	i2c_smbus_write_byte_data(data->client, TCS3472_ATIME, data->atime);
+	i2c_smbus_write_byte_data(data->client, TCS3472_WTIME, 0xff);
+	i2c_smbus_write_word_data(data->client, TCS3472_AILT, data->low_thresh);
+	i2c_smbus_write_word_data(data->client, TCS3472_AIHT, data->high_thresh);
+	if (data->chip_info->has_proximity) {
+		i2c_smbus_write_word_data(data->client, TCS3472_PILT,
+					  data->prox_low_thresh);
+		i2c_smbus_write_word_data(data->client, TCS3472_PIHT,
+					  data->prox_high_thresh);
+		i2c_smbus_write_byte_data(data->client, TCS3472_PPULSE,
+					  data->ppulse);
+	}
+	i2c_smbus_write_byte_data(data->client, TCS3472_PERS,
+				  (data->ppers << 4) | data->apers);
+	i2c_smbus_write_byte_data(data->client, TCS3472_CONFIG, 0x00);
+	i2c_smbus_write_byte_data(data->client, TCS3472_CONTROL, data->control);
+
+	/* Clear stale interrupts before re-enabling sources */
+	i2c_smbus_read_byte_data(data->client, TCS3472_ALL_INTR_CLEAR);
+
+	/* Restore ENABLE last — re-activates AEN, interrupt enables, etc. */
+	ret = i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE,
+					data->enable_saved);
+	if (!ret)
+		data->enable = data->enable_saved;
 
 	return ret;
 }
@@ -597,8 +997,18 @@ static int tcs3472_resume(struct device *dev)
 static DEFINE_SIMPLE_DEV_PM_OPS(tcs3472_pm_ops, tcs3472_suspend,
 				tcs3472_resume);
 
+static const struct of_device_id tcs3472_of_match[] = {
+	{ .compatible = "amstaos,tcs3472",
+	  .data = &tcs3472_chip_info },
+	{ .compatible = "amstaos,tmd3782",
+	  .data = &tmd3782_chip_info },
+	{ }
+};
+MODULE_DEVICE_TABLE(of, tcs3472_of_match);
+
 static const struct i2c_device_id tcs3472_id[] = {
-	{ "tcs3472" },
+	{ "tcs3472", (kernel_ulong_t)&tcs3472_chip_info },
+	{ "tmd3782", (kernel_ulong_t)&tmd3782_chip_info },
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, tcs3472_id);
@@ -607,6 +1017,7 @@ static struct i2c_driver tcs3472_driver = {
 	.driver = {
 		.name	= TCS3472_DRV_NAME,
 		.pm	= pm_sleep_ptr(&tcs3472_pm_ops),
+		.of_match_table = tcs3472_of_match,
 	},
 	.probe		= tcs3472_probe,
 	.remove		= tcs3472_remove,
@@ -615,5 +1026,5 @@ static struct i2c_driver tcs3472_driver = {
 module_i2c_driver(tcs3472_driver);
 
 MODULE_AUTHOR("Peter Meerwald <pmeerw@pmeerw.net>");
-MODULE_DESCRIPTION("TCS3472 color light sensors driver");
+MODULE_DESCRIPTION("TCS3472/TMD3782 color light and proximity sensors driver");
 MODULE_LICENSE("GPL");

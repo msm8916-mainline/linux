@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/iio/light/amstaos,tcs3472.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: AMS/TAOS TCS3472/TMD3782 Color Light and Proximity Sensor
+
+maintainers:
+  - Peter Meerwald <pmeerw@pmeerw.net>
+
+description: |
+  RGBC color light-to-digital converter with optional proximity detection.
+  TCS3472 provides 4-channel RGBC sensing. TMD3782 adds an integrated
+  proximity detector with IR LED driver. The TMD3782 family also includes
+  TMD37825/TMD37827 variants at I2C address 0x29 (same die, untested).
+
+  TCS3472 datasheet:
+    https://ams.com/documents/20143/36005/TCS3472_DS000190_1-00.pdf
+
+  TMD3782 datasheet:
+    https://media.digikey.com/pdf/Data%20Sheets/Austriamicrosystems%20PDFs/TMD3782_v2.pdf
+
+properties:
+  compatible:
+    enum:
+      - amstaos,tcs3472
+      - amstaos,tmd3782
+
+  reg:
+    maxItems: 1
+
+  interrupts:
+    maxItems: 1
+
+  vdd-supply:
+    description: Regulator that provides power to the sensor
+
+  vddio-supply:
+    description: Regulator that provides power to the I2C bus
+
+  vled-supply:
+    description: Regulator that provides power to the proximity IR LED
+
+required:
+  - compatible
+  - reg
+
+additionalProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/interrupt-controller/irq.h>
+
+    i2c {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        light-sensor@39 {
+                compatible = "amstaos,tmd3782";
+                reg = <0x39>;
+                interrupts = <113 IRQ_TYPE_LEVEL_LOW>;
+                vdd-supply = <&reg_prox_vdd>;
+                vddio-supply = <&pm8916_l5>;
+                vled-supply = <&reg_prox_led>;
+        };
+    };
+...

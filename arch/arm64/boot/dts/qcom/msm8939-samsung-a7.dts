@@ -166,6 +166,19 @@
 			vdd-supply = <&pm8916_l17>;
 			vddio-supply = <&pm8916_l5>;
 		};
+
+		light-sensor@39 {
+			compatible = "amstaos,tmd3782";
+			reg = <0x39>;
+			interrupts-extended = <&tlmm 113 IRQ_TYPE_LEVEL_LOW>;
+
+			vdd-supply = <&pm8916_l17>;
+			vddio-supply = <&pm8916_l5>;
+			vled-supply = <&pm8916_l17>;
+
+			pinctrl-0 = <&prox_int_default>;
+			pinctrl-names = "default";
+		};
 	};
 
 	i2c-tkey {
@@ -698,6 +711,13 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+	prox_int_default: prox-int-default-state {
+		pins = "gpio113";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
 	};
 
 	reg_tsp_en_default: reg-tsp-en-default-state {
