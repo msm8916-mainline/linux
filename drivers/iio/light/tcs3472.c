@@ -15,6 +15,7 @@
 
 #include <linux/module.h>
 #include <linux/i2c.h>
+#include <linux/cleanup.h>
 #include <linux/delay.h>
 #include <linux/of.h>
 #include <linux/pm.h>
@@ -273,23 +274,26 @@ static int tcs3472_read_raw(struct iio_dev *indio_dev,
 		if (chan->type == IIO_PROXIMITY) {
 			bool cold;
 
-			mutex_lock(&data->lock);
-			cold = !data->prox_event_enabled && !data->prox_buf_enabled;
-			if (cold) {
-				data->enable |= TCS3472_ENABLE_PEN |
-						TCS3472_ENABLE_WEN;
-				ret = i2c_smbus_write_byte_data(data->client,
-							  TCS3472_ENABLE,
-							  data->enable);
-				if (ret) {
-					data->enable &= ~(TCS3472_ENABLE_PEN |
+			{
+				guard(mutex)(&data->lock);
+				cold = !data->prox_event_enabled &&
+				       !data->prox_buf_enabled;
+				if (cold) {
+					data->enable |= TCS3472_ENABLE_PEN |
+							TCS3472_ENABLE_WEN;
+					ret = i2c_smbus_write_byte_data(
+						data->client, TCS3472_ENABLE,
+						data->enable);
+					if (ret) {
+						data->enable &=
+							~(TCS3472_ENABLE_PEN |
 							  TCS3472_ENABLE_WEN);
-					mutex_unlock(&data->lock);
-					iio_device_release_direct_mode(indio_dev);
-					return ret;
+						iio_device_release_direct_mode(
+							indio_dev);
+						return ret;
+					}
 				}
 			}
-			mutex_unlock(&data->lock);
 
 			ret = tcs3472_req_data(data, TCS3472_STATUS_PVALID);
 			if (ret >= 0)
@@ -297,7 +301,7 @@ static int tcs3472_read_raw(struct iio_dev *indio_dev,
 							       chan->address);
 
 			if (cold) {
-				mutex_lock(&data->lock);
+				guard(mutex)(&data->lock);
 				if (!data->prox_event_enabled &&
 				    !data->prox_buf_enabled) {
 					data->enable &= ~(TCS3472_ENABLE_PEN |
@@ -306,7 +310,6 @@ static int tcs3472_read_raw(struct iio_dev *indio_dev,
 								  TCS3472_ENABLE,
 								  data->enable);
 				}
-				mutex_unlock(&data->lock);
 			}
 		} else {
 			ret = tcs3472_req_data(data, TCS3472_STATUS_AVALID);
@@ -345,6 +348,7 @@ static int tcs3472_write_raw(struct iio_dev *indio_dev,
 			return -EINVAL;
 		for (i = 0; i < ARRAY_SIZE(tcs3472_agains); i++) {
 			if (val == tcs3472_agains[i]) {
+				guard(mutex)(&data->lock);
 				data->control &= ~TCS3472_CONTROL_AGAIN_MASK;
 				data->control |= i;
 				return i2c_smbus_write_byte_data(
@@ -384,10 +388,9 @@ static int tcs3472_read_event(struct iio_dev *indio_dev,
 	int *val2)
 {
 	struct tcs3472_data *data = iio_priv(indio_dev);
-	int ret;
 	unsigned int period;
 
-	mutex_lock(&data->lock);
+	guard(mutex)(&data->lock);
 
 	switch (info) {
 	case IIO_EV_INFO_VALUE:
@@ -397,23 +400,16 @@ static int tcs3472_read_event(struct iio_dev *indio_dev,
 		else
 			*val = (dir == IIO_EV_DIR_RISING) ?
 				data->high_thresh : data->low_thresh;
-		ret = IIO_VAL_INT;
-		break;
+		return IIO_VAL_INT;
 	case IIO_EV_INFO_PERIOD:
 		period = (256 - data->atime) * 2400 *
 			tcs3472_intr_pers[data->apers];
 		*val = period / USEC_PER_SEC;
 		*val2 = period % USEC_PER_SEC;
-		ret = IIO_VAL_INT_PLUS_MICRO;
-		break;
+		return IIO_VAL_INT_PLUS_MICRO;
 	default:
-		ret = -EINVAL;
-		break;
+		return -EINVAL;
 	}
-
-	mutex_unlock(&data->lock);
-
-	return ret;
 }
 
 static int tcs3472_write_event(struct iio_dev *indio_dev,
@@ -427,7 +423,8 @@ static int tcs3472_write_event(struct iio_dev *indio_dev,
 	int period;
 	int i;
 
-	mutex_lock(&data->lock);
+	guard(mutex)(&data->lock);
+
 	switch (info) {
 	case IIO_EV_INFO_VALUE:
 		if (chan->type == IIO_PROXIMITY) {
@@ -439,8 +436,7 @@ static int tcs3472_write_event(struct iio_dev *indio_dev,
 				command = TCS3472_PILT;
 				break;
 			default:
-				ret = -EINVAL;
-				goto error;
+				return -EINVAL;
 			}
 		} else {
 			switch (dir) {
@@ -451,13 +447,12 @@ static int tcs3472_write_event(struct iio_dev *indio_dev,
 				command = TCS3472_AILT;
 				break;
 			default:
-				ret = -EINVAL;
-				goto error;
+				return -EINVAL;
 			}
 		}
 		ret = i2c_smbus_write_word_data(data->client, command, val);
 		if (ret)
-			goto error;
+			return ret;
 
 		if (chan->type == IIO_PROXIMITY) {
 			if (dir == IIO_EV_DIR_RISING)
@@ -470,13 +465,11 @@ static int tcs3472_write_event(struct iio_dev *indio_dev,
 			else
 				data->low_thresh = val;
 		}
-		break;
+		return 0;
 	case IIO_EV_INFO_PERIOD:
-		/* Period only applies to ALS events (APERS non-linear mapping) */
-		if (chan->type == IIO_PROXIMITY) {
-			ret = -EINVAL;
-			goto error;
-		}
+		if (chan->type == IIO_PROXIMITY)
+			return -EINVAL;
+
 		period = val * USEC_PER_SEC + val2;
 		for (i = 1; i < ARRAY_SIZE(tcs3472_intr_pers) - 1; i++) {
 			if (period <= (256 - data->atime) * 2400 *
@@ -486,18 +479,13 @@ static int tcs3472_write_event(struct iio_dev *indio_dev,
 		ret = i2c_smbus_write_byte_data(data->client, TCS3472_PERS,
 						(data->ppers << 4) | i);
 		if (ret)
-			goto error;
+			return ret;
 
 		data->apers = i;
-		break;
+		return 0;
 	default:
-		ret = -EINVAL;
-		break;
+		return -EINVAL;
 	}
-error:
-	mutex_unlock(&data->lock);
-
-	return ret;
 }
 
 static int tcs3472_read_event_config(struct iio_dev *indio_dev,
@@ -505,16 +493,13 @@ static int tcs3472_read_event_config(struct iio_dev *indio_dev,
 	enum iio_event_direction dir)
 {
 	struct tcs3472_data *data = iio_priv(indio_dev);
-	int ret;
 
-	mutex_lock(&data->lock);
+	guard(mutex)(&data->lock);
+
 	if (chan->type == IIO_PROXIMITY)
-		ret = data->prox_event_enabled;
-	else
-		ret = !!(data->enable & TCS3472_ENABLE_AIEN);
-	mutex_unlock(&data->lock);
+		return data->prox_event_enabled;
 
-	return ret;
+	return !!(data->enable & TCS3472_ENABLE_AIEN);
 }
 
 static int tcs3472_write_event_config(struct iio_dev *indio_dev,
@@ -529,7 +514,7 @@ static int tcs3472_write_event_config(struct iio_dev *indio_dev,
 	if (!data->client->irq)
 		return -EINVAL;
 
-	mutex_lock(&data->lock);
+	guard(mutex)(&data->lock);
 
 	enable_old = data->enable;
 
@@ -541,7 +526,6 @@ static int tcs3472_write_event_config(struct iio_dev *indio_dev,
 					TCS3472_ENABLE_WEN;
 		} else {
 			data->enable &= ~TCS3472_ENABLE_PIEN;
-			/* Only drop PEN+WEN if buffer isn't using proximity */
 			if (!data->prox_buf_enabled)
 				data->enable &= ~(TCS3472_ENABLE_PEN |
 						  TCS3472_ENABLE_WEN);
@@ -562,7 +546,6 @@ static int tcs3472_write_event_config(struct iio_dev *indio_dev,
 				data->prox_event_enabled = !state;
 		}
 	}
-	mutex_unlock(&data->lock);
 
 	return ret;
 }
@@ -645,7 +628,7 @@ static int tcs3472_buffer_preenable(struct iio_dev *indio_dev)
 	if (!test_bit(4, indio_dev->active_scan_mask))
 		return 0;
 
-	mutex_lock(&data->lock);
+	guard(mutex)(&data->lock);
 	data->prox_buf_enabled = true;
 	data->enable |= TCS3472_ENABLE_PEN | TCS3472_ENABLE_WEN;
 	ret = i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE, data->enable);
@@ -654,7 +637,6 @@ static int tcs3472_buffer_preenable(struct iio_dev *indio_dev)
 		if (!data->prox_event_enabled)
 			data->enable &= ~(TCS3472_ENABLE_PEN | TCS3472_ENABLE_WEN);
 	}
-	mutex_unlock(&data->lock);
 
 	return ret;
 }
@@ -666,14 +648,13 @@ static int tcs3472_buffer_postdisable(struct iio_dev *indio_dev)
 	if (!data->prox_buf_enabled)
 		return 0;
 
-	mutex_lock(&data->lock);
+	guard(mutex)(&data->lock);
 	data->prox_buf_enabled = false;
 	if (!data->prox_event_enabled) {
 		data->enable &= ~(TCS3472_ENABLE_PEN | TCS3472_ENABLE_WEN);
 		i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE,
 					  data->enable);
 	}
-	mutex_unlock(&data->lock);
 
 	return 0;
 }
@@ -909,14 +890,12 @@ static int tcs3472_powerdown(struct tcs3472_data *data)
 {
 	int ret;
 
-	mutex_lock(&data->lock);
+	guard(mutex)(&data->lock);
 
 	data->enable_saved = data->enable;
 	ret = i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE, 0x00);
 	if (!ret)
 		data->enable = 0;
-
-	mutex_unlock(&data->lock);
 
 	return ret;
 }
@@ -945,13 +924,13 @@ static int tcs3472_resume(struct device *dev)
 		to_i2c_client(dev)));
 	int ret;
 
-	mutex_lock(&data->lock);
+	guard(mutex)(&data->lock);
 
 	/* Write PON first, then wait for oscillator warm-up */
 	ret = i2c_smbus_write_byte_data(data->client, TCS3472_ENABLE,
 					TCS3472_ENABLE_PON);
 	if (ret)
-		goto unlock;
+		return ret;
 
 	usleep_range(2500, 3000);
 
@@ -973,11 +952,7 @@ static int tcs3472_resume(struct device *dev)
 	i2c_smbus_write_byte_data(data->client, TCS3472_CONFIG, 0x00);
 	i2c_smbus_write_byte_data(data->client, TCS3472_CONTROL, data->control);
 
-	/* Clear stale interrupt flags before re-enabling interrupt sources.
-	 * Use ALL_INTR_CLEAR (0xE7) rather than INTR_CLEAR (0xE6) so
-	 * proximity interrupts are also cleared for TMD3782. Harmless
-	 * for TCS3472 — PINT is never set on that chip.
-	 */
+	/* Clear stale interrupts before re-enabling sources */
 	i2c_smbus_read_byte_data(data->client, TCS3472_ALL_INTR_CLEAR);
 
 	/* Restore ENABLE last — re-activates AEN, interrupt enables, etc. */
@@ -985,9 +960,6 @@ static int tcs3472_resume(struct device *dev)
 					data->enable_saved);
 	if (!ret)
 		data->enable = data->enable_saved;
-
-unlock:
-	mutex_unlock(&data->lock);
 
 	return ret;
 }
