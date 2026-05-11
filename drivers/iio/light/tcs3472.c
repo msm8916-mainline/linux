@@ -15,6 +15,7 @@
 
 #include <linux/module.h>
 #include <linux/i2c.h>
+#include <linux/bitfield.h>
 #include <linux/cleanup.h>
 #include <linux/delay.h>
 #include <linux/of.h>
@@ -184,13 +185,7 @@ static const struct iio_event_spec tmd3782_prox_events[] = {
 
 static const int tcs3472_agains[] = { 1, 4, 16, 60 };
 
-static const int tcs3472_led_currents[][2] = {
-	{ 100000, 0x00 },
-	{  50000, 0x01 },
-	{  25000, 0x02 },
-	{  12500, 0x03 },
-	{      0, 0x00 },  /* sentinel, also default = 100mA */
-};
+static const int tmd3782_pdrive_uamp[] = { 100000, 50000, 25000, 12500 };
 
 static const struct iio_chan_spec tcs3472_channels[] = {
 	TCS3472_CHANNEL(CLEAR, 0, TCS3472_CDATA),
@@ -208,7 +203,10 @@ static const struct iio_chan_spec tmd3782_channels[] = {
 	{
 		.type = IIO_PROXIMITY,
 		.address = TCS3472_PDATA,
-		.info_mask_separate = BIT(IIO_CHAN_INFO_RAW),
+		.info_mask_separate = BIT(IIO_CHAN_INFO_RAW) |
+				      BIT(IIO_CHAN_INFO_CALIBBIAS),
+		.info_mask_separate_available =
+				      BIT(IIO_CHAN_INFO_CALIBBIAS),
 		.scan_index = 4,
 		.scan_type = {
 			.sign = 'u',
@@ -331,6 +329,10 @@ static int tcs3472_read_raw(struct iio_dev *indio_dev,
 		*val = 0;
 		*val2 = (256 - data->atime) * 2400;
 		return IIO_VAL_INT_PLUS_MICRO;
+	case IIO_CHAN_INFO_CALIBBIAS:
+		*val = tmd3782_pdrive_uamp[FIELD_GET(TMD3782_CONTROL_PDRIVE_MASK,
+						     data->control)];
+		return IIO_VAL_INT;
 	}
 	return -EINVAL;
 }
@@ -367,7 +369,21 @@ static int tcs3472_write_raw(struct iio_dev *indio_dev,
 					data->client, TCS3472_ATIME,
 					data->atime);
 			}
-
+		}
+		return -EINVAL;
+	case IIO_CHAN_INFO_CALIBBIAS:
+		if (val2 != 0)
+			return -EINVAL;
+		for (i = 0; i < ARRAY_SIZE(tmd3782_pdrive_uamp); i++) {
+			if (val == tmd3782_pdrive_uamp[i]) {
+				guard(mutex)(&data->lock);
+				data->control &= ~TMD3782_CONTROL_PDRIVE_MASK;
+				data->control |= FIELD_PREP(
+					TMD3782_CONTROL_PDRIVE_MASK, i);
+				return i2c_smbus_write_byte_data(
+					data->client, TCS3472_CONTROL,
+					data->control);
+			}
 		}
 		return -EINVAL;
 	}
@@ -694,9 +710,26 @@ static const struct attribute_group tcs3472_attribute_group = {
 	.attrs = tcs3472_attributes,
 };
 
+static int tcs3472_read_avail(struct iio_dev *indio_dev,
+			      struct iio_chan_spec const *chan,
+			      const int **vals, int *type,
+			      int *length, long mask)
+{
+	switch (mask) {
+	case IIO_CHAN_INFO_CALIBBIAS:
+		*vals = tmd3782_pdrive_uamp;
+		*type = IIO_VAL_INT;
+		*length = ARRAY_SIZE(tmd3782_pdrive_uamp);
+		return IIO_AVAIL_LIST;
+	default:
+		return -EINVAL;
+	}
+}
+
 static const struct iio_info tcs3472_info = {
 	.read_raw = tcs3472_read_raw,
 	.write_raw = tcs3472_write_raw,
+	.read_avail = tcs3472_read_avail,
 	.read_event_value = tcs3472_read_event,
 	.write_event_value = tcs3472_write_event,
 	.read_event_config = tcs3472_read_event_config,
@@ -761,23 +794,7 @@ static int tcs3472_probe(struct i2c_client *client)
 	data->control = ret;
 
 	if (data->chip_info->has_proximity) {
-		u32 led_ua;
-		int i, pdrive = 0x00; /* default 100mA */
-
-		/* TMD3782 datasheet page 25, Figure 34: bit 5 must be 1 */
 		data->control |= TCS3472_CONTROL_RSVD5;
-
-		if (!device_property_read_u32(&client->dev, "led-max-microamp",
-					      &led_ua)) {
-			for (i = 0; tcs3472_led_currents[i][0]; i++) {
-				if (led_ua == tcs3472_led_currents[i][0]) {
-					pdrive = tcs3472_led_currents[i][1];
-					break;
-				}
-			}
-		}
-		data->control &= ~TMD3782_CONTROL_PDRIVE_MASK;
-		data->control |= (pdrive << 6);
 
 		ret = i2c_smbus_write_byte_data(data->client, TCS3472_CONTROL,
 						data->control);

@@ -80,7 +80,6 @@
 		vddio-supply = <&pm8916_l5>;
 		vled-supply = <&reg_prox_vled>;
 
-		led-max-microamp = <100000>;
 		amstaos,proximity-pulse-count = <6>;
 
 		pinctrl-0 = <&prox_int_default>;

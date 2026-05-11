@@ -42,14 +42,6 @@ properties:
   vled-supply:
     description: Regulator that provides power to the proximity IR LED
 
-  led-max-microamp:
-    description: Maximum proximity LED drive current in microamps
-    enum:
-      - 12500
-      - 25000
-      - 50000
-      - 100000
-
   amstaos,proximity-pulse-count:
     description:
       Number of proximity IR LED pulses per measurement cycle.
@@ -80,7 +72,6 @@ examples:
                 vdd-supply = <&reg_prox_vdd>;
                 vddio-supply = <&pm8916_l5>;
                 vled-supply = <&reg_prox_led>;
-                led-max-microamp = <100000>;
                 amstaos,proximity-pulse-count = <6>;
         };
     };
