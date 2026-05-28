@@ -121,8 +121,7 @@
 		compatible = "goodix,gt928";
 		reg = <0x14>;
 
-		interrupt-parent = <&tlmm>;
-		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+		interrupts-extended = <&tlmm 13 IRQ_TYPE_EDGE_FALLING>;
 
 		irq-gpios = <&tlmm 13 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
@@ -158,6 +157,7 @@
 		regulator-min-microvolt = <2850000>;
 		regulator-max-microvolt = <2850000>;
 	};
+
 	pm8916_l17: l17 {
 		regulator-min-microvolt = <2850000>;
 		regulator-max-microvolt = <2850000>;
@@ -245,6 +245,7 @@
 		drive-strength = <8>;
 		bias-pull-up;
 	};
+
 	ts_int_default: ts-int-default-state {
 		pins = "gpio13";
 		function = "gpio";
