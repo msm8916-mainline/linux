@@ -3,9 +3,37 @@
 /dts-v1/;
 
 #include "msm8916-pm8916.dtsi"
+#include <dt-bindings/gpio/gpio.h>
 
 / {
     model = "vivo Y927 (PD1410V)";
     compatible = "vivo,y927", "qcom,msm8916";
     chassis-type = "handset";
+
+    usb_id: usb-id {
+        compatible = "linux,extcon-usb-gpio";
+        id-gpios = <&tlmm 110 GPIO_ACTIVE_HIGH>;
+        pinctrl-names = "default";
+        pinctrl-0 = <&usb_id_default>;
+    };
+};
+
+&usb {
+    dr_mode = "peripheral";
+    extcon = <&usb_id>, <&usb_id>;
+    status = "okay";
+};
+
+&usb_hs_phy {
+    extcon = <&usb_id>;
+    status = "okay";
+};
+
+&tlmm {
+    usb_id_default: usb-id-default {
+        pins = "gpio110";
+        function = "gpio";
+        drive-strength = <8>;
+        bias-pull-up;
+    };
 };
