@@ -10,6 +10,12 @@
     compatible = "vivo,y927", "qcom,msm8916";
     chassis-type = "handset";
 
+    aliases {
+        mmc0 = &sdhc_1;   // eMMC 固化为 /dev/mmcblk0
+        mmc1 = &sdhc_2;   // SD 卡 固化为 /dev/mmcblk1
+    };
+
+
     usb_id: usb-id {
         compatible = "linux,extcon-usb-gpio";
         id-gpios = <&tlmm 110 GPIO_ACTIVE_HIGH>;
@@ -36,4 +42,13 @@
         drive-strength = <8>;
         bias-pull-up;
     };
+};
+
+&sdhc_1 {
+    status = "okay";   // eMMC（内部存储）
+};
+
+&sdhc_2 {
+    status = "okay";   // SD 卡（TF 卡槽）
+    cd-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
 };
