@@ -207,3 +207,15 @@
         pinctrl-0 = <&touchscreen_default>;
     };
 };
+
+&wcnss {
+    status = "okay";
+};
+
+&wcnss_iris {
+    compatible = "qcom,wcn3620";        /* Y927 实测；与 lk2nd DTS 一致 */
+};
+
+&wcnss_mem {
+    status = "okay";
+};
