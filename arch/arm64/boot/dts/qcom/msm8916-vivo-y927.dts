@@ -219,3 +219,7 @@
 &wcnss_mem {
     status = "okay";
 };
+
+&gpu {
+    status = "okay";
+};
