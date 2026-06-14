@@ -15,12 +15,46 @@
         mmc1 = &sdhc_2;   // SD 卡 固化为 /dev/mmcblk1
     };
 
-
     usb_id: usb-id {
         compatible = "linux,extcon-usb-gpio";
         id-gpios = <&tlmm 110 GPIO_ACTIVE_HIGH>;
         pinctrl-names = "default";
         pinctrl-0 = <&usb_id_default>;
+    };
+
+    /* 背光（GPIO8 控制） */
+    backlight: backlight {
+        compatible = "gpio-backlight";
+        gpios = <&tlmm 8 GPIO_ACTIVE_HIGH>;
+        default-on;
+    };
+
+    /* LCD 偏压电源 VSP */
+    reg_lcd_enp: regulator-lcd-enp {
+        compatible = "regulator-fixed";
+        regulator-name = "lcd_enp";
+        gpio = <&tlmm 97 GPIO_ACTIVE_HIGH>;
+        enable-active-high;
+        regulator-always-on;     /* lmdpdg 生成的 panel 驱动不读 vsp/vsn-supply */
+        regulator-boot-on;       /* 必须 always-on，否则 fixed regulator 启动时被拉低，屏黑 */
+    };
+
+    /* LCD 偏压电源 VSN */
+    reg_lcd_enn: regulator-lcd-enn {
+        compatible = "regulator-fixed";
+        regulator-name = "lcd_enn";
+        gpio = <&tlmm 98 GPIO_ACTIVE_HIGH>;
+        enable-active-high;
+        regulator-always-on;
+        regulator-boot-on;
+    };
+
+    /* 预留 lk1st splash framebuffer 不被内核踩踏 */
+    reserved-memory {
+        cont-splash@83200000 {
+            reg = <0 0x83200000 0 0x800000>;
+            no-map;
+        };
     };
 };
 
@@ -42,6 +76,20 @@
         drive-strength = <8>;
         bias-pull-up;
     };
+
+    /* DSI reset pin (GPIO25) */
+    mdss_default: mdss-default-state {
+        pins = "gpio25";
+        function = "gpio";
+        drive-strength = <8>;
+        bias-disable;
+    };
+    mdss_sleep: mdss-sleep-state {
+        pins = "gpio25";
+        function = "gpio";
+        drive-strength = <2>;
+        bias-pull-down;
+    };
 };
 
 &sdhc_1 {
@@ -51,4 +99,37 @@
 &sdhc_2 {
     status = "okay";   // SD 卡（TF 卡槽）
     cd-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+};
+
+/* ====== DSI 主机 + 面板 ====== */
+&mdss {
+    status = "okay";
+};
+
+&mdss_dsi0 {
+    pinctrl-names = "default", "sleep";
+    pinctrl-0 = <&mdss_default>;
+    pinctrl-1 = <&mdss_sleep>;
+    status = "okay";
+
+    panel@0 {
+        compatible = "vivo,y927-hx8394a";
+        reg = <0>;
+        reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+        backlight = <&backlight>;
+        vsp-supply = <&reg_lcd_enp>;
+        vsn-supply = <&reg_lcd_enn>;
+
+        port {
+            panel_in: endpoint {
+                remote-endpoint = <&mdss_dsi0_out>;
+            };
+        };
+    };
+};
+
+/* DSI host 输出端：data-lanes + remote-endpoint 必须放在这里 */
+&mdss_dsi0_out {
+    data-lanes = <0 1 2 3>;
+    remote-endpoint = <&panel_in>;
 };
