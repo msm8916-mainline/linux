@@ -5,6 +5,7 @@
 #include "msm8916-pm8916.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/interrupt-controller/irq.h>
 
 / {
     model = "vivo Y927 (PD1410V)";
@@ -112,11 +113,35 @@
         drive-strength = <2>;
         bias-pull-up;
     };
+
+    /* 触摸屏 IRQ (GPIO13) + RESET (GPIO12) */
+    touchscreen_default: touchscreen-default-state {
+        touch-pins {
+            pins = "gpio13";
+            function = "gpio";
+            drive-strength = <2>;
+            bias-pull-up;
+        };
+        reset-pins {
+            pins = "gpio12";
+            function = "gpio";
+            drive-strength = <2>;
+            bias-disable;
+        };
+    };
 };
 
 &pm8916_resin {
     linux,code = <KEY_VOLUMEDOWN>;
     status = "okay";
+};
+
+/* PM8916 LDO16：触摸屏 AVDD28 (2.85V)。dtsi 里默认未声明 LDO16，板级要补上。 */
+&pm8916_rpm_regulators {
+    pm8916_l16: l16 {
+        regulator-min-microvolt = <2850000>;
+        regulator-max-microvolt = <2850000>;
+    };
 };
 
 
@@ -160,4 +185,25 @@
 &mdss_dsi0_out {
     data-lanes = <0 1 2 3>;
     remote-endpoint = <&panel_in>;
+};
+
+
+/* ====== 触摸屏 (Goodix GT9271 on BLSP I2C5 @ 0x14) ====== */
+&blsp_i2c5 {
+    status = "okay";
+
+    touchscreen@14 {
+        compatible = "goodix,gt9271";
+        reg = <0x14>;
+        interrupt-parent = <&tlmm>;
+        interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+        irq-gpios = <&tlmm 13 GPIO_ACTIVE_HIGH>;
+        reset-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+        AVDD28-supply = <&pm8916_l16>;
+        VDDIO-supply = <&pm8916_l6>;
+        touchscreen-size-x = <720>;
+        touchscreen-size-y = <1280>;
+        pinctrl-names = "default";
+        pinctrl-0 = <&touchscreen_default>;
+    };
 };
