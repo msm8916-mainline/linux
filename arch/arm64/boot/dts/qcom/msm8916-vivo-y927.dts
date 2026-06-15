@@ -73,6 +73,28 @@
             linux,code = <KEY_VOLUMEUP>;
         };
     };
+
+    /*
+     * Y927 原厂电池：4.35V / 2260 mAh
+     * 数据来源：原厂 DTB `qcom,b76-atl-4v35-2260mah-data` 节点。
+     * OCV 表为 25°C 下的电压→容量映射，主线 simple-battery 的标准做法。
+     */
+    battery: battery {
+        compatible = "simple-battery";
+        voltage-min-design-microvolt = <3400000>;
+        voltage-max-design-microvolt = <4350000>;
+        energy-full-design-microwatt-hours = <8588000>;
+        charge-full-design-microamp-hours = <2260000>;
+        ocv-capacity-celsius = <25>;
+        ocv-capacity-table-0 = <
+            4342000 100  4288000 95   4234000 90   4189000 85
+            4148000 80   4111000 75   4075000 70   4041000 65
+            4008000 60   3977000 55   3949000 50   3922000 45
+            3895000 40   3866000 35   3835000 30   3803000 25
+            3774000 20   3744000 15   3711000 10   3674000 5
+            3634000 0
+        >;
+    };
 };
 
 &usb {
@@ -222,4 +244,17 @@
 
 &gpu {
     status = "okay";
+};
+
+&pm8916_bms {
+    status = "okay";
+    monitored-battery = <&battery>;
+    power-supplies = <&pm8916_charger>;
+};
+
+&pm8916_charger {
+    status = "okay";
+    monitored-battery = <&battery>;
+    qcom,fast-charge-safe-current = <900000>;       /* 0.9 A 安全限流 */
+    qcom,fast-charge-safe-voltage = <4200000>;      /* PM8916 LBC 浮充上限 4.2V */
 };
