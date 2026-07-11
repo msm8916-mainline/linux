@@ -5,6 +5,7 @@
 #include "msm8916-pm8916.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 
 / {
@@ -24,11 +25,15 @@
         pinctrl-0 = <&usb_id_default>;
     };
 
-    /* 背光（GPIO8 控制） */
+    /* LCD backlight: PM8916 LPG/PWM on MPP4, GPIO8 as enable. */
     backlight: backlight {
-        compatible = "gpio-backlight";
-        gpios = <&tlmm 8 GPIO_ACTIVE_HIGH>;
-        default-on;
+        compatible = "pwm-backlight";
+        pwms = <&pm8916_pwm 0 100000>;
+
+        brightness-levels = <0 255>;
+        num-interpolated-steps = <255>;
+        default-brightness-level = <255>;
+        enable-gpios = <&tlmm 8 GPIO_ACTIVE_HIGH>;
     };
 
     /* LCD 偏压电源 VSP */
@@ -257,4 +262,20 @@
     monitored-battery = <&battery>;
     qcom,fast-charge-safe-current = <900000>;       /* 0.9 A 安全限流 */
     qcom,fast-charge-safe-voltage = <4200000>;      /* PM8916 LBC 浮充上限 4.2V */
+};
+
+&pm8916_pwm {
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&pwm_out>;
+};
+
+&pm8916_mpps {
+    pwm_out: mpp4-state {
+        pins = "mpp4";
+        function = "digital";
+        power-source = <PM8916_MPP_VPH>;
+        output-low;
+        qcom,dtest = <1>;
+    };
 };
