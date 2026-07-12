@@ -5,6 +5,7 @@
  * Copyright (C) 2014 Asahi Kasei Microdevices Corporation
  */
 
+#include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/gpio/consumer.h>
 #include <linux/i2c.h>
@@ -12,6 +13,7 @@
 #include <linux/of.h>
 #include <linux/pm_runtime.h>
 #include <linux/regulator/consumer.h>
+#include <sound/pcm_params.h>
 #include <sound/soc.h>
 #include <sound/tlv.h>
 
@@ -72,6 +74,9 @@
 #define AK4375_14_DAC_CLK_DIVIDER		0x14
 #define AK4375_15_AUDIO_IF_FORMAT		0x15
 #define DEVICEID_MASK				GENMASK(7, 5)
+#define DIF_MASK				GENMASK(1, 0)
+#define DIF_24_BIT_MSB_JUSTIFIED		0x0
+#define DIF_16_BIT_I2S				0x1
 #define AK4375_24_MODE_CONTROL			0x24
 
 #define AK4375_PLL_FREQ_OUT_112896000		112896000	/* 44.1 kHz base rate */
@@ -95,6 +100,7 @@ struct ak4375_drvdata {
 struct ak4375_priv {
 	struct device *dev;
 	struct regmap *regmap;
+	struct clk *ref_clk;
 	struct gpio_desc *pdn_gpiod;
 	struct regulator_bulk_data supplies[ARRAY_SIZE(supply_names)];
 	unsigned int rate;
@@ -253,6 +259,25 @@ static int ak4375_hw_params(struct snd_pcm_substream *substream,
 	struct snd_soc_component *component = dai->component;
 	struct ak4375_priv *ak4375 = snd_soc_component_get_drvdata(component);
 	unsigned int freq_in, freq_out;
+	u8 dif;
+	int ret;
+
+	switch (params_format(params)) {
+	case SNDRV_PCM_FORMAT_S16_LE:
+		dif = DIF_16_BIT_I2S;
+		break;
+	case SNDRV_PCM_FORMAT_S24_LE:
+	case SNDRV_PCM_FORMAT_S32_LE:
+		dif = DIF_24_BIT_MSB_JUSTIFIED;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	ret = snd_soc_component_update_bits(component, AK4375_15_AUDIO_IF_FORMAT,
+					    DIF_MASK, dif);
+	if (ret < 0)
+		return ret;
 
 	ak4375->rate = params_rate(params);
 
@@ -417,6 +442,7 @@ static void ak4375_power_off(struct ak4375_priv *ak4375)
 	gpiod_set_value_cansleep(ak4375->pdn_gpiod, 0);
 	usleep_range(1000, 2000);
 
+	clk_disable_unprepare(ak4375->ref_clk);
 	regulator_bulk_disable(ARRAY_SIZE(ak4375->supplies), ak4375->supplies);
 }
 
@@ -427,6 +453,13 @@ static int ak4375_power_on(struct ak4375_priv *ak4375)
 	ret = regulator_bulk_enable(ARRAY_SIZE(ak4375->supplies), ak4375->supplies);
 	if (ret < 0) {
 		dev_err(ak4375->dev, "Failed to enable regulators: %d\n", ret);
+		return ret;
+	}
+
+	ret = clk_prepare_enable(ak4375->ref_clk);
+	if (ret < 0) {
+		dev_err(ak4375->dev, "Failed to enable reference clock: %d\n", ret);
+		regulator_bulk_disable(ARRAY_SIZE(ak4375->supplies), ak4375->supplies);
 		return ret;
 	}
 
@@ -516,6 +549,11 @@ static int ak4375_i2c_probe(struct i2c_client *i2c)
 
 	for (i = 0; i < ARRAY_SIZE(supply_names); i++)
 		ak4375->supplies[i].supply = supply_names[i];
+
+	ak4375->ref_clk = devm_clk_get_optional(ak4375->dev, "ref");
+	if (IS_ERR(ak4375->ref_clk))
+		return dev_err_probe(ak4375->dev, PTR_ERR(ak4375->ref_clk),
+				     "failed to get reference clock\n");
 
 	ret = devm_regulator_bulk_get(ak4375->dev, ARRAY_SIZE(ak4375->supplies), ak4375->supplies);
 	if (ret < 0) {

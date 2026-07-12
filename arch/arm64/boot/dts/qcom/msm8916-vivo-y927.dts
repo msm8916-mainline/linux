@@ -7,6 +7,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
 #include <dt-bindings/sound/apq8016-lpass.h>
+#include <dt-bindings/clock/qcom,rpmcc.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 
 / {
@@ -36,6 +37,15 @@
         default-brightness-level = <255>;
         enable-gpios = <&tlmm 8 GPIO_ACTIVE_HIGH>;
     };
+
+	reg_headphones_avdd: regulator-headphones-avdd {
+		compatible = "regulator-fixed";
+		regulator-name = "headphones-avdd";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		gpio = <&tlmm 36 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
 
     /* LCD 偏压电源 VSP */
     reg_lcd_enp: regulator-lcd-enp {
@@ -135,6 +145,13 @@
         drive-strength = <2>;
         bias-pull-down;
     };
+    headset_jack_default: headset-jack-default-state {
+        pins = "gpio9";
+        function = "gpio";
+        drive-strength = <2>;
+        bias-disable;
+    };
+
     gpio_keys_default: gpio-keys-default-state {
         pins = "gpio107";
         function = "gpio";
@@ -239,6 +256,17 @@
 &blsp_i2c6 {
     status = "okay";
 
+	headphones: audio-codec@10 {
+		compatible = "asahi-kasei,ak4375";
+		reg = <0x10>;
+		avdd-supply = <&reg_headphones_avdd>;
+		tvdd-supply = <&pm8916_l6>;
+		pdn-gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
+		clocks = <&rpmcc RPM_SMD_BB_CLK2_PIN>;
+		clock-names = "ref";
+		#sound-dai-cells = <0>;
+	};
+
     speaker_codec: audio-codec@34 {
         compatible = "nxp,tfa9887", "nxp,tfa9895";
         reg = <0x34>;
@@ -273,19 +301,26 @@
 };
 
 &pm8916_codec {
+    pinctrl-names = "default";
+    pinctrl-0 = <&headset_jack_default>;
+    jack-gpios = <&tlmm 9 GPIO_ACTIVE_LOW>;
+
     qcom,micbias-lvl = <2800>;
     qcom,mbhc-vthreshold-low = <75 150 237 450 500>;
     qcom,mbhc-vthreshold-high = <75 150 237 450 500>;
-    qcom,hphl-jack-type-normally-open;
     status = "okay";
 };
 
 &sound {
-    model = "msm8916-1mic";
-    widgets = "Speaker", "Speaker";
-    pin-switches = "Speaker";
+    model = "vivo-y927";
+	widgets =
+		"Speaker", "Speaker",
+		"Headphone", "Headphones";
+	pin-switches = "Speaker", "Headphones";
     audio-routing =
         "Speaker", "Speaker OUT",
+		"Headphones", "HPL",
+		"Headphones", "HPR",
         "AMIC1", "MIC BIAS External1",
         "AMIC2", "MIC BIAS Internal2",
         "AMIC3", "MIC BIAS External1";
@@ -307,14 +342,14 @@
     };
 
     quaternary-dai-link {
-        link-name = "Speaker";
+        link-name = "External Outputs";
 
         cpu {
             sound-dai = <&lpass MI2S_QUATERNARY>;
         };
 
         codec {
-            sound-dai = <&speaker_codec>;
+            sound-dai = <&headphones>, <&speaker_codec>;
         };
     };
 
