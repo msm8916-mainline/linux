@@ -135,26 +135,47 @@
 #define CHIP_ON_DELAY				15 // ms
 #define FIRMWARE_ON_DELAY			40 // ms
 
+/*
+ * Two Zinitix touch-report layouts exist in the wild. The default is an 8-byte
+ * per-contact stride with a per-finger bitmask in report byte[2]. Some firmware
+ * (e.g. bt532 on the Samsung Galaxy Tab A 8.0) packs contacts at a 6-byte stride
+ * and reports a finger COUNT in byte[2] instead of a bitmask. Selected per
+ * compatible via the of_device_id .data below.
+ */
+struct zinitix_chip_data {
+	unsigned int coord_stride;	/* per-contact byte stride in the report */
+	bool finger_count;		/* byte[2] is a finger count, not a bitmask */
+};
+
+static const struct zinitix_chip_data zinitix_bt532_data = {
+	.coord_stride = 6,
+	.finger_count = true,
+};
+
 struct point_coord {
 	__le16	x;
 	__le16	y;
 	u8	width;
 	u8	sub_status;
-	// currently unused, but needed as padding:
-	u8	minor_width;
-	u8	angle;
+	/*
+	 * 8-byte-stride firmware appends two unused bytes here (minor_width,
+	 * angle); the report is parsed at the chip's coord_stride, so on that
+	 * firmware they are simply skipped rather than being part of this struct.
+	 */
 };
 
 struct touch_event {
 	__le16	status;
 	u8	finger_mask;
 	u8	time_stamp;
-	struct point_coord point_coord[MAX_SUPPORTED_FINGER_NUM];
+	/* raw per-contact bytes, parsed at the chip's coord_stride (max 8) */
+	u8	coords[MAX_SUPPORTED_FINGER_NUM * 8];
 };
 
 struct bt541_ts_data {
 	struct i2c_client *client;
 	struct input_dev *input_dev;
+	const struct zinitix_chip_data *chip;
 	struct touchscreen_properties prop;
 	struct regulator_bulk_data supplies[2];
 	u32 zinitix_mode;
@@ -444,6 +465,8 @@ static irqreturn_t zinitix_ts_irq_handler(int irq, void *bt541_handler)
 {
 	struct bt541_ts_data *bt541 = bt541_handler;
 	struct i2c_client *client = bt541->client;
+	unsigned int stride = bt541->chip ? bt541->chip->coord_stride : 8;
+	bool finger_count = bt541->chip ? bt541->chip->finger_count : false;
 	struct touch_event touch_event;
 	unsigned long finger_mask;
 	__le16 icon_events;
@@ -452,8 +475,11 @@ static irqreturn_t zinitix_ts_irq_handler(int irq, void *bt541_handler)
 
 	memset(&touch_event, 0, sizeof(struct touch_event));
 
+	/* header (status, finger_mask, time_stamp) + one stride per contact */
 	error = zinitix_read_data(bt541->client, ZINITIX_POINT_STATUS_REG,
-				  &touch_event, sizeof(struct touch_event));
+				  &touch_event,
+				  offsetof(struct touch_event, coords) +
+					  MAX_SUPPORTED_FINGER_NUM * stride);
 	if (error) {
 		dev_err(&client->dev, "Failed to read in touchpoint struct\n");
 		goto out;
@@ -470,13 +496,31 @@ static irqreturn_t zinitix_ts_irq_handler(int irq, void *bt541_handler)
 		zinitix_report_keys(bt541, le16_to_cpu(icon_events));
 	}
 
-	finger_mask = touch_event.finger_mask;
-	for_each_set_bit(i, &finger_mask, MAX_SUPPORTED_FINGER_NUM) {
-		const struct point_coord *p = &touch_event.point_coord[i];
+	if (finger_count) {
+		/*
+		 * On this firmware byte[2] is a finger COUNT, not a bitmask: a
+		 * 2-finger report carries 0x02, so for_each_set_bit() would look
+		 * only at slot 1 and silently drop slot 0. The chip marks every
+		 * populated contact with SUB_BIT_EXIST, so iterate all slots and
+		 * report the present ones.
+		 */
+		for (i = 0; i < MAX_SUPPORTED_FINGER_NUM; i++) {
+			const struct point_coord *p =
+				(const struct point_coord *)&touch_event.coords[i * stride];
 
-		/* Only process contacts that are actually reported */
-		if (p->sub_status & SUB_BIT_EXIST)
-			zinitix_report_finger(bt541, i, p);
+			if (p->sub_status & SUB_BIT_EXIST)
+				zinitix_report_finger(bt541, i, p);
+		}
+	} else {
+		/* default: byte[2] is a per-finger bitmask */
+		finger_mask = touch_event.finger_mask;
+		for_each_set_bit(i, &finger_mask, MAX_SUPPORTED_FINGER_NUM) {
+			const struct point_coord *p =
+				(const struct point_coord *)&touch_event.coords[i * stride];
+
+			if (p->sub_status & SUB_BIT_EXIST)
+				zinitix_report_finger(bt541, i, p);
+		}
 	}
 
 	input_mt_sync_frame(bt541->input_dev);
@@ -627,6 +671,7 @@ static int zinitix_ts_probe(struct i2c_client *client)
 		return -ENOMEM;
 
 	bt541->client = client;
+	bt541->chip = device_get_match_data(&client->dev);
 	i2c_set_clientdata(client, bt541);
 
 	error = zinitix_init_regulators(bt541);
@@ -741,7 +786,7 @@ static const struct of_device_id zinitix_of_match[] = {
 	{ .compatible = "zinitix,bt431" },
 	{ .compatible = "zinitix,bt432" },
 	{ .compatible = "zinitix,bt531" },
-	{ .compatible = "zinitix,bt532" },
+	{ .compatible = "zinitix,bt532", .data = &zinitix_bt532_data },
 	{ .compatible = "zinitix,bt538" },
 	{ .compatible = "zinitix,bt541" },
 	{ .compatible = "zinitix,bt548" },
