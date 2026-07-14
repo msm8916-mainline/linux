@@ -132,6 +132,13 @@
 		bias-disable;
 	};
 
+	light_int_default: light-int-default-state {
+		pins = "gpio113";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
     usb_id_default: usb-id-default {
         pins = "gpio110";
         function = "gpio";
@@ -267,6 +274,16 @@
 		reg = <0x0c>;
 		vdd-supply = <&pm8916_l17>;
 		vid-supply = <&pm8916_l6>;
+	};
+
+	light-sensor@39 {
+		compatible = "amstaos,tmd2772";
+		reg = <0x39>;
+		interrupts-extended = <&tlmm 113 IRQ_TYPE_EDGE_FALLING>;
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l6>;
+		pinctrl-0 = <&light_int_default>;
+		pinctrl-names = "default";
 	};
 };
 
