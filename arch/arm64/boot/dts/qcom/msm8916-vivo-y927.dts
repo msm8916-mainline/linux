@@ -261,6 +261,13 @@
 				"0", "-1", "0",
 				"0", "0", "-1";
 	};
+
+	magnetometer@c {
+		compatible = "asahi-kasei,ak8963";
+		reg = <0x0c>;
+		vdd-supply = <&pm8916_l17>;
+		vid-supply = <&pm8916_l6>;
+	};
 };
 
 /* ====== 触摸屏 (Goodix GT9271 on BLSP I2C5 @ 0x14) ====== */
