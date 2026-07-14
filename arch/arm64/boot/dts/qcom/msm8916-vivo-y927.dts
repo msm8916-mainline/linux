@@ -366,6 +366,10 @@
     };
 };
 
+&pm8916_vib {
+	status = "okay";
+};
+
 &pm8916_bms {
     status = "okay";
     monitored-battery = <&battery>;
