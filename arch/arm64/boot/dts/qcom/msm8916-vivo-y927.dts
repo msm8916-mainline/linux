@@ -125,6 +125,13 @@
 };
 
 &tlmm {
+	accel_int_default: accel-int-default-state {
+		pins = "gpio21";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
     usb_id_default: usb-id-default {
         pins = "gpio110";
         function = "gpio";
@@ -187,6 +194,11 @@
         regulator-min-microvolt = <2850000>;
         regulator-max-microvolt = <2850000>;
     };
+
+	pm8916_l17: l17 {
+		regulator-min-microvolt = <2850000>;
+		regulator-max-microvolt = <2850000>;
+	};
 };
 
 
@@ -232,6 +244,24 @@
     remote-endpoint = <&panel_in>;
 };
 
+
+/* ====== 传感器 (BLSP I2C2) ====== */
+&blsp_i2c2 {
+	status = "okay";
+
+	accelerometer@18 {
+		compatible = "st,lis3dh-accel";
+		reg = <0x18>;
+		interrupts-extended = <&tlmm 21 IRQ_TYPE_EDGE_RISING>;
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l6>;
+		pinctrl-0 = <&accel_int_default>;
+		pinctrl-names = "default";
+		mount-matrix = "1", "0", "0",
+				"0", "-1", "0",
+				"0", "0", "-1";
+	};
+};
 
 /* ====== 触摸屏 (Goodix GT9271 on BLSP I2C5 @ 0x14) ====== */
 &blsp_i2c5 {
