@@ -5,6 +5,7 @@
 #include "msm8916-pm8916.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
 #include <dt-bindings/sound/apq8016-lpass.h>
 #include <dt-bindings/clock/qcom,rpmcc.h>
@@ -19,6 +20,19 @@
         mmc0 = &sdhc_1;   // eMMC 固化为 /dev/mmcblk0
         mmc1 = &sdhc_2;   // SD 卡 固化为 /dev/mmcblk1
     };
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&button_backlight_default>;
+
+		led-0 {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_KBD_BACKLIGHT;
+			gpios = <&pm8916_mpps 2 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+	};
 
     usb_id: usb-id {
         compatible = "linux,extcon-usb-gpio";
@@ -448,6 +462,13 @@
 };
 
 &pm8916_mpps {
+	button_backlight_default: mpp2-state {
+		pins = "mpp2";
+		function = "sink";
+		drive-strength = <5>;
+		output-low;
+	};
+
     pwm_out: mpp4-state {
         pins = "mpp4";
         function = "digital";
