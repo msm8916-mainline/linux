@@ -368,6 +368,36 @@
     status = "okay";
 };
 
+&bam_dmux {
+	status = "okay";
+};
+
+&bam_dmux_dma {
+	status = "okay";
+};
+
+&gps_mem {
+	status = "okay";
+};
+
+&mba_mem {
+	status = "okay";
+};
+
+&memshare {
+	status = "okay";
+};
+
+&mpss {
+	status = "okay";
+};
+
+&mpss_mem {
+	/* Matches the modem/adsp carveout in the downstream device tree. */
+	reg = <0x0 0x86800000 0x0 0x4e00000>;
+	status = "okay";
+};
+
 &gpu {
     status = "okay";
 };
