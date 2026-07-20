@@ -61,6 +61,11 @@
 #define PMIC_MPP_REG_AIN_CTL			0x4a
 #define PMIC_MPP_REG_SINK_CTL			0x4c
 
+#define PMIC_MPP_REG_SINK_MASK			0x7
+#define PMIC_MPP_SINK_MIN_MA			5
+#define PMIC_MPP_SINK_MAX_MA			40
+#define PMIC_MPP_SINK_STEP_MA			5
+
 /* PMIC_MPP_REG_MODE_CTL */
 #define PMIC_MPP_REG_MODE_VALUE_MASK		0x1
 #define PMIC_MPP_REG_MODE_FUNCTION_SHIFT	1
@@ -455,6 +460,9 @@ static int pmic_mpp_config_set(struct pinctrl_dev *pctldev, unsigned int pin,
 			pad->dtest = arg;
 			break;
 		case PIN_CONFIG_DRIVE_STRENGTH:
+			if (arg < PMIC_MPP_SINK_MIN_MA || arg > PMIC_MPP_SINK_MAX_MA ||
+			    arg % PMIC_MPP_SINK_STEP_MA)
+				return -EINVAL;
 			pad->drive_strength = arg;
 			break;
 		case PMIC_MPP_CONF_AMUX_ROUTE:
@@ -502,7 +510,9 @@ static int pmic_mpp_config_set(struct pinctrl_dev *pctldev, unsigned int pin,
 	if (ret < 0)
 		return ret;
 
-	ret = pmic_mpp_write(state, pad, PMIC_MPP_REG_SINK_CTL, pad->drive_strength);
+	val = pad->drive_strength / PMIC_MPP_SINK_STEP_MA - 1;
+
+	ret = pmic_mpp_write(state, pad, PMIC_MPP_REG_SINK_CTL, val);
 	if (ret < 0)
 		return ret;
 
@@ -769,7 +779,8 @@ static int pmic_mpp_populate(struct pmic_mpp_state *state,
 	if (val < 0)
 		return val;
 
-	pad->drive_strength = val;
+	pad->drive_strength = (val & PMIC_MPP_REG_SINK_MASK) *
+			      PMIC_MPP_SINK_STEP_MA + PMIC_MPP_SINK_STEP_MA;
 
 	val = pmic_mpp_read(state, pad, PMIC_MPP_REG_AOUT_CTL);
 	if (val < 0)

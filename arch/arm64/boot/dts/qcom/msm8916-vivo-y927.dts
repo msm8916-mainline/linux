@@ -1,0 +1,517 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "msm8916-pm8916.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
+#include <dt-bindings/sound/apq8016-lpass.h>
+#include <dt-bindings/clock/qcom,rpmcc.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+
+/ {
+    model = "vivo Y927 (PD1410V)";
+    compatible = "vivo,y927", "qcom,msm8916";
+    chassis-type = "handset";
+
+    aliases {
+        mmc0 = &sdhc_1;   // eMMC 固化为 /dev/mmcblk0
+        mmc1 = &sdhc_2;   // SD 卡 固化为 /dev/mmcblk1
+    };
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&button_backlight_default>;
+
+		led-0 {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_KBD_BACKLIGHT;
+			gpios = <&pm8916_mpps 2 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+	};
+
+    usb_id: usb-id {
+        compatible = "linux,extcon-usb-gpio";
+        id-gpios = <&tlmm 110 GPIO_ACTIVE_HIGH>;
+        pinctrl-names = "default";
+        pinctrl-0 = <&usb_id_default>;
+    };
+
+    /* LCD backlight: PM8916 LPG/PWM on MPP4, GPIO8 as enable. */
+    backlight: backlight {
+        compatible = "pwm-backlight";
+        pwms = <&pm8916_pwm 0 100000>;
+
+        brightness-levels = <0 255>;
+        num-interpolated-steps = <255>;
+        default-brightness-level = <255>;
+        enable-gpios = <&tlmm 8 GPIO_ACTIVE_HIGH>;
+    };
+
+	reg_headphones_avdd: regulator-headphones-avdd {
+		compatible = "regulator-fixed";
+		regulator-name = "headphones-avdd";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		gpio = <&tlmm 36 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+    /* LCD 偏压电源 VSP */
+    reg_lcd_enp: regulator-lcd-enp {
+        compatible = "regulator-fixed";
+        regulator-name = "lcd_enp";
+        gpio = <&tlmm 97 GPIO_ACTIVE_HIGH>;
+        enable-active-high;
+        regulator-always-on;     /* lmdpdg 生成的 panel 驱动不读 vsp/vsn-supply */
+        regulator-boot-on;       /* 必须 always-on，否则 fixed regulator 启动时被拉低，屏黑 */
+    };
+
+    /* LCD 偏压电源 VSN */
+    reg_lcd_enn: regulator-lcd-enn {
+        compatible = "regulator-fixed";
+        regulator-name = "lcd_enn";
+        gpio = <&tlmm 98 GPIO_ACTIVE_HIGH>;
+        enable-active-high;
+        regulator-always-on;
+        regulator-boot-on;
+    };
+
+    /* 预留 lk1st splash framebuffer 不被内核踩踏 */
+    reserved-memory {
+        cont-splash@83200000 {
+            reg = <0 0x83200000 0 0x800000>;
+            no-map;
+        };
+    };
+
+    gpio-keys {
+        compatible = "gpio-keys";
+
+        pinctrl-names = "default";
+        pinctrl-0 = <&gpio_keys_default>;
+
+        label = "GPIO Buttons";
+
+        button-volume-up {
+            label = "Volume Up";
+            gpios = <&tlmm 107 GPIO_ACTIVE_LOW>;
+            linux,code = <KEY_VOLUMEUP>;
+        };
+    };
+
+    /*
+     * Y927 原厂电池：4.35V / 2260 mAh
+     * 数据来源：原厂 DTB `qcom,b76-atl-4v35-2260mah-data` 节点。
+     * OCV 表为 25°C 下的电压→容量映射，主线 simple-battery 的标准做法。
+     */
+    battery: battery {
+        compatible = "simple-battery";
+        voltage-min-design-microvolt = <3400000>;
+        voltage-max-design-microvolt = <4350000>;
+        energy-full-design-microwatt-hours = <8588000>;
+        charge-full-design-microamp-hours = <2260000>;
+        ocv-capacity-celsius = <25>;
+        ocv-capacity-table-0 = <
+            4342000 100  4288000 95   4234000 90   4189000 85
+            4148000 80   4111000 75   4075000 70   4041000 65
+            4008000 60   3977000 55   3949000 50   3922000 45
+            3895000 40   3866000 35   3835000 30   3803000 25
+            3774000 20   3744000 15   3711000 10   3674000 5
+            3634000 0
+        >;
+    };
+};
+
+&usb {
+    dr_mode = "peripheral";
+    extcon = <&usb_id>, <&usb_id>;
+    status = "okay";
+};
+
+&usb_hs_phy {
+    extcon = <&usb_id>;
+    status = "okay";
+};
+
+&tlmm {
+	accel_int_default: accel-int-default-state {
+		pins = "gpio21";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	light_int_default: light-int-default-state {
+		pins = "gpio113";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+    usb_id_default: usb-id-default {
+        pins = "gpio110";
+        function = "gpio";
+        drive-strength = <8>;
+        bias-pull-up;
+    };
+
+    /* DSI reset pin (GPIO25) */
+    mdss_default: mdss-default-state {
+        pins = "gpio25";
+        function = "gpio";
+        drive-strength = <8>;
+        bias-disable;
+    };
+    mdss_sleep: mdss-sleep-state {
+        pins = "gpio25";
+        function = "gpio";
+        drive-strength = <2>;
+        bias-pull-down;
+    };
+    headset_jack_default: headset-jack-default-state {
+        pins = "gpio9";
+        function = "gpio";
+        drive-strength = <2>;
+        bias-disable;
+    };
+
+    gpio_keys_default: gpio-keys-default-state {
+        pins = "gpio107";
+        function = "gpio";
+        drive-strength = <2>;
+        bias-pull-up;
+    };
+
+    /* 触摸屏 IRQ (GPIO13) + RESET (GPIO12) */
+    touchscreen_default: touchscreen-default-state {
+        touch-pins {
+            pins = "gpio13";
+            function = "gpio";
+            drive-strength = <2>;
+            bias-pull-up;
+        };
+        reset-pins {
+            pins = "gpio12";
+            function = "gpio";
+            drive-strength = <2>;
+            bias-disable;
+        };
+    };
+};
+
+&pm8916_resin {
+    linux,code = <KEY_VOLUMEDOWN>;
+    status = "okay";
+};
+
+/* PM8916 LDO16：触摸屏 AVDD28 (2.85V)。dtsi 里默认未声明 LDO16，板级要补上。 */
+&pm8916_rpm_regulators {
+    pm8916_l16: l16 {
+        regulator-min-microvolt = <2850000>;
+        regulator-max-microvolt = <2850000>;
+    };
+
+	pm8916_l17: l17 {
+		regulator-min-microvolt = <2850000>;
+		regulator-max-microvolt = <2850000>;
+	};
+};
+
+
+&sdhc_1 {
+    status = "okay";   // eMMC（内部存储）
+};
+
+&sdhc_2 {
+    status = "okay";   // SD 卡（TF 卡槽）
+    cd-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+};
+
+/* ====== DSI 主机 + 面板 ====== */
+&mdss {
+    status = "okay";
+};
+
+&mdss_dsi0 {
+    pinctrl-names = "default", "sleep";
+    pinctrl-0 = <&mdss_default>;
+    pinctrl-1 = <&mdss_sleep>;
+    status = "okay";
+
+    panel@0 {
+        compatible = "vivo,y927-hx8394a";
+        reg = <0>;
+        reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+        backlight = <&backlight>;
+        vsp-supply = <&reg_lcd_enp>;
+        vsn-supply = <&reg_lcd_enn>;
+
+        port {
+            panel_in: endpoint {
+                remote-endpoint = <&mdss_dsi0_out>;
+            };
+        };
+    };
+};
+
+/* DSI host 输出端：data-lanes + remote-endpoint 必须放在这里 */
+&mdss_dsi0_out {
+    data-lanes = <0 1 2 3>;
+    remote-endpoint = <&panel_in>;
+};
+
+
+/* ====== 传感器 (BLSP I2C2) ====== */
+&blsp_i2c2 {
+	status = "okay";
+
+	accelerometer@18 {
+		compatible = "st,lis3dh-accel";
+		reg = <0x18>;
+		interrupts-extended = <&tlmm 21 IRQ_TYPE_EDGE_RISING>;
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l6>;
+		pinctrl-0 = <&accel_int_default>;
+		pinctrl-names = "default";
+		mount-matrix = "1", "0", "0",
+				"0", "-1", "0",
+				"0", "0", "-1";
+	};
+
+	magnetometer@c {
+		compatible = "asahi-kasei,ak8963";
+		reg = <0x0c>;
+		vdd-supply = <&pm8916_l17>;
+		vid-supply = <&pm8916_l6>;
+	};
+
+	light-sensor@39 {
+		compatible = "amstaos,tmd2772";
+		reg = <0x39>;
+		interrupts-extended = <&tlmm 113 IRQ_TYPE_EDGE_FALLING>;
+		vdd-supply = <&pm8916_l17>;
+		vddio-supply = <&pm8916_l6>;
+		pinctrl-0 = <&light_int_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&blsp_i2c4 {
+	status = "okay";
+};
+
+/* ====== 触摸屏 (Goodix GT9271 on BLSP I2C5 @ 0x14) ====== */
+&blsp_i2c5 {
+    status = "okay";
+
+    touchscreen@14 {
+        compatible = "goodix,gt9271";
+        reg = <0x14>;
+        interrupt-parent = <&tlmm>;
+        interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+        irq-gpios = <&tlmm 13 GPIO_ACTIVE_HIGH>;
+        reset-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+        AVDD28-supply = <&pm8916_l16>;
+        VDDIO-supply = <&pm8916_l6>;
+        touchscreen-size-x = <720>;
+        touchscreen-size-y = <1280>;
+        pinctrl-names = "default";
+        pinctrl-0 = <&touchscreen_default>;
+    };
+};
+
+&blsp_i2c6 {
+    status = "okay";
+
+	headphones: audio-codec@10 {
+		compatible = "asahi-kasei,ak4375";
+		reg = <0x10>;
+		avdd-supply = <&reg_headphones_avdd>;
+		tvdd-supply = <&pm8916_l6>;
+		pdn-gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
+		clocks = <&rpmcc RPM_SMD_BB_CLK2_PIN>;
+		clock-names = "ref";
+		#sound-dai-cells = <0>;
+	};
+
+    speaker_codec: audio-codec@34 {
+        compatible = "nxp,tfa9887", "nxp,tfa9895";
+        reg = <0x34>;
+        vddd-supply = <&pm8916_l5>;
+        sound-name-prefix = "Speaker";
+        #sound-dai-cells = <0>;
+    };
+};
+
+&venus {
+	status = "okay";
+};
+
+&venus_mem {
+	status = "okay";
+};
+
+&wcnss {
+    status = "okay";
+};
+
+&wcnss_iris {
+    compatible = "qcom,wcn3620";        /* Y927 实测；与 lk2nd DTS 一致 */
+};
+
+&wcnss_mem {
+    status = "okay";
+};
+
+&bam_dmux {
+	status = "okay";
+};
+
+&bam_dmux_dma {
+	status = "okay";
+};
+
+&gps_mem {
+	status = "okay";
+};
+
+&mba_mem {
+	status = "okay";
+};
+
+&memshare {
+	status = "okay";
+};
+
+&mpss {
+	status = "okay";
+};
+
+&mpss_mem {
+	/* Matches the modem/adsp carveout in the downstream device tree. */
+	reg = <0x0 0x86800000 0x0 0x4e00000>;
+	status = "okay";
+};
+
+&gpu {
+    status = "okay";
+};
+
+&lpass {
+    status = "okay";
+};
+
+&lpass_codec {
+    status = "okay";
+};
+
+&pm8916_codec {
+    pinctrl-names = "default";
+    pinctrl-0 = <&headset_jack_default>;
+    jack-gpios = <&tlmm 9 GPIO_ACTIVE_LOW>;
+
+    qcom,micbias-lvl = <2800>;
+    qcom,mbhc-vthreshold-low = <75 150 237 450 500>;
+    qcom,mbhc-vthreshold-high = <75 150 237 450 500>;
+    status = "okay";
+};
+
+&sound {
+    model = "vivo-y927";
+	widgets =
+		"Speaker", "Speaker",
+		"Headphone", "Headphones";
+	pin-switches = "Speaker", "Headphones";
+    audio-routing =
+        "Speaker", "Speaker OUT",
+		"Headphones", "HPL",
+		"Headphones", "HPR",
+        "AMIC1", "MIC BIAS External1",
+        "AMIC2", "MIC BIAS Internal2",
+        "AMIC3", "MIC BIAS External1";
+    pinctrl-names = "default", "sleep";
+    pinctrl-0 = <&cdc_pdm_default &sec_mi2s_default>;
+    pinctrl-1 = <&cdc_pdm_sleep &sec_mi2s_sleep>;
+    status = "okay";
+
+    primary-dai-link {
+        link-name = "Primary MI2S";
+
+        cpu {
+            sound-dai = <&lpass MI2S_PRIMARY>;
+        };
+
+        codec {
+            sound-dai = <&lpass_codec 0>, <&pm8916_codec 0>;
+        };
+    };
+
+    quaternary-dai-link {
+        link-name = "External Outputs";
+
+        cpu {
+            sound-dai = <&lpass MI2S_QUATERNARY>;
+        };
+
+        codec {
+            sound-dai = <&headphones>, <&speaker_codec>;
+        };
+    };
+
+    tertiary-dai-link {
+        link-name = "Tertiary MI2S";
+
+        cpu {
+            sound-dai = <&lpass MI2S_TERTIARY>;
+        };
+
+        codec {
+            sound-dai = <&lpass_codec 1>, <&pm8916_codec 1>;
+        };
+    };
+};
+
+&pm8916_vib {
+	status = "okay";
+};
+
+&pm8916_bms {
+    status = "okay";
+    monitored-battery = <&battery>;
+    power-supplies = <&pm8916_charger>;
+};
+
+&pm8916_charger {
+    status = "okay";
+    monitored-battery = <&battery>;
+    qcom,fast-charge-safe-current = <900000>;       /* 0.9 A 安全限流 */
+    qcom,fast-charge-safe-voltage = <4200000>;      /* PM8916 LBC 浮充上限 4.2V */
+};
+
+&pm8916_pwm {
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&pwm_out>;
+};
+
+&pm8916_mpps {
+	button_backlight_default: mpp2-state {
+		pins = "mpp2";
+		function = "sink";
+		drive-strength = <5>;
+		output-low;
+	};
+
+    pwm_out: mpp4-state {
+        pins = "mpp4";
+        function = "digital";
+        power-source = <PM8916_MPP_VPH>;
+        output-low;
+        qcom,dtest = <1>;
+    };
+};

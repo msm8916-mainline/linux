@@ -22,6 +22,12 @@ properties:
   '#sound-dai-cells':
     const: 0
 
+  clocks:
+    maxItems: 1
+
+  clock-names:
+    const: ref
+
   avdd-supply:
     description: regulator phandle for the AVDD power supply.
 

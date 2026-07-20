@@ -115,6 +115,11 @@ $defs:
       input-enable: true
       output-high: true
       output-low: true
+      drive-strength:
+        description:
+          Selects the current sink strength for the specified pin, in mA.
+        enum: [5, 10, 15, 20, 25, 30, 35, 40]
+
       power-source: true
 
       qcom,analog-level:
