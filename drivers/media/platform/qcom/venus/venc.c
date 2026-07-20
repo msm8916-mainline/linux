@@ -692,7 +692,6 @@ static int venc_set_properties(struct venus_inst *inst)
 		struct hfi_h264_vui_timing_info info;
 		struct hfi_h264_entropy_control entropy;
 		struct hfi_h264_db_control deblock;
-		struct hfi_h264_8x8_transform h264_transform;
 
 		ptype = HFI_PROPERTY_PARAM_VENC_H264_VUI_TIMING_INFO;
 		info.enable = 1;
@@ -724,15 +723,18 @@ static int venc_set_properties(struct venus_inst *inst)
 		if (ret)
 			return ret;
 
-		ptype = HFI_PROPERTY_PARAM_VENC_H264_TRANSFORM_8X8;
-		h264_transform.enable_type = 0;
-		if (ctr->profile.h264 == V4L2_MPEG_VIDEO_H264_PROFILE_HIGH ||
-		    ctr->profile.h264 == V4L2_MPEG_VIDEO_H264_PROFILE_CONSTRAINED_HIGH)
-			h264_transform.enable_type = ctr->h264_8x8_transform;
+		if (IS_V4(inst->core) || IS_V6(inst->core)) {
+			struct hfi_h264_8x8_transform h264_transform = {};
 
-		ret = hfi_session_set_property(inst, ptype, &h264_transform);
-		if (ret)
-			return ret;
+			ptype = HFI_PROPERTY_PARAM_VENC_H264_TRANSFORM_8X8;
+			if (ctr->profile.h264 == V4L2_MPEG_VIDEO_H264_PROFILE_HIGH ||
+			    ctr->profile.h264 == V4L2_MPEG_VIDEO_H264_PROFILE_CONSTRAINED_HIGH)
+				h264_transform.enable_type = ctr->h264_8x8_transform;
+
+			ret = hfi_session_set_property(inst, ptype, &h264_transform);
+			if (ret)
+				return ret;
+		}
 
 		if (ctr->layer_bitrate) {
 			unsigned int i;
