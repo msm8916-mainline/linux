@@ -73,6 +73,16 @@ config AL3320A
 	  To compile this driver as a module, choose M here: the
 	  module will be called al3320a.
 
+config AP3216C
+	tristate "AP3216C/AP3426 ambient light sensor"
+	depends on I2C
+	help
+	  Say Y here if you want to build a driver for the Dynaimage
+	  AP3216C or AP3426 ambient light and proximity sensor.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called ap3216c.
+
 config APDS9160
 	tristate "APDS9160 combined als and proximity sensor"
 	depends on I2C
