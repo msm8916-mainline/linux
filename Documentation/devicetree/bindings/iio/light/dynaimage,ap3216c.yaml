@@ -1,0 +1,74 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/iio/light/dynaimage,ap3216c.yaml#
+$schema: http://devicetree.org/schemas/meta-schemas/core.yaml#
+
+title: DynaImage AP3216C / AP3426 Ambient Light and Proximity Sensor
+
+maintainers:
+  - Vladislav Dubrovin <foxy9855@gmail.com>
+
+description: |
+  DynaImage AP3216C and AP3426 are integrated digital ambient light,
+  proximity, and IR sensor.
+
+  Specifications about the devices can be found at:
+  https://github.com/RT-Thread-packages/ap3216c/blob/master/ap3216c_datasheet.pdf
+
+properties:
+  compatible:
+    oneOf:
+      - items:
+          - const: dynaimage,ap3426
+          - const: dynaimage,ap3216c
+      - enum:
+          - dynaimage,ap3216c
+          - dynaimage,ap3426
+
+  reg:
+    maxItems: 1
+
+  interrupts:
+    maxItems: 1
+
+  vdd-supply:
+    description: Regulator powering the sensor VDD pin.
+
+  vddio-supply:
+    description: Regulator powering the sensor VDDIO pin.
+
+  proximity-near-level:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description:
+      Raw proximity threshold level above which an object is considered "near".
+    default: 300
+
+required:
+  - compatible
+  - reg
+
+additionalProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/interrupt-controller/irq.h>
+
+    i2c {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        light-sensor@1e {
+            compatible = "dynaimage,ap3426", "dynaimage,ap3216c";
+            reg = <0x1e>;
+
+            interrupt-parent = <&tlmm>;
+            interrupts = <113 IRQ_TYPE_EDGE_FALLING>;
+            vdd-supply = <&pm8916_l17>;
+            vddio-supply = <&pm8916_l6>;
+            proximity-near-level = <300>;
+
+            pinctrl-0 = <&als_int_default>;
+            pinctrl-names = "default";
+        };
+    };
