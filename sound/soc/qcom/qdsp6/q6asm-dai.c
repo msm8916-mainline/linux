@@ -225,7 +225,12 @@ static int q6asm_dai_prepare(struct snd_soc_component *component,
 
 	prtd->pcm_count = snd_pcm_lib_period_bytes(substream);
 	/* rate and channels are sent to audio driver */
-	if (prtd->state == Q6ASM_STREAM_RUNNING) {
+	/*
+	 * The DSP stream stays open after TRIGGER_STOP/EOS (state STOPPED), so a
+	 * re-prepare (xrun recovery, resume from standby) must close it too, or
+	 * the next open_write fails with ADSP_EALREADY.
+	 */
+	if (prtd->state != Q6ASM_STREAM_IDLE) {
 		/* clear the previous setup if any  */
 		q6asm_cmd(prtd->audio_client, prtd->stream_id, CMD_CLOSE);
 		q6asm_unmap_memory_regions(substream->stream,
