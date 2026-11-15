@@ -52,6 +52,7 @@ static void put_iova_spaces(struct drm_gem_object *obj, struct drm_gpuvm *vm,
 static void msm_gem_close(struct drm_gem_object *obj, struct drm_file *file)
 {
 	struct msm_context *ctx = file->driver_priv;
+	struct msm_drm_private *priv = obj->dev->dev_private;
 	struct drm_exec exec;
 
 	update_ctx_mem(file, -obj->size);
@@ -71,6 +72,16 @@ static void msm_gem_close(struct drm_gem_object *obj, struct drm_file *file)
 	 * is closed (see msm_gem_vm_close())
 	 */
 	if (msm_context_is_vmbind(ctx))
+		return;
+
+	/*
+	 * GPUs without per-process pagetables (a2xx..a5xx) hand every context
+	 * the global GPU VM.  Tearing down the VMAs there on handle close
+	 * unmaps buffers that other processes still use (e.g. a dma-buf shared
+	 * with the compositor), which then fault on their stale iova.
+	 * msm_gem_vma_put() above tears them down after the last user.
+	 */
+	if (priv->gpu && ctx->vm == priv->gpu->vm)
 		return;
 
 	/*
@@ -100,6 +111,21 @@ void msm_gem_vma_put(struct drm_gem_object *obj)
 
 	if (atomic_dec_return(&to_msm_bo(obj)->vma_ref))
 		return;
+
+	/*
+	 * Without per-process pagetables (a2xx..a5xx) every context maps the
+	 * object in the shared GPU VM, see msm_gem_close().  Drop that mapping,
+	 * and the reference it holds on the object, once the last user is gone.
+	 */
+	if (priv->gpu && priv->gpu->vm) {
+		struct drm_exec exec;
+
+		dma_resv_wait_timeout(obj->resv, DMA_RESV_USAGE_BOOKKEEP, false,
+				      MAX_SCHEDULE_TIMEOUT);
+		msm_gem_lock_vm_and_obj(&exec, obj, priv->gpu->vm);
+		put_iova_spaces(obj, priv->gpu->vm, true, "vma_put");
+		drm_exec_fini(&exec);     /* drop locks */
+	}
 
 	if (!priv->kms)
 		return;
