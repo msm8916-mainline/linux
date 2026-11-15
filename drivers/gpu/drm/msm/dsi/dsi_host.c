@@ -1197,9 +1197,19 @@ static void dsi_wait4video_done(struct msm_dsi_host *msm_host)
 
 static void dsi_wait4video_eng_busy(struct msm_dsi_host *msm_host)
 {
+	const struct msm_dsi_cfg_handler *cfg_hnd = msm_host->cfg_hnd;
 	u32 data;
 
 	if (!(msm_host->mode_flags & MIPI_DSI_MODE_VIDEO))
+		return;
+
+	/*
+	 * With BLOCK_DMA_WITHIN_FRAME the hardware holds the DMA until the
+	 * blanking itself. Sleeping past VIDEO_DONE misses short blankings
+	 * and costs a whole frame per command.
+	 */
+	if (cfg_hnd->major == MSM_DSI_VER_MAJOR_6G &&
+	    cfg_hnd->minor >= MSM_DSI_6G_VER_MINOR_V1_2)
 		return;
 
 	data = dsi_read(msm_host, REG_DSI_STATUS0);
